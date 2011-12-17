@@ -51,7 +51,6 @@
   					</descriptorRefs>
   					<archive>
   						<manifest>
-  							<mainClass>net.sf.mavenjython.InitJython</mainClass>
   						</manifest>
   					</archive>
   				</configuration>
