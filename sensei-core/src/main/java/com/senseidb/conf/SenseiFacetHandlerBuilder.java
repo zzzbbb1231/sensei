@@ -129,8 +129,8 @@ public class SenseiFacetHandlerBuilder {
 		return new MultiValueFacetHandler(name, fieldName, termListFactory,null,depends);
 	}
 
-	static PathFacetHandler buildPathHandler(String name,String fieldName, Map<String,List<String>> paramMap){
-		PathFacetHandler handler = new PathFacetHandler(name, fieldName, false);	// path does not support multi value yet
+	static PathFacetHandler buildPathHandler(String name,String fieldName, Map<String,List<String>> paramMap, boolean multi){
+		PathFacetHandler handler = new PathFacetHandler(name, fieldName, multi);
 		String sep = null;
 		if (paramMap!=null){
 			List<String> sepVals = paramMap.get("separator");
@@ -370,7 +370,9 @@ public class SenseiFacetHandlerBuilder {
 				if (type.equals("simple")) {
 					facetHandler = buildSimpleFacetHandler(name, fieldName, dependSet, termListFactoryMap.get(fieldName));
 				} else if (type.equals("path")) {
-					facetHandler = buildPathHandler(name, fieldName, paramMap);
+					facetHandler = buildPathHandler(name, fieldName, paramMap, false);
+                                } else if (type.equals("multi-path")) {
+                                        facetHandler = buildPathHandler(name, fieldName, paramMap, true);
 				} else if (type.equals("range")) {
 					facetHandler = buildRangeHandler(name, fieldName, termListFactoryMap.get(fieldName), paramMap);
 				} else if (type.equals("multi")) {
