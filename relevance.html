@@ -1,0 +1,295 @@
+---
+layout: default
+title: SenseiDB - Hadoop Bootstrap
+---
+<div class="hero-unit">
+  <h2>Relevance Support</h2>
+  <p>Easy relevance operation in SenseiDB server.</p>
+</div>
+
+<h2>Introduction</h2>
+<p>
+  Sensei now has integrated relevance support. The main idea here is that users can create/tune the relevance model (ranking scheme) online or store the relevance model in a more convenient way, thus avoid the classic relevance coding in a more complicated way. Also,
+  by doing this we may not need to re-deploy the service. 
+</p>
+<p>
+  Things we will cover in this document:
+  <ul>
+    <li><b>How it works?</b></li>
+      <p>How do the users interact with senseiDB to create or tune relevance model.</p>
+  </ul>
+
+  <ul>
+    <li><b>Location of relevance component in Sensei JSON request Object.</b></li>
+      <p>The detailed location about where the relevance component sits inside the request JSON object.</p>
+  </ul>
+
+  <ul>
+    <li><b>How to use it: Grammar, Layout.</b></li>
+      <p>The simple grammar to write the relevance json.</p>
+  </ul>
+
+  <ul>
+    <li><b>Some facility methods.</b></li>
+      <p>Some optimized method which could be useful when writing a customized relevance model.</p>
+  </ul>
+</p>
+
+<h2>How it works?</h2>
+<p>
+  The relevance support functionality in SenseiDB is implemented to help the user to create and tune relevance model in an easier way.
+      The basic pipeline is that users send a JSON request/BQL request containing simple relevance model expression to the server, the server will compile
+      the code and generate the corresponding relevance model. Relevance model may have a name, so that next time you only need to refer to the model with its name.
+      Also, models are cached inside each node, and hence no extra performance cost.
+</p>
+
+<p>Users can write java code math function as a relevance model (we will explain this in the following part), 
+and we used <a href="http://www.jboss.org/javassist/downloads">JAVASSIST</a> package to do the one-time compilation.</p>
+
+
+<h2>Location of relevance component inside request JSON</h2>
+<p>
+   Before using relevance json request, we need to get familiar with the sensei <a href="client-rest-req.html">JSON request API</a> design.
+</p>
+<p>
+First of all, a sensei request json is something like below:
+
+<pre class="prettyprint" id="xml">
+<?xml version="1.0" encoding="UTF-8"?>
+{
+  "query" : {
+      // query sub-json inside the request json.
+         "query_string":{       // the query type is "query_string"
+               // the detailed info about query_string type query;
+          }
+    }
+  },
+ 
+  // paging parameters
+ 
+  "size" : 10,   // default to 10;
+  "from" : 0,    //default to 0;
+ 
+  "groupBy" : {
+    "columns" : ["category"],
+    "top" : 3
+  },
+ 
+ 
+  "filter" : {
+      // filters json here.
+  },
+ 
+  "selections" : [
+      //details of this part see the selections.json
+  ],
+ 
+ 
+  "facets":{
+  // facet parameters
+  },
+ 
+  "facetInit":{
+       // facet initialization parameters for runtime facets
+  },
+  "sort":[
+      {"color":"desc"},       // sort by color in reverse order
+      "_score"                     // secondary sort by relevance, reverse  parameter is ignored
+  ],
+  "fetchStored" : false,
+  "termVectors" : [],
+  "partitions":[1,2],
+  "explain" : false,
+  "routeParam": null,
+}
+</pre>
+</p>
+
+<p>
+Inside the request json, we can see a query sub-json, which is the first part sub-json in the request json above. 
+The query sub-json contains a key which is a query type, and the value is the real query json. 
+The relevance part (relevance json) is located inside the specific query json. 
+For example, if inside the request json, we have put a query json with the type of "query_string", and it has a relevance part. 
+Note that a relevance json mainly has three parts. It can have either a "predefined-model" part, or "model" part (runtime model), 
+we need to choose one of these two types of model references. 
+The "values" part provides the input values for either the runtime model or the predefined one. 
+So the combination is predefined-model plus an optional values part, or model plus an optional values part.
+</p>
+<p>
+The query sub-json above with a relevance should be as explained below. 
+<pre class="prettyprint" id="xml">
+<?xml version="1.0" encoding="UTF-8"?>
+
+{
+        "query_string":{  //query type specified here. this one is a query_string type query;
+            "query":"",  //empty query term, which will search everything;
+            "relevance":{
+ 
+                // A predefined model is either the model preloaded during sensei startup, or saved runtime model with a name;
+                "predefined-model": "model-name",
+ 
+                // A runtime model definition below will be compiled at runtime (if no previous runtime model is cached).
+                "model":{
+                    "facets":{
+                        "int":["year","mileage"],
+                        "long":["groupid"]
+                    },
+                    "variables":{
+                        "set_int":["goodYear"],
+                        "int":["thisYear"]
+                    },
+                    "function_params":["_INNER_SCORE","thisYear","year","goodYear"],
+                    
+                    "function":" if(goodYear.contains(year)) return (float)Math.exp(10d);   if(year==thisYear) return 87f   ; return  _INNER_SCORE    ;"
+                    // "save as" part below is optional, if specified, this runtime generated model will be saved with a name.
+                    // After a runtime model is named, it will be convenient to use next time, we can just specify the model name.
+                    // Attn: Even if we do not name a runtime model, the system will also automatically cache a certain amount of anonymous runtime models, so
+                    // there is no extra compilation cost for second request with the same model function body and signature.
+ 
+                    "save_as":{
+                           "name":"RuntimeModelName",
+                           "overwrite":true     //optional, default value is false;
+                    }
+                },
+ 
+                // values part is used for either predefined model or a runtime model above, if these models require input values;
+                "values":{
+                    "thisYear":2001,
+                    "goodYear":[1996,1997]
+                }
+            }
+        }
+    }
+</pre>
+</p>
+
+<h2>How to use it: Grammar, Layout</h2>
+<p>
+   Before we start, a working relevance json embeded in the sensei json request is like this:
+<pre class="prettyprint" id="xml">
+<?xml version="1.0" encoding="UTF-8"?>
+
+{
+        "query": {
+            "query_string": {
+                "query": "",
+                "relevance":{
+ 
+                    "model":{
+                        "variables":{
+                             "set_int":["goodYear"],
+                             "int":["thisYear"],
+                             "map_int_float":["mileageWeight"],
+                             "map_int_string":["yearcolor"],
+                             "map_string_float":["colorweight"],
+                             "map_string_string":["categorycolor"]
+                            },
+                        "facets":{
+                             "int":["year","mileage"],
+                             "long":["groupid"],
+                             "string":["color","category"]
+                            },
+                        "function_params":["_INNER_SCORE", "thisYear", "year","goodYear","mileageWeight","mileage","color", "yearcolor", "colorweight", "category", "categorycolor"],
+                        "function":" if(categorycolor.containsKey(category) && categorycolor.get(category).equals(color))  return 10000f; if(colorweight.containsKey(color) ) return 200f + colorweight.getFloat(color); if(yearcolor.containsKey(year) && yearcolor.get(year).equals(color)) return 200f; if(mileageWeight.containsKey(mileage)) return 10000+mileageWeight.get(mileage); if(goodYear.contains(year)) return (float)Math.exp(2d);   if(year==thisYear) return 87f   ; return  _INNER_SCORE;"
+                    },
+ 
+                    "values":{
+                         "goodYear":[1996,1997],
+                         "thisYear":2001,
+                         "mileageWeight":{"key":[11400,11000],"value":[777.9, 10.2]},
+                        "yearcolor":{"key":[1998],"value":["red"]},
+                        "colorweight":{"key":["red"],"value":[335.5]},
+                        "categorycolor":{"key":["compact"],"value":["red"]}
+                    }
+                }
+            }
+        },
+        "from": 0,
+        "size": 6,
+        "explain": false,
+        "fetchStored": false,
+        "sort":["_score"]
+    }
+</pre>
+</p>
+
+<p>
+The relevance json has two parts, one is the model part, another is the values part. Model part should be relatively static. The values part provides the input required by the static model. Each request may have different values part, but may probably use the same model.
+</p>
+
+<p>
+Inside the model part, we define 4 items:
+
+  <ul>
+    <li><b>variables</b></li>
+      <p>User provided variable, the variable name and type are defined here, but the actual values has to be filled outside the model part, but in the values part.</p>
+  </ul>
+
+  <ul>
+    <li><b>facets</b></li>
+      <p>Define what facet/column will be used in the relevance model. It automatically defined the variable name the same as the facet name.</p>
+  </ul>
+  
+  <ul>
+    <li><b>function_params</b></li>
+      <p>Define which parameters will be used in the function. All the parameters listed here have to be defined either in the variables part, or the facets part.</p>
+  </ul>
+
+  <ul>
+    <li><b>function</b></li>
+      <p>The real function body. Java code here. It must have a return type, and return a float value. No malicious class can be used, a custom class loader will prevent it from being loaded if it is not in the white class list.</p>
+  </ul>
+</p>
+
+
+<p>
+Supported variable types:
+
+        <ul><li><b>HashSet: in detail, set_int, set_float, set_string, set_double, set_long|set_int, set_float, set_string, set_double, set_long.</b></li></ul>
+        <ul><li><b>HashMap: e.g., map_int_int, map_int_double, map_int_float, map_string_int, map_string_double, etc. (Currently support two types hashmap: map_int_* and map_string_*)</b></li></ul>
+        <ul><li><b>other normal type: int, double, float, long, bool, string.</b></li></ul>
+
+Supported facet types:
+        <ul><li><b>Normal facet: double, float, int, long, short, string.</b></li></ul>
+        <ul><li><b>Multi-facet: mdouble, mfloat, mint, mlong, mshort, mstring.</b></li></ul>
+        <ul><li><b>Weighted Multi-facet: wmdouble, wmflot, wmint, wmlong, wmshort, wmstring.</b></li></ul>
+</p>
+
+
+<p>
+<font color="red"><b>Attention !!!</b></font>:
+
+    <ul><li><b>When defining the variables, some reserved keywords can not be used. Currently "_INNER_SCORE" and "_NOW" can not be used. "_INNER_SCORE" is a float value which is the inner score from the original query. "_NOW" is the long value of the current time in millionseconds.</b></li></ul>
+    <ul><li><b>All the variables used in the function body have to be pre-defined in the variables or facets part.</b></li></ul>
+    <ul><li><b>Inside the function body, java.lang.Math class can be used for computation work. Other class such as java.lang.System or java.lang.Thread won't be loaded.</b></li></ul>
+    <ul><li><b>In the Sensei request json, must specify the sort by parameter as "sort":["_score"].</b></li></ul>
+    <ul><li><b>Explicit type casting is required. For instance, java.lang.Math.exp(20d), since exp requires a double input.</b></li></ul>
+    <ul><li><b>For hashmap usage, for the following maps, get method should be replaced with type-specified get method:
+        <ul><li>map_string_int ==> getInt(String)</li></ul>
+        <ul><li>map_string_double ==> getDouble(String)</li></ul>
+        <ul><li>map_string_float ==> getFloat(String)</li></ul>
+        <ul><li>map_string_long ==> getLong(String)</li></ul>
+    </b></li></ul>
+    <ul><li><b>For facet usage, normal facet can be treated as primitive type of string object directly. However, if it is defined as a multi-facet object, or a weighted multi-facet object, it has some predefined methods to be used:
+        <ul><li>for multi-facet object, we can use contains() method. e.g. for an "mint" type multi-facet object a, we can use it as a.contains(int target) inside the relevance code. for "mstring" type, it could be a.contains(String target).</li></ul>
+        <ul><li>for multi-facet object, we also have containsAny(Set set) method. It accept a predefined set variable from the values part of the relevance section in the request json, and check if any value of this facet is among this set.</li></ul>
+        <ul><li>for weighted multi-facet object, besides the method for multi-facet, we can also use boolean hasWeight(int target) and int getWeight() methods. The first one has to be executed firstly, if we get true, we can use the second one to get the weight for the target.</li></ul>
+	</b></li></ul>
+</p>
+
+<p>
+For more sample relevance JSONs, please refer to the relevance test cases in senseiDB code, the <a href="https://github.com/sguo/sensei/blob/master/sensei-core/src/test/java/com/senseidb/test/TestSensei.java">relevance test cases</a> have covered a lot of use case for relevance.
+</p>
+<h2>Some facility methods</h2>
+<p>
+ We also plan to provide some facility methods in the relevance model, which means inside the scoring function, these facility methods/functions can be called directly for performance reason.
+Currently supported:
+
+    <ul><li><b>double exp(int a) --> faster version of java.lang.Math.exp(double a)</b></li></ul>
+    <ul><li><b>double exp(float a) --> faster version of java.lang.Math.exp(double a)</b></li></ul>
+    <ul><li><b>double exp(double a) --> faster version of java.lang.Math.exp(double a)</b></li></ul>
+   
+</p>
+
+<h2>BQL support</h2>
+<p>Coming soon!</p>
