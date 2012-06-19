@@ -1,0 +1,68 @@
+---
+layout: default
+title: SenseiDB - Activity Engine
+version: 1.0.0
+---
+<div class="hero-unit">
+  <h2>Activity Engine</h2>
+  <p>A tutorial showing how to use the Sensei Activity Engine</p>  
+</div>
+<h3>Description</h3>
+<p>Sensei activity datastore is used to keep volatile field values outside of the Lucene's index. This allows partial updates and supports high indexing update rate for the Sensei</p>
+<h3>Configuration</h3>
+<p>Currently only int fields are supported as activity fields. To specify the activity column, use the following configuration </p>
+<pre class="prettyprint" id="xml">
+&lt;table ...
+    &lt;column name="likes" activity="true" type="int"/&gt;
+&lt;/table&gt;
+&lt;facets&gt;
+      ...
+ &lt;facet name="likes" type="range"/&gt;
+&lt;/facets&gt;
+</pre>
+<p>Now you can issue the range queries for the &quot;likes&quot; facet </p>
+<pre class="prettyprint" id="xml">
+{"selections": [{"range": {"likes": {"from": 18, "include_lower": true}}}], "sort":[{"likes":"desc"}]}
+</pre>
+<p>Please be advised that activity range query performance might be slower comparing to usual Sensei range queries. It's better to use activity fields for sorting and relevance</p>
+<h3>Time aggregates support</h3><p>If we want to store the activity data and keep track of all the updates for particular time, we can use the following configuration: </p>
+<pre class="prettyprint" id="xml">
+&lt;table ...
+    &lt;column name="likes" activity="true" type="int"/&gt;
+&lt;/table&gt;
+&lt;facets&gt;
+      ...
+ &lt;facet name="likes" column="likes" type="aggregated-range"&gt;
+	 &lt;params&gt;
+		  &lt;param name="time" value="5m" /&gt;
+		  &lt;param name="time" value="15m" /&gt;
+		  &lt;param name="time" value="1h" /&gt;
+		  &lt;param name="time" value="12h" /&gt;
+		  &lt;param name="time" value="1d" /&gt;
+		  &lt;param name="time" value="7d" /&gt;
+		  &lt;param name="time" value="2w" /&gt;
+	&lt;/params&gt;
+ &lt;/facet&gt;
+&lt;/facets&gt;
+</pre>
+<p>Now you can issue the range queries  for the time aggregates</p>
+<pre class="prettyprint" id="xml">
+{"selections": [{"range": {"likes:15m": {"from": 18, "include_lower": true}}}], "sort":[{"likes:15m":"desc"}]}
+</pre>
+<p>And we still can access the non-aggregated values </p>
+<pre class="prettyprint" id="xml">
+{"selections": [{"range": {"likes": {"from": 18, "include_lower": true}}}], "sort":[{"likes":"desc"}]}
+</pre>
+<h3 >Indexing</h3><p>To index the activity value, add the activity field and value to the Json document</p>
+<pre class="prettyprint" id="xml">
+{"id":5, "color":"blue", "likes" : 25}
+</pre>
+<p>This would set the &quot;likes&quot; value to 25</p><p>If we just want to increment the existing value, we can do the following:</p>
+<pre class="prettyprint" id="xml">
+{&quot;id&quot;:5, &quot;type&quot;:&quot;update&quot;, &quot;likes&quot; : &quot;+4&quot;}
+</pre>
+<h3 >Partial updates indexing</h3>
+<p>Currently Lucene doesn't support updates,  the update is delete + create</p>
+<p>So if we just want to modify the activity values for the indexed document, we may send the json document with the uid, &quot;update&quot; 
+identifier and the activity field. If no other fields are present, the Lucene's index wouldn't be rebuilt. The only thing, that would be changed is the activity value</p>
+<pre class="prettyprint" id="xml">{"id":5, "type":"update", "likes" : "+1"}</pre>
