@@ -326,7 +326,7 @@ sensei.index.analyzer.version = LUCENE_34	</pre><p>in the code:</p><pre class="p
       &lt;facet name="tags" type="custom" /&gt;
       &lt;facet name="virtual_groupid" type="custom" /&gt;
       &lt;facet name="virtual_groupid_fixed" type="custom" /&gt;
-&lt;/facets&gt;  </pre><p>In the java code:</p><pre class="prettyprint">
+&lt;/facets&gt;  </pre><p>In the Java code:</p><pre class="prettyprint">
 public class VirtualGroupIdFactory implements SenseiPluginFactory&lt;List&lt;FacetHandler&gt;&gt; {
   @Override
   public List&lt;FacetHandler&gt; getBean(Map initProperties, String fullPrefix, SenseiPluginRegistry pluginRegistry) {
