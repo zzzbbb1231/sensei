@@ -45,7 +45,7 @@ lists the meaning of all the meta-symbols we use.
 documentation of statements and clauses can be found in later
 sections.</p>
 
-<pre class="programlisting">
+<pre>
 &lt;statement&gt; ::= ( &lt;select_stmt&gt; | &lt;describe_stmt&gt; ) [';']
 
 &lt;select_stmt&gt; ::= SELECT &lt;select_list&gt; [&lt;from_clause&gt;] [&lt;where_clause&gt;] [&lt;given_clause&gt;]
@@ -59,16 +59,18 @@ sections.</p>
 
 &lt;from_clause&gt; ::= FROM &lt;index_name&gt;
 
+&lt;index_name&gt; ::= &lt;identifier&gt; | &lt;quoted_string&gt;
+
 &lt;where_clause&gt; ::= WHERE &lt;search_expr&gt;
 
-&lt;search_expr&gt; ::= &lt;boolean_expression&gt;
+&lt;search_expr&gt; ::= &lt;term_expr&gt; ( OR &lt;term_expr&gt; )*
 
-&lt;boolean_expression&gt; ::= &lt;boolean_term&gt; ( OR &lt;boolean_term&gt; )*
+&lt;term_expr&gt; ::= &lt;facet_expr&gt; ( AND &lt;facet_expr&gt; )*
 
-&lt;boolean_term&gt; ::= &lt;boolean_term&gt; (AND &lt;boolean_term&gt; )*
+&lt;facet_expr&gt; ::= &lt;predicate&gt; 
+               | '(' &lt;search_expr&gt; ')'
 
-&lt;boolean_factor&gt; ::= &lt;predicate&gt;
-                   | '(' &lt;boolean_expression&gt; ')'
+&lt;predicates&gt; ::= &lt;predicate&gt; ( AND &lt;predicate&gt; )*
 
 &lt;predicate&gt; ::= &lt;in_predicate&gt;
               | &lt;contains_all_predicate&gt;
@@ -80,9 +82,9 @@ sections.</p>
               | &lt;time_predicate&gt;
               | &lt;match_predicate&gt;
               | &lt;like_predicate&gt;
+              | &lt;null_predicate&gt;
 
-&lt;in_predicate&gt; ::= &lt;column_name&gt; [NOT] IN &lt;value_list&gt; [&lt;except_clause&gt;]
-                   [&lt;predicate_props&gt;]
+&lt;in_predicate&gt; ::= &lt;column_name&gt; [NOT] IN &lt;value_list&gt; [&lt;except_clause&gt;] [&lt;predicate_props&gt;]
 
 &lt;contains_all_predicate&gt; ::= &lt;column_name&gt; CONTAINS ALL &lt;value_list&gt; [&lt;except_clause&gt;]
                              [&lt;predicate_props&gt;]
@@ -95,21 +97,34 @@ sections.</p>
 
 &lt;between_predicate&gt; ::= &lt;column_name&gt; [NOT] BETWEEN &lt;value&gt; AND &lt;value&gt;
 
-&lt;range_predicate&gt; ::= &lt;column_name&gt; &lt;range_op&gt; &lt;value&gt;
+&lt;range_predicate&gt; ::= &lt;column_name&gt; &lt;range_op&gt; &lt;numeric&gt;
 
-&lt;time_predicate&gt; ::= &lt;column_name&gt; [NOT] IN LAST &lt;time_span&gt;
-                   | &lt;column_name&gt; [NOT] ( SINCE | AFTER | BEFORE ) &lt;time_expr&gt;
+&lt;time_predicate&gt; ::= &lt;column_name&gt; IN LAST &lt;time_span&gt;
+                   | &lt;column_name&gt; ( SINCE | AFTER | BEFORE ) &lt;time_expr&gt;
 
-&lt;match_predicate&gt; ::= [NOT] MATCH '(' column_name_list ')' AGAINST '(' quoted_string ')'
+&lt;match_predicate&gt; ::= [NOT] MATCH '(' &lt;column_name_list&gt; ')' AGAINST '(' &lt;quoted_string&gt; ')'
 
 &lt;like_predicate&gt; ::= &lt;column_name&gt; [NOT] LIKE &lt;quoted_string&gt;
 
-&lt;value_list&gt; ::= '(' &lt;value&gt; ( ',' &lt;value&gt; )* ')'
+&lt;null_predicate&gt; ::= &lt;column_name&gt; IS [NOT] NULL
 
-&lt;value&gt; ::= &lt;quoted_string&gt;
-          | &lt;numeric&gt;
+&lt;value_list&gt; ::= &lt;non_variable_value_list&gt; | &lt;variable&gt;
+
+&lt;non_variable_value_list&gt; ::= '(' &lt;value&gt; ( ',' &lt;value&gt; )* ')'
+
+&lt;python_style_list&gt; ::= '[' &lt;python_style_value&gt; ( ',' &lt;python_style_value&gt; )* ']'
+
+&lt;python_style_dict&gt; ::= '{' &lt;key_value_pair&gt; ( ',' &lt;key_value_pair&gt; )* '}'
+
+&lt;python_style_value&gt; ::= &lt;value&gt;
+                       | &lt;python_style_list&gt;
+                       | &lt;python_style_dict&gt;
+
+&lt;value&gt; ::= &lt;numeric&gt;
+          | &lt;quoted_string&gt;
           | TRUE
           | FALSE
+          | &lt;variable&gt;
 
 &lt;range_op&gt; ::= '&lt;' | '&lt;=' | '&gt;=' | '&gt;'
 
@@ -119,7 +134,8 @@ sections.</p>
 
 &lt;prop_list&gt; ::= '(' &lt;key_value_pair&gt; ( ',' &lt;key_value_pair&gt; )* ')'
 
-&lt;key_value_pair&gt; ::= &lt;quoted_string&gt; ':' &lt;quoted_string&gt;
+&lt;key_value_pair&gt; ::= &lt;quoted_string&gt; ':' 
+                     ( &lt;value&gt; | &lt;python_style_list&gt; | &lt;python_style_dict&gt; )
 
 &lt;given_clause&gt; ::= GIVEN FACET PARAM &lt;facet_param_list&gt;
 
@@ -140,10 +156,12 @@ sections.</p>
                       | &lt;group_by_clause&gt;
                       | &lt;browse_by_clause&gt;
                       | &lt;fetching_stored_clause&gt;
+                      | &lt;route_by_clause&gt;
+                      | &lt;relevance_model_clause&gt;
 
 &lt;order_by_clause&gt; ::= ORDER BY &lt;sort_specs&gt;
 
-&lt;sort_specs&gt; ::= &lt;sort_spec&gt; ( ',', &lt;sort_spec&gt; )*
+&lt;sort_specs&gt; ::= &lt;sort_spec&gt; ( ',' &lt;sort_spec&gt; )*
 
 &lt;sort_spec&gt; ::= &lt;column_name&gt; [&lt;ordering_spec&gt;]
 
@@ -151,7 +169,9 @@ sections.</p>
 
 &lt;group_by_clause&gt; ::= GROUP BY &lt;group_spec&gt;
 
-&lt;group_spec&gt; ::= &lt;facet_name&gt; [TOP &lt;max_per_group&gt;]
+&lt;group_spec&gt; ::= &lt;or_column_name_list&gt; [TOP &lt;max_per_group&gt;]
+
+&lt;or_column_name_list&gt; ::= &lt;column_name&gt; ( OR &lt;column_name&gt; )*
 
 &lt;limit_clause&gt; ::= LIMIT [&lt;offset&gt; ','] &lt;count&gt;
 
@@ -175,6 +195,197 @@ sections.</p>
 
 &lt;fetching_flag&gt; ::= TRUE | FALSE
 
+&lt;route_by_clause&gt; ::= ROUTE BY &lt;quoted_string&gt;
+
+&lt;relevance_model_clause&gt; ::= USING RELEVANCE MODEL &lt;identifier&gt; &lt;prop_list&gt;
+                             [&lt;relevance_model&gt;]
+
+&lt;relevance_model&gt; ::= DEFINED AS &lt;formal_parameters&gt; BEGIN &lt;model_block&gt; END
+
+&lt;formal_parameters&gt; ::= '(' &lt;formal_parameter_decls&gt; ')'
+
+&lt;formal_parameter_decls&gt; ::= &lt;formal_parameter_decl&gt; ( ',' &lt;formal_parameter_decl&gt; )*
+
+&lt;formal_parameter_decl&gt; ::= &lt;variable_modifiers&gt; &lt;type&gt; &lt;variable_declarator_id&gt;
+
+&lt;variable_modifiers&gt; ::= ( &lt;variable_modifier&gt; )*
+
+&lt;variable_modifier&gt; ::= 'final'
+
+&lt;type&gt; ::= &lt;class_or_interface_type&gt; ('[' ']')*
+         | &lt;primitive_type&gt; ('[' ']')*
+         | &lt;boxed_type&gt; ('[' ']')*
+         | &lt;limited_type&gt; ('[' ']')*
+
+&lt;class_or_interface_type&gt; ::= &lt;fast_util_data_type&gt;
+
+&lt;fast_util_data_type&gt; ::= 'IntOpenHashSet'
+                        | 'FloatOpenHashSet'
+                        | 'DoubleOpenHashSet'
+                        | 'LongOpenHashSet'
+                        | 'ObjectOpenHashSet'
+                        | 'Int2IntOpenHashMap'
+                        | 'Int2FloatOpenHashMap'
+                        | 'Int2DoubleOpenHashMap'
+                        | 'Int2LongOpenHashMap'
+                        | 'Int2ObjectOpenHashMap'
+                        | 'Object2IntOpenHashMap'
+                        | 'Object2FloatOpenHashMap'
+                        | 'Object2DoubleOpenHashMap'
+                        | 'Object2LongOpenHashMap'
+                        | 'Object2ObjectOpenHashMap'
+
+&lt;primitive_type&gt; ::= 'boolean' | 'char' | 'byte' | 'short' 
+                   | 'int' | 'long' | 'float' | 'double'
+
+&lt;boxed_type&gt; ::= 'Boolean' | 'Character' | 'Byte' | 'Short' 
+               | 'Integer' | 'Long' | 'Float' | 'Double'
+
+&lt;limited_type&gt; ::= 'String' | 'System' | 'Math'
+
+&lt;model_block&gt; ::= ( &lt;block_statement&gt; )+
+
+&lt;block_statement&gt; ::= &lt;local_variable_declaration_stmt&gt;
+                    | &lt;java_statement&gt;
+
+&lt;local_variable_declaration_stmt&gt; ::= &lt;local_variable_declaration&gt; ';'
+
+&lt;local_variable_declaration&gt; ::= &lt;variable_modifiers&gt; &lt;type&gt; &lt;variable_declarators&gt;
+
+&lt;java_statement&gt; ::= &lt;block&gt;
+                   | 'if' &lt;par_expression&gt; &lt;java_statement&gt; [ &lt;else_statement&gt; ]
+                   | 'for' '(' &lt;for_control&gt; ')' &lt;java_statement&gt;
+                   | 'while' &lt;par_expression&gt; &lt;java_statement&gt;
+                   | 'do' &lt;java_statement&gt; 'while&gt; &lt;par_expression&gt; ';'
+                   | 'switch' &lt;par_expression&gt; '{' &lt;switch_block_statement_groups&gt; '}'
+                   | 'return' &lt;expression&gt; ';'
+                   | 'break' [&lt;identifier&gt;] ';'
+                   | 'continue' [&lt;identifier&gt;] ';'
+                   | ';'
+                   | &lt;statement_expression&gt; ';'
+
+&lt;block&gt; ::= '{' ( &lt;block_statement&gt; )* '}'
+
+&lt;else_statement&gt; ::= 'else' &lt;java_statement&gt;
+
+&lt;switch_block_statement_groups&gt; ::= ( &lt;switch_block_statement_group&gt; )*
+
+&lt;switch_block_statement_group&gt; ::= ( &lt;switch_label&gt; )+ ( &lt;block_statement&gt; )*
+
+&lt;switch_label&gt; ::= 'case' &lt;constant_expression&gt; ':'
+                 | 'case' &lt;enum_constant_name&gt; ':'
+                 | 'default' ':'
+
+&lt;for_control&gt; ::= &lt;enhanced_for_control&gt;
+                | [&lt;for_init&gt;] ';' [&lt;expression&gt;] ';' [&lt;for_update&gt;]
+
+&lt;for_init&gt; ::= &lt;local_variable_declaration&gt;
+             | &lt;expression_list&gt;
+
+&lt;enhanced_for_control&gt; ::= &lt;variable_modifiers&gt; &lt;type&gt; &lt;identifier&gt; ':' &lt;expression&gt;
+
+&lt;for_update&gt; ::= &lt;expression_list&gt;
+
+&lt;par_expression&gt; ::= '(' &lt;expression&gt; ')'
+
+&lt;expression_list&gt; ::= &lt;expression&gt; ( ',' &lt;expression&gt; )*
+
+&lt;statement_expression&gt; ::= &lt;expression&gt;
+
+&lt;constant_expression&gt; ::= &lt;expression&gt;
+
+&lt;enum_constant_name&gt; ::= &lt;identifier&gt;
+
+&lt;variable_declarators&gt; ::= &lt;variable_declarator&gt; ( ',' &lt;variable_declarator&gt; )*
+
+&lt;variable_declarator&gt; ::= &lt;variable_declarator_id&gt; '=' &lt;variable_initializer&gt;
+
+&lt;variable_declarator_id&gt; ::= &lt;identifier&gt; ('[' ']')*
+
+&lt;variable_initializer&gt; ::= &lt;array_initializer&gt;
+                         | &lt;expression&gt;
+
+&lt;array_initializer&gt; ::= '{' [ &lt;variable_initializer&gt; ( ',' &lt;variable_initializer&gt; )* [','] ] '}'
+
+&lt;expression&gt; ::= &lt;conditional_expression&gt; [ &lt;assignment_operator&gt; &lt;expression&gt; ]
+
+&lt;assignment_operator&gt; ::= '=' | '+=' | '-=' | '*=' | '/=' | '&amp;=' | '|=' | '^=' |
+                        | '%=' | '&lt;&lt;=' | '&gt;&gt;&gt;=' | '&gt;&gt;='
+
+&lt;conditional_expression&gt; ::= &lt;conditional_or_expression&gt; [ '?' &lt;expression&gt; ':' &lt;expression&gt; ]
+
+&lt;conditional_or_expression&gt; ::= &lt;conditional_and_expression&gt; ( '||' &lt;conditional_and_expression&gt; )*
+
+&lt;conditional_and_expression&gt; ::= &lt;inclusive_or_expression&gt; ('&amp;&amp;' &lt;inclusive_or_expression&gt; )*
+
+&lt;inclusive_or_expression&gt; ::= &lt;exclusive_or_expression&gt; ('|' &lt;exclusive_or_expression&gt; )*
+
+&lt;exclusive_or_expression&gt; ::= &lt;and_expression&gt; ('^' &lt;and_expression&gt; )*
+
+&lt;and_expression&gt; ::= &lt;equality_expression&gt; ( '&amp;' &lt;equality_expression&gt; )*
+
+&lt;equality_expression&gt; ::= &lt;instanceof_expression&gt; ( ('==' | '!=') &lt;instanceof_expression&gt; )*
+
+&lt;instanceof_expression&gt; ::= &lt;relational_expression&gt; [ 'instanceof' &lt;type&gt; ]
+
+&lt;relational_expression&gt; ::= &lt;shift_expression&gt; ( &lt;relational_op&gt; &lt;shift_expression&gt; )*
+
+&lt;shift_expression&gt; ::= &lt;additive_expression&gt; ( &lt;shift_op&gt; &lt;additive_expression&gt; )*
+
+&lt;relational_op&gt; ::= '&lt;=' | '&gt;=' | '&lt;' | '&gt;'
+
+&lt;shift_op&gt; ::= '&lt;&lt;' | '&gt;&gt;&gt;' | '&gt;&gt;'
+
+&lt;additive_expression&gt; ::= &lt;multiplicative_expression&gt; ( ('+' | '-') &lt;multiplicative_expression&gt; )*
+
+&lt;multiplicative_expression&gt; ::= &lt;unary_expression&gt; ( ( '*' | '/' | '%' ) &lt;unary_expression&gt; )*
+
+&lt;unary_expression&gt; ::= '+' &lt;unary_expression&gt;
+                     | '-' &lt;unary_expression&gt;
+                     | '++' &lt;unary_expression&gt;
+                     | '--' &lt;unary_expression&gt;
+                     | &lt;unary_expression_not_plus_minus&gt;
+
+&lt;unary_expression_not_plus_minus&gt; ::= '~' &lt;unary_expression&gt;
+                                    | '!' &lt;unary_expression&gt;
+                                    | &lt;cast_expression&gt;
+                                    | &lt;primary&gt; &lt;selector&gt;* [ ('++'|'--') ]
+
+&lt;cast_expression&gt; ::= '(' &lt;primitive_type&gt; ')' &lt;unary_expression&gt;
+                    | '(' (&lt;type&gt; | &lt;expression&gt;) ')' &lt;unary_expression_not_plus_minus&gt;
+
+&lt;primary&gt; ::= &lt;par_expression&gt;
+            | &lt;literal&gt;
+            | &lt;java_ident&gt; ('.' &lt;java_method&gt;)* [&lt;identifier_suffix&gt;]
+
+&lt;java_ident&gt; ::= &lt;boxed_type&gt;
+               | &lt;limited_type&gt;
+               | &lt;identifier&gt;
+
+&lt;java_method&gt; ::= &lt;identifier&gt;
+
+&lt;identifier_suffix&gt; ::= ('[' ']')+ '.' 'class'
+                      | &lt;arguments&gt;
+                      | '.' 'class'
+                      | '.' 'this'
+                      | '.' 'super' &lt;arguments&gt;
+
+&lt;literal&gt; ::= &lt;integer&gt;
+            | &lt;real&gt;
+            | &lt;floating_point_literal&gt;
+            | &lt;character_literal&gt;
+            | &lt;quoted_string&gt;
+            | &lt;boolean_literal&gt;
+            | 'null'
+
+&lt;boolean_literal&gt; ::= 'true' | 'false'
+
+&lt;selector&gt; ::= '.' &lt;identifier&gt; &lt;arguments&gt;
+             | '.' 'this'
+             | '[' &lt;expression&gt; ']'
+
+&lt;arguments&gt; ::= '(' [&lt;expression_list&gt;] ')'
+
 &lt;quoted_string&gt; ::= '"' ( &lt;char&gt; )* '"'
                   | "'" ( &lt;char&gt; )* "'"
 
@@ -184,7 +395,9 @@ sections.</p>
 
 &lt;identifier_part&gt; ::= &lt;identifier_start&gt; | &lt;digit&gt;
 
-&lt;column_name&gt; ::= &lt;identifier&gt;
+&lt;variable&gt; ::= '$' ( &lt;alpha&gt; | &lt;digit&gt; | '_' )+
+
+&lt;column_name&gt; ::= &lt;identifier&gt; | &lt;quoted_string&gt;
 
 &lt;facet_name&gt; ::= &lt;identifier&gt;
 
@@ -198,9 +411,9 @@ sections.</p>
 
 &lt;digit&gt; ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
-&lt;numeric&gt; ::= &lt;time_expr&gt; | &lt;number&gt;
-
-&lt;number&gt; ::= &lt;integer&gt; | &lt;real&gt;
+&lt;numeric&gt; ::= &lt;time_expr&gt; 
+            | &lt;integer&gt;
+            | &lt;real&gt;
 
 &lt;integer&gt; ::= ( &lt;digit&gt; )+
 
@@ -225,10 +438,12 @@ sections.</p>
 
 &lt;time_millisecond_part&gt; ::= &lt;integer&gt; ( 'millisecond' | 'milliseconds' | 'msec' | 'msecs')
 
-&lt;date_time_string&gt; ::= &lt;digit&gt;&lt;digit&gt;&lt;digit&gt;&lt;digit&gt; ('-' | '/' ) &lt;digit&gt;&lt;digit&gt;
-                       ('-' | '/' ) &lt;digit&gt;&lt;digit&gt;
-                       &lt;digit&gt;&lt;digit&gt; ':' &lt;digit&gt;&lt;digit&gt; ':' &lt;digit&gt;&lt;digit&gt;
+&lt;date_time_string&gt; ::= &lt;date&gt; [&lt;time&gt;]
 
+&lt;date&gt; ::= &lt;digit&gt;&lt;digit&gt;&lt;digit&gt;&lt;digit&gt; ('-' | '/' | '.') &lt;digit&gt;&lt;digit&gt;
+           ('-' | '/' | '.') &lt;digit&gt;&lt;digit&gt;
+
+&lt;time&gt; ::= DIGIT DIGIT ':' DIGIT DIGIT ':' DIGIT DIGIT
 </pre>
 
 <h2>BQL Statement Syntax</h2>
@@ -1539,8 +1754,6 @@ FACET PARAM clause. Every parameter is specified in the clause as a
 <span class="emphasis"><em>param-type</em></span>,
 <span class="emphasis"><em>param-value</em></span>).</p>
 
-<ol>
-  <li>
     <p><span class="bold"><strong>On a search system for LinkedIn
     shares, find recent updates from member 12345678 himself (i.e. value
     0 for the Network facet) and all his first degree connections
@@ -1558,7 +1771,7 @@ GIVEN FACET PARAM (Network, "member_id", int, 12345678)
 
     <pre>
 +---------------------+---------+----------------------+---------+
-| _uid                 | Network | userid               | country |
+| _uid                | Network | userid               | country |
 +---------------------+---------+----------------------+---------+
 | 5527797854963249152 | 0       | 00000000000012345678 | us      |
 | 5527805402646839296 | 1       | 00000000000042593551 | us      |
@@ -1573,3 +1786,50 @@ GIVEN FACET PARAM (Network, "member_id", int, 12345678)
 +---------------------+---------+----------------------+---------+
 10 rows in set, 14 hits, 10749644 total docs (server: 432ms, total: 472ms)
     </pre>
+
+
+<h3>Query with a Relevance Model</h3>
+
+<p>
+Find the top 10 black or red cars using a special relevance model, which
+gives higher scores to the cars of year 1999 or 2000 (with a boost value
+of 100) or the black cars (with a boost value of 50):
+</p>
+<pre class="example">
+SELECT year, color, price, _score
+FROM cars
+WHERE color in ('black', 'red')
+USING RELEVANCE MODEL my_model (favorite_color:'black', favorite_years:[1999, 2000])
+      DEFINED AS (String favorite_color, IntOpenHashSet favorite_years)
+      BEGIN
+        float boost = 0.0;
+        if (favorite_years.contains(year)) 
+          boost += 100;
+        if (favorite_color.equals(color))
+          boost += 50;
+        return price + boost;
+      END
+ORDER BY RELEVANCE
+</pre>
+
+
+<p>
+Results:
+</p><pre class="example">
++----------------------+-------+-------------------------+--------+
+| year                 | color | price                   | _score |
++----------------------+-------+-------------------------+--------+
+| 00000000000000001999 | black | 00000000000000019500.00 | 19650  |
+| 00000000000000001999 | black | 00000000000000019500.00 | 19650  |
+| 00000000000000002000 | red   | 00000000000000019500.00 | 19600  |
+| 00000000000000001999 | red   | 00000000000000019500.00 | 19600  |
+| 00000000000000002000 | red   | 00000000000000019500.00 | 19600  |
+| 00000000000000001999 | black | 00000000000000019400.00 | 19550  |
+| 00000000000000001996 | black | 00000000000000019500.00 | 19550  |
+| 00000000000000001993 | black | 00000000000000019500.00 | 19550  |
+| 00000000000000001994 | black | 00000000000000019500.00 | 19550  |
+| 00000000000000001997 | black | 00000000000000019500.00 | 19550  |
++----------------------+-------+-------------------------+--------+
+10 rows in set, 5301 hits, 15000 total docs (server: 9ms, total: 28ms)
+</pre>
+
