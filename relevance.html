@@ -16,30 +16,36 @@ title: SenseiDB - Hadoop Bootstrap
   Things we will cover in this document:
   <ul>
     <li><b>How it works?</b></li>
-      <p>How do the users interact with senseiDB to create or tune relevance model.</p>
+      <p>How do the users interact with SenseiDB to create or tune relevance models.</p>
   </ul>
 
   <ul>
-    <li><b>Location of relevance component in Sensei JSON request Object.</b></li>
+    <li><b>Location of relevance component in Sensei JSON request objects.</b></li>
       <p>The detailed location about where the relevance component sits inside the request JSON object.</p>
   </ul>
 
   <ul>
     <li><b>How to use it: Grammar, Layout.</b></li>
-      <p>The simple grammar to write the relevance json.</p>
+      <p>The simple grammar to write relevance models in JSON format.</p>
   </ul>
 
   <ul>
     <li><b>Some facility methods.</b></li>
       <p>Some optimized method which could be useful when writing a customized relevance model.</p>
   </ul>
+
+  <ul>
+    <li><b>How to use relevance models in BQL.</b></li>
+      <p>BQL makes it even more easier to create and use relevance models.</p>
+  </ul>
+
 </p>
 
 <h2>How it works?</h2>
 <p>
-  The relevance support functionality in SenseiDB is implemented to help the user to create and tune relevance model in an easier way.
-      The basic pipeline is that users send a JSON request/BQL request containing simple relevance model expression to the server, the server will compile
-      the code and generate the corresponding relevance model. Relevance model may have a name, so that next time you only need to refer to the model with its name.
+  The relevance support functionality in SenseiDB is implemented to help users create and tune relevance models in an easy way.
+      The basic pipeline is that users send a JSON/BQL request containing a simple relevance model expression to the server, the server will compile
+      the code and generate the corresponding relevance model. Relevance models may have a name, so that next time the user only needs to refer to the model with its name.
       Also, models are cached inside each node, and hence no extra performance cost.
 </p>
 
@@ -49,10 +55,10 @@ and we used <a href="http://www.jboss.org/javassist/downloads">Javassist</a> pac
 
 <h2>Location of relevance component inside request JSON</h2>
 <p>
-   Before using relevance json request, we need to get familiar with the sensei <a href="client-rest-req.html">JSON request API</a> design.
+   Before using relevance json request, we need to get familiar with Sensei <a href="client-rest-req.html">JSON request API</a> design.
 </p>
 <p>
-First of all, a sensei request json is something like below:
+First of all, a Sensei JSON request is something like below:
 
 <pre class="prettyprint" id="xml">
 <?xml version="1.0" encoding="UTF-8"?>
@@ -222,7 +228,7 @@ Inside the model part, we define 4 items:
 
   <ul>
     <li><b>variables</b></li>
-      <p>User provided variable, the variable name and type are defined here, but the actual values has to be filled outside the model part, but in the values part.</p>
+      <p>User provided variables.  The variable names and types are defined here, but the actual values have to be filled outside the model part, in the values part.</p>
   </ul>
 
   <ul>
@@ -292,4 +298,69 @@ Currently supported:
 </p>
 
 <h2>BQL support</h2>
-<p>Coming soon!</p>
+
+<p>Relevance models can be created and used in BQL queries with the USING
+RELEVANCE MODEL clause.  A BQL query using a relevance model looks like:</p>
+
+<pre>
+SELECT &lt;select_list&gt;
+FROM &lt;identifier&gt;
+WHERE &lt;search_expr&gt;
+USING RELEVANCE MODEL &lt;identifier&gt; &lt;prop_list&gt; [&lt;relevance_model&gt;];
+</pre>
+
+<p>Compared with a regular SELECT statement, the only thing new here is the
+USING RELEVANCE MODEL clause.  <code>&lt;identifier&gt;</code> within the USING
+RELEVANCE MODE clause refers to the model name,
+and <code>&lt;prop_list&gt;</code> is used to pass relevance model
+parameters.</p>
+
+<p>The last piece, <code>&lt;relevance_mode&gt;</code>, is optional, and it takes
+the following format:</p>
+
+<pre>
+DEFINED AS &lt;formal_parameters&gt;
+  BEGIN
+    &lt;model_block&gt;
+  END
+</pre>
+
+<p>When <code>&lt;relevance_mode&gt;</code> is specified, it means that the SELECT
+statement has a relevance model defined inline; otherwise, it means that the
+SELECT statement is using a relevance model that has been created before with
+the given name.</p>
+
+<p><code>&lt;model_block&gt;</code> is the relevance model function body,
+written in a subset of the Java language (as described above).</p>
+
+<p><code>&lt;formal_parameters&gt;</code> is defined exactly the same as a
+Java method parameter list, even though only a limited number of data types are
+supported.</p>
+
+<p><code>&lt;prop_list&gt;</code> is a comma separated key-value-pair list.
+Each key-value has the form of <code>&lt;key&gt;:&lt;value&gt;</code>, where the
+value part uses JSON (or Python) format to pass primitive data, lists, sets, or
+maps.</p>
+
+<p>Here is a complete example of a SELECT statement using a relevance model:</p>
+
+<pre>
+SELECT *
+FROM cars
+WHERE price > 2000.00
+USING RELEVANCE MODEL my_model (favoriteColor:"black", favoriteTag:"cool")
+  DEFINED AS (String favoriteColor, String favoriteTag)
+    BEGIN
+      float boost = 1.0;
+      if (tags.contains(favoriteTag))
+         boost += 0.5;
+      if (color.equals(my_color))
+         boost += 1.2;
+      return _INNER_SCORE * boost;
+    END
+</pre>
+
+<p>Note that, in the relevance model function body, facet names
+like <code>tags</code> and <code>color</code> and internal variable names
+like <code>_INNER_SCORE</code> can be used directly.  They do not have to be
+included in the parameter list.</p>
