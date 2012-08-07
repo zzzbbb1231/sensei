@@ -1,0 +1,44 @@
+---
+layout: post
+title: SenseiDB 1.5.0 Released!
+---
+<div class="hero-unit">
+  <h2>{{page.title}}</h2>
+</div>
+<p>
+	Today we have released SenseiDB 1.5.0. This is the first release we worked on as a distributed group of core developers, across different companies and different continents. I am super proud of the way the team collaborated together across different boundaries, and truly a success story on distributed development paradigm and open source collaboration.
+</p>
+
+<p>
+	Amongst tons of bug fixes, performance work, tooling etc., we managed to introduce several important features to SenseiDB.
+</p>
+
+<h2>Relevance Toolkit</h2>
+<p>
+	As part of the effort to build a relevance-driven news feed for the LinkedIn homepage (recently serving 100% from SenseiDB, off of RDBMS), we want to be able to quickly iterate on trying weight parameters for various features as well as new relevance models.
+</p>
+<p>
+	As a result, we have introduce a section on the request json where relevance modeling information can be passed in dynamically per query, where data scientists and product managers can tune weights and adjust models on the fly against a real running cluster serving real data without incurring costs of redeploying server-side relevance code. (We have BQL support for this as well!)
+</p>
+<p>
+	Details can be found at: <a href="http://senseidb.github.com/sensei/relevance.html" target="new">
+		http://senseidb.github.com/sensei/relevance.html</a>
+</p>
+<h2>Map-Reduce framework</h2>
+<p>
+	We are seeing some deployments of SenseiDB as a analytics engine motivated by the BROWSE BY and GROUP BY features. To take this to the next step, we've built a framework that allows for arbitrary map-reduce type code to run agains the in-memory aggregated data structure. This allows lightning-fast analytics type queries served out of query engine.
+</p>
+<p>
+	Details can be found at: <a href="http://senseidb.github.com/sensei/map-reduce.html" target="new">http://senseidb.github.com/sensei/map-reduce.html</a>
+</p>
+<h2>Activity Engine</h2>
+<p>
+	To incorporate social resonance, e.g. number of likes, shares, comments etc. with time roll-ups into relevance calculation is a becoming more and more important to a social engine like SenseiDB. Due to limiting capabilities of partial updates into an inverted index, we have built a secondary activity that stores tracking social signals and rolls them into time intervals. The collected data then can be viewed as a <b>FacetHandler</b> and participating into scoring as just another feature, and can be tuned as part of the flexible relevance toolkit mentioned above.
+</p>
+<p>
+	Details can be found at: <a href="http://senseidb.github.com/sensei/activity-engine.html" target="new">http://senseidb.github.com/sensei/activity-engine.html</a>
+</p>
+<hr/>
+<p>
+	We will have follow-up blog posts by the designers of these systems discussing details of these super-awesome features.
+</p>
