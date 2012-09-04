@@ -27,3 +27,4 @@ target
 *.iml
 *.ipr
 *.iws
+sensei-ba/src/testdata/index/*
