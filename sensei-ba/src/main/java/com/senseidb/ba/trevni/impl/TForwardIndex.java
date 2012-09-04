@@ -28,10 +28,10 @@ public class TForwardIndex implements ForwardIndex {
       e.printStackTrace();
       return 0;
     }
-    if (_colType.equals("dim")) {
+    if (_colType.equals("dim") || _colType.equals("shrd") || _colType.equals("sort")) {
       Integer i = (Integer) _colValReader.next();
       return i.intValue();
-    } else if (_colType.equals("met")) {
+    } else if (_colType.equals("time")) {
       Long f = (Long) _colValReader.next();
       return f.intValue();
     } else {

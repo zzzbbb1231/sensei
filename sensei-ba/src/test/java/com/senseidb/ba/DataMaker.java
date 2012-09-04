@@ -42,7 +42,7 @@ public class DataMaker {
   private static Object beginShardingFieldValue;
   private static Object endShardingFieldValue;
   
-  public static String createTrevniFilesFor(File avroFile, String dir) throws IOException {
+  public static void createTrevniFilesFor(File avroFile, String dir) throws IOException {
     InputStream inStream = new FileInputStream(avroFile);
     rootOutputDir = dir;
     DatumReader<GenericRecord> datumReader = new GenericDatumReader<GenericRecord>();
@@ -58,7 +58,6 @@ public class DataMaker {
     }
     flushDictionaries();
     flushIndexFile();
-    return null;
   }
 
   

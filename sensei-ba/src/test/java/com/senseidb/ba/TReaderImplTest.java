@@ -9,6 +9,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.senseidb.ba.trevni.impl.TForwardIndex;
 import com.senseidb.ba.trevni.impl.TReaderImpl;
 
 public class TReaderImplTest {
@@ -59,9 +60,6 @@ public class TReaderImplTest {
   public void testGetForwardIndex() throws Exception {
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
     assertNotNull(colTypes);
-    /*
-     * Every non-metric and non-time column should have a dictionary 
-     * */
     for (String colName : colNames) {
       assertNotNull(impl.getForwardIndex(colName));
     }
@@ -70,5 +68,15 @@ public class TReaderImplTest {
   /*
    * End Simple null check tests
    * */
+
+  @Test
+  public void validateGetForwardIndexResponse() throws Exception {
+    Map<String, Class<?>> colTypes = impl.getColumnTypes();
+    assertNotNull(colTypes);
+    for (String colName : colNames) {
+      TForwardIndex idx = (TForwardIndex) impl.getForwardIndex(colName);
+      assertNotNull(idx.getValueIndex(100));
+    }
+  }
 
 }
