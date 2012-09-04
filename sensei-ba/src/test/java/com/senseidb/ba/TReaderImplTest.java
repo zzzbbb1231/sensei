@@ -9,6 +9,8 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.senseidb.ba.trevni.impl.TReaderImpl;
+
 public class TReaderImplTest {
   
   private String dataDir = "";
@@ -16,15 +18,14 @@ public class TReaderImplTest {
   private String colNames [];
   @Before
   public void setUp() throws IOException, ClassNotFoundException {
-    String dir = System.getProperty("user.dir");
-    String path = dir + "/sensei-ba/src/testdata/sample_data.avro";
-    File dir1 = new File(dir + "/src/data/index");
-    dataDir = dir + "/sensei-ba/src/testdata/index";
-    dir1.mkdir();
+    String baseDir = System.getProperty("user.dir");
+    String path = baseDir + "/sensei-ba/src/test/resources/data/sample_data.avro";
+    File indexDir = new File(baseDir + "/sensei-ba/src/test/resources/data/index");
+    indexDir.mkdir();
     File avroFile = new File(path);
-    DataMaker.createTrevniFilesFor(avroFile, dir1.getAbsolutePath());
-    File baseDir = new File(dataDir);
-    impl = new TReaderImpl(baseDir);
+    DataMaker.createTrevniFilesFor(avroFile, indexDir.getAbsolutePath());
+    File baseIndexDir = new File(indexDir.getAbsolutePath());
+    impl = new TReaderImpl(baseIndexDir);
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
     colNames = colTypes.keySet().toArray(new String[0]);
   }

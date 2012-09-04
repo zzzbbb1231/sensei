@@ -2,6 +2,8 @@ package com.senseidb.ba.trevni;
 
 import java.util.Map;
 
+import com.senseidb.ba.trevni.impl.TermValueList;
+
 public interface PinotIndexReader {
   Map<String, Class<?>> getColumnTypes();
   /**
