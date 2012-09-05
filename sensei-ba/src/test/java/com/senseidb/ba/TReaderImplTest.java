@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.avro.Schema;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,6 +17,14 @@ public class TReaderImplTest {
   
   private TReaderImpl impl;
   private String colNames [];
+  
+  /*
+   * Preserving the schema of the original avro file from which the trv files are created,
+   * this is so that we can run tests against schema incase we need to. 
+   * 
+   * */
+  private Schema schema;
+  
   @Before
   public void setUp() throws IOException, ClassNotFoundException {
     String baseDir = System.getProperty("user.dir");
@@ -23,7 +32,7 @@ public class TReaderImplTest {
     File indexDir = new File(baseDir + "/sensei-ba/src/test/resources/data/index");
     indexDir.mkdir();
     File avroFile = new File(path);
-    DataMaker.createTrevniFilesFor(avroFile, indexDir.getAbsolutePath());
+    schema = DataMaker.createTrevniFilesForAndReturnSchema(avroFile, indexDir.getAbsolutePath());
     File baseIndexDir = new File(indexDir.getAbsolutePath());
     impl = new TReaderImpl(baseIndexDir);
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
