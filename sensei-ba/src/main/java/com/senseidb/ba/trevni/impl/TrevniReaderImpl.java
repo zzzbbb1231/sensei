@@ -15,20 +15,20 @@ import org.apache.trevni.ColumnValues;
  * This is in a work in progress. 
  * 
  * */
-public class TReaderImpl implements PinotIndexReader {
+public class TrevniReaderImpl implements PinotIndexReader {
   private Map<String, Class<?>> _columnTypes;
-  private HashMap<String, TDictionary> _dictionaryMap;
+  private HashMap<String, TrevniDictionary> _dictionaryMap;
   private ColumnFileReader _columnReader;
   private ColumnFileMetaData _metadata;
   private String[] _dimensions;
   private String[] _dimTypes;
-  private HashMap<String, TForwardIndex> _forwardIndexMap;
+  private HashMap<String, TrevniForwardIndex> _forwardIndexMap;
   private long _rowCount;
 
   /*
    * Takes in a file and constructs the index
    */
-  public TReaderImpl(File dir) throws IOException, ClassNotFoundException {
+  public TrevniReaderImpl(File dir) throws IOException, ClassNotFoundException {
     File[] files = dir.listFiles();
     for (File f : files) {
       if (f.getName().endsWith(".trv")) {
@@ -51,31 +51,31 @@ public class TReaderImpl implements PinotIndexReader {
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void constructDictionary(String basePath) throws IOException {
-    _dictionaryMap = new HashMap<String, TDictionary>();
+    _dictionaryMap = new HashMap<String, TrevniDictionary>();
     String[] dictArray = _metadata.getString("dictMapping").split(",");
     for (String dict : dictArray) {
       String dimName = dict.split(":")[0];
       String dictFileName = dict.split(":")[1];
       File file = new File(basePath + "/" + dictFileName);
-      _dictionaryMap.put(dimName, new TDictionary(file, _columnTypes.get(dimName)));
+      _dictionaryMap.put(dimName, new TrevniDictionary(file, _columnTypes.get(dimName)));
     }
   }
 
   public void constructForwardIndex() throws IOException {
-    _forwardIndexMap = new HashMap<String, TForwardIndex>();
+    _forwardIndexMap = new HashMap<String, TrevniForwardIndex>();
     
     for (String dim : _dimensions) {
       if (dim.startsWith("shrd") || dim.startsWith("sort") || dim.startsWith("dim")) {
         ColumnValues<Integer> intReader = _columnReader.getValues(dim);
-        TForwardIndex fIndex = new TForwardIndex(intReader, "dim", _rowCount);
+        TrevniForwardIndex fIndex = new TrevniForwardIndex(intReader, "dim", _rowCount);
         _forwardIndexMap.put(dim, fIndex);
       } else if (dim.startsWith("time")) {
         ColumnValues<Integer> longReader = _columnReader.getValues(dim);
-        TForwardIndex fIndex = new TForwardIndex(longReader, "time", _rowCount);
+        TrevniForwardIndex fIndex = new TrevniForwardIndex(longReader, "time", _rowCount);
         _forwardIndexMap.put(dim, fIndex);
       } else {
         ColumnValues<Integer> doubleReader = _columnReader.getValues(dim);
-        TForwardIndex fIndex = new TForwardIndex(doubleReader, "met", _rowCount);
+        TrevniForwardIndex fIndex = new TrevniForwardIndex(doubleReader, "met", _rowCount);
         _forwardIndexMap.put(dim, fIndex);
       }
     }

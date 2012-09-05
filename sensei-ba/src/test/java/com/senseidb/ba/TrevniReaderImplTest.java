@@ -10,17 +10,17 @@ import org.apache.avro.Schema;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.senseidb.ba.trevni.impl.TForwardIndex;
-import com.senseidb.ba.trevni.impl.TReaderImpl;
+import com.senseidb.ba.trevni.impl.TrevniForwardIndex;
+import com.senseidb.ba.trevni.impl.TrevniReaderImpl;
 
-public class TReaderImplTest {
+public class TrevniReaderImplTest {
   
-  private TReaderImpl impl;
+  private TrevniReaderImpl impl;
   private String colNames [];
   
   /*
    * Preserving the schema of the original avro file from which the trv files are created,
-   * this is so that we can run tests against schema incase we need to. 
+   * to run validation tests if needed. 
    * 
    * */
   private Schema schema;
@@ -34,7 +34,7 @@ public class TReaderImplTest {
     File avroFile = new File(path);
     schema = DataMaker.createTrevniFilesForAndReturnSchema(avroFile, indexDir.getAbsolutePath());
     File baseIndexDir = new File(indexDir.getAbsolutePath());
-    impl = new TReaderImpl(baseIndexDir);
+    impl = new TrevniReaderImpl(baseIndexDir);
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
     colNames = colTypes.keySet().toArray(new String[0]);
   }
@@ -83,7 +83,7 @@ public class TReaderImplTest {
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
     assertNotNull(colTypes);
     for (String colName : colNames) {
-      TForwardIndex idx = (TForwardIndex) impl.getForwardIndex(colName);
+      TrevniForwardIndex idx = (TrevniForwardIndex) impl.getForwardIndex(colName);
       assertNotNull(idx.getValueIndex(100));
     }
   }
@@ -92,7 +92,7 @@ public class TReaderImplTest {
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
     assertNotNull(colTypes);
     for (String colName : colNames) {
-      TForwardIndex idx = (TForwardIndex) impl.getForwardIndex(colName);
+      TrevniForwardIndex idx = (TrevniForwardIndex) impl.getForwardIndex(colName);
       assertNotNull(idx.getLength());
       assertNotSame(0, idx.getLength());
     }

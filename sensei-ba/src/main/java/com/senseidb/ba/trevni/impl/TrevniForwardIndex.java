@@ -6,12 +6,12 @@ import org.apache.trevni.ColumnValues;
 
 import com.senseidb.ba.trevni.*;
 
-public class TForwardIndex implements ForwardIndex {
+public class TrevniForwardIndex implements ForwardIndex {
   private ColumnValues<?> _colValReader;
   private String _colType;
   private int _length;
 
-  public TForwardIndex(ColumnValues<?> colValreader, String type, long count) {
+  public TrevniForwardIndex(ColumnValues<?> colValreader, String type, long count) {
     _colValReader = colValreader;
     _colType = type;
     _length = (int) count;
