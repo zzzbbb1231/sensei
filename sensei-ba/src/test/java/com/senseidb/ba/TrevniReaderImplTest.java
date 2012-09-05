@@ -1,22 +1,30 @@
 package com.senseidb.ba;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.avro.Schema;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.senseidb.ba.trevni.impl.TForwardIndex;
-import com.senseidb.ba.trevni.impl.TReaderImpl;
+import com.senseidb.ba.trevni.impl.TrevniForwardIndex;
+import com.senseidb.ba.trevni.impl.TrevniReaderImpl;
 
-public class TReaderImplTest {
+public class TrevniReaderImplTest {
   
-  private String dataDir = "";
-  private TReaderImpl impl;
+  private TrevniReaderImpl impl;
   private String colNames [];
+  
+  /*
+   * Preserving the schema of the original avro file from which the trv files are created,
+   * to run validation tests if needed. 
+   * 
+   * */
+  private Schema schema;
+  
   @Before
   public void setUp() throws IOException, ClassNotFoundException {
     String baseDir = System.getProperty("user.dir");
@@ -24,9 +32,9 @@ public class TReaderImplTest {
     File indexDir = new File(baseDir + "/sensei-ba/src/test/resources/data/index");
     indexDir.mkdir();
     File avroFile = new File(path);
-    DataMaker.createTrevniFilesFor(avroFile, indexDir.getAbsolutePath());
+    schema = DataMaker.createTrevniFilesForAndReturnSchema(avroFile, indexDir.getAbsolutePath());
     File baseIndexDir = new File(indexDir.getAbsolutePath());
-    impl = new TReaderImpl(baseIndexDir);
+    impl = new TrevniReaderImpl(baseIndexDir);
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
     colNames = colTypes.keySet().toArray(new String[0]);
   }
@@ -69,14 +77,25 @@ public class TReaderImplTest {
    * End Simple null check tests
    * */
 
+  // Forward index tests
   @Test
   public void validateGetForwardIndexResponse() throws Exception {
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
     assertNotNull(colTypes);
     for (String colName : colNames) {
-      TForwardIndex idx = (TForwardIndex) impl.getForwardIndex(colName);
+      TrevniForwardIndex idx = (TrevniForwardIndex) impl.getForwardIndex(colName);
       assertNotNull(idx.getValueIndex(100));
     }
   }
 
+  public void valiFowradIndexLength() throws Exception {
+    Map<String, Class<?>> colTypes = impl.getColumnTypes();
+    assertNotNull(colTypes);
+    for (String colName : colNames) {
+      TrevniForwardIndex idx = (TrevniForwardIndex) impl.getForwardIndex(colName);
+      assertNotNull(idx.getLength());
+      assertNotSame(0, idx.getLength());
+    }
+  }
+  
 }

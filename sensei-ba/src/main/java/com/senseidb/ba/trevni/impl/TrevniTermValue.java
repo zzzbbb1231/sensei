@@ -1,10 +1,10 @@
 package com.senseidb.ba.trevni.impl;
 
-public class TTermValue<T> implements Comparable<T> {
+public class TrevniTermValue<T> implements Comparable<T> {
 
   private T _val;
   
-  public TTermValue(T val) {
+  public TrevniTermValue(T val) {
     _val = val;
   }
 

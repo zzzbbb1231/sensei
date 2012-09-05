@@ -9,14 +9,14 @@ import org.apache.trevni.ColumnFileReader;
 import org.apache.trevni.ColumnValues;
 
 
-public class TDictionary<T> implements TermValueList {
+public class TrevniDictionary<T> implements TermValueList {
   
-  private HashMap<Integer, TTermValue<T>> _dictionaryMap;
+  private HashMap<Integer, TrevniTermValue<T>> _dictionaryMap;
   private String _keyType;
   private String _valType;
 
-  public TDictionary(File file, Class<?> originalValType) throws IOException {
-    _dictionaryMap = new HashMap<Integer, TTermValue<T>>();
+  public TrevniDictionary(File file, Class<?> originalValType) throws IOException {
+    _dictionaryMap = new HashMap<Integer, TrevniTermValue<T>>();
     ColumnFileReader reader = new ColumnFileReader(file);
     ColumnValues<String> val = reader.getValues(0);
     while (val.hasNext()) {
@@ -28,8 +28,8 @@ public class TDictionary<T> implements TermValueList {
   }
 
   @SuppressWarnings("unchecked")
-  public TTermValue<T> applyProperCastAndReturnValue(String original, Class<?> originalValType) {
-    return new TTermValue<T>((T) original);
+  public TrevniTermValue<T> applyProperCastAndReturnValue(String original, Class<?> originalValType) {
+    return new TrevniTermValue<T>((T) original);
   }
 
   @Override
