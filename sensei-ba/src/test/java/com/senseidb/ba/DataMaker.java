@@ -26,9 +26,9 @@ import org.apache.avro.Schema.Type;
  */
 
 public class DataMaker {
-  private static ColumnMetaData[] cMetaDataArr;
+  private static ColumnMetaData[] columnMetaDataArr;
   private static Schema schema;
-  private static ColumnFileWriter cFileWriter;
+  private static ColumnFileWriter columnFileWriter;
   private static Map<String, Map<String, Integer>> dictionaries;
   private static Map<String, Integer> highestDictMappingInts;
   private static Map<String, Map<String, Integer>> dictValueFrequencies;
@@ -65,34 +65,34 @@ public class DataMaker {
     writeFileMetaData();
     writeDimsMetaData();
     writeDictsMetaData();
-    cFileWriter.writeTo(new File(rootOutputDir + "/test-" + timeFieldValue.toString() + ".trv"));
+    columnFileWriter.writeTo(new File(rootOutputDir + "/test-" + timeFieldValue.toString() + ".trv"));
   }
 
   private static void writeFileMetaData() {
-    cFileWriter.getMetaData().set("source", "test");
-    cFileWriter.getMetaData().set("time", timeFieldValue.toString());
-    cFileWriter.getMetaData().set("shardDim", shardingField);
-    cFileWriter.getMetaData().set("shardValueBegin", beginShardingFieldValue.toString());
-    cFileWriter.getMetaData().set("shardValueEnd", endShardingFieldValue.toString());
+    columnFileWriter.getMetaData().set("source", "test");
+    columnFileWriter.getMetaData().set("time", timeFieldValue.toString());
+    columnFileWriter.getMetaData().set("shardDim", shardingField);
+    columnFileWriter.getMetaData().set("shardValueBegin", beginShardingFieldValue.toString());
+    columnFileWriter.getMetaData().set("shardValueEnd", endShardingFieldValue.toString());
     if (sortingField != null) {
-      cFileWriter.getMetaData().set("sortDim", sortingField.toString());
+      columnFileWriter.getMetaData().set("sortDim", sortingField.toString());
     }
   }
 
   private static void writeDimsMetaData() {
-    if (cMetaDataArr != null && cMetaDataArr.length > 0) {
-      String initFieldName = cMetaDataArr[0].getName();
+    if (columnMetaDataArr != null && columnMetaDataArr.length > 0) {
+      String initFieldName = columnMetaDataArr[0].getName();
       StringBuilder colNames = new StringBuilder(initFieldName);
       StringBuilder dimTypes = new StringBuilder(initFieldName + ":"
           + getTypeFromAvroSchema(schema, initFieldName).toString());
-      for (int i = 1; i < cMetaDataArr.length; i++) {
-        String fieldName = cMetaDataArr[i].getName();
+      for (int i = 1; i < columnMetaDataArr.length; i++) {
+        String fieldName = columnMetaDataArr[i].getName();
         colNames.append("," + fieldName);
         dimTypes
             .append("," + fieldName + ":" + getTypeFromAvroSchema(schema, fieldName).toString());
       }
-      cFileWriter.getMetaData().set("orderedDimNames", colNames.toString());
-      cFileWriter.getMetaData().set("dimTypes", dimTypes.toString());
+      columnFileWriter.getMetaData().set("orderedDimNames", colNames.toString());
+      columnFileWriter.getMetaData().set("dimTypes", dimTypes.toString());
     }
   }
 
@@ -105,7 +105,7 @@ public class DataMaker {
         dictMapping.append("," + dictNames[i] + ":" + dictNames[i]
             + "-" + "test" + "-" + timeFieldValue + ".dict");
       }
-      cFileWriter.getMetaData()
+      columnFileWriter.getMetaData()
           .set("dictMapping", dictMapping.toString());
     }
   }
@@ -145,16 +145,16 @@ public class DataMaker {
     }
     endShardingFieldValue = record.get(shardingField);
     Object[] trevniRow = getTrevniRow(record);
-    cFileWriter.writeRow(trevniRow);
+    columnFileWriter.writeRow(trevniRow);
     numRowsInWriter += 1;
     timeFieldValue = record.get(timeField);
   }
 
   private static Object[] getTrevniRow(GenericRecord record) {
 
-    Object[] trevniRow = new Object[cMetaDataArr.length];
-    for (int i = 0; i < cMetaDataArr.length; i++) {
-      String columnName = cMetaDataArr[i].getName();
+    Object[] trevniRow = new Object[columnMetaDataArr.length];
+    for (int i = 0; i < columnMetaDataArr.length; i++) {
+      String columnName = columnMetaDataArr[i].getName();
       Object valueToIndex = null;
       if (shouldCreateDictionary(columnName)) {
         String value = record.get(columnName).toString();
@@ -194,9 +194,9 @@ public class DataMaker {
     highestDictMappingInts = new HashMap<String, Integer>();
     dictValueFrequencies = new HashMap<String, Map<String, Integer>>();
     initializeColumnMetaData();
-    cFileWriter = new ColumnFileWriter(new org.apache.trevni.ColumnFileMetaData().setChecksum(
-        "null").setCodec("null"), cMetaDataArr);
-    for (ColumnMetaData cmd : cMetaDataArr) {
+    columnFileWriter = new ColumnFileWriter(new org.apache.trevni.ColumnFileMetaData().setChecksum(
+        "null").setCodec("null"), columnMetaDataArr);
+    for (ColumnMetaData cmd : columnMetaDataArr) {
       if (shouldCreateDictionary(cmd.getName())) {
         dictionaries.put(cmd.getName(), new HashMap<String, Integer>());
         highestDictMappingInts.put(cmd.getName(), 0);
@@ -230,7 +230,7 @@ public class DataMaker {
         }
       }
     }
-    cMetaDataArr = cMetadataList.toArray(new ColumnMetaData[0]);
+    columnMetaDataArr = cMetadataList.toArray(new ColumnMetaData[0]);
   }
 
   private static ValueType getIndexColumnValueType(String fieldName) {

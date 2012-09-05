@@ -14,7 +14,6 @@ import com.senseidb.ba.trevni.impl.TReaderImpl;
 
 public class TReaderImplTest {
   
-  private String dataDir = "";
   private TReaderImpl impl;
   private String colNames [];
   @Before
