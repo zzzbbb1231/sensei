@@ -1,6 +1,6 @@
 package com.senseidb.ba;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -69,6 +69,7 @@ public class TReaderImplTest {
    * End Simple null check tests
    * */
 
+  // Forward index tests
   @Test
   public void validateGetForwardIndexResponse() throws Exception {
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
@@ -79,4 +80,14 @@ public class TReaderImplTest {
     }
   }
 
+  public void valiFowradIndexLength() throws Exception {
+    Map<String, Class<?>> colTypes = impl.getColumnTypes();
+    assertNotNull(colTypes);
+    for (String colName : colNames) {
+      TForwardIndex idx = (TForwardIndex) impl.getForwardIndex(colName);
+      assertNotNull(idx.getLength());
+      assertNotSame(0, idx.getLength());
+    }
+  }
+  
 }

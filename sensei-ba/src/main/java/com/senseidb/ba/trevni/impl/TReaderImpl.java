@@ -23,6 +23,7 @@ public class TReaderImpl implements PinotIndexReader {
   private String[] _dimensions;
   private String[] _dimTypes;
   private HashMap<String, TForwardIndex> _forwardIndexMap;
+  private long _rowCount;
 
   /*
    * Takes in a file and constructs the index
@@ -32,6 +33,7 @@ public class TReaderImpl implements PinotIndexReader {
     for (File f : files) {
       if (f.getName().endsWith(".trv")) {
         _columnReader = new ColumnFileReader(f);
+        _rowCount = _columnReader.getRowCount();
       }
     }
     _columnTypes = new HashMap<String, Class<?>>();
@@ -61,18 +63,19 @@ public class TReaderImpl implements PinotIndexReader {
 
   public void constructForwardIndex() throws IOException {
     _forwardIndexMap = new HashMap<String, TForwardIndex>();
+    
     for (String dim : _dimensions) {
       if (dim.startsWith("shrd") || dim.startsWith("sort") || dim.startsWith("dim")) {
         ColumnValues<Integer> intReader = _columnReader.getValues(dim);
-        TForwardIndex fIndex = new TForwardIndex(intReader, "dim");
+        TForwardIndex fIndex = new TForwardIndex(intReader, "dim", _rowCount);
         _forwardIndexMap.put(dim, fIndex);
       } else if (dim.startsWith("time")) {
         ColumnValues<Integer> longReader = _columnReader.getValues(dim);
-        TForwardIndex fIndex = new TForwardIndex(longReader, "time");
+        TForwardIndex fIndex = new TForwardIndex(longReader, "time", _rowCount);
         _forwardIndexMap.put(dim, fIndex);
       } else {
         ColumnValues<Integer> doubleReader = _columnReader.getValues(dim);
-        TForwardIndex fIndex = new TForwardIndex(doubleReader, "met");
+        TForwardIndex fIndex = new TForwardIndex(doubleReader, "met", _rowCount);
         _forwardIndexMap.put(dim, fIndex);
       }
     }
