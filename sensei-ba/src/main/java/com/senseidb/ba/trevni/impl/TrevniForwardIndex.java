@@ -44,7 +44,9 @@ public class TrevniForwardIndex implements ForwardIndex {
 
   @Override
   public int getFrequency(int valueId) {
-
+    /*
+     * Not going to be implemented in the first run
+     * */
     return 0;
   }
 }

@@ -42,6 +42,13 @@ public class TrevniReaderImplTest {
   /*
    * Simple null check tests
    * */
+  
+  @Test
+  public void testGetLength() throws Exception {
+    assertNotNull(impl.getLength());
+    assertNotSame(0, impl.getLength());
+  }
+
   @Test
   public void testGetColumnTypes() throws Exception {
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
@@ -88,7 +95,8 @@ public class TrevniReaderImplTest {
     }
   }
 
-  public void valiFowradIndexLength() throws Exception {
+  @Test
+  public void validFowradIndexLength() throws Exception {
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
     assertNotNull(colTypes);
     for (String colName : colNames) {
@@ -97,5 +105,18 @@ public class TrevniReaderImplTest {
       assertNotSame(0, idx.getLength());
     }
   }
-  
+
+   @Test
+   public void computeAvgValuePerForwardIndex() throws Exception {
+     for (String colName : colNames) {
+       TrevniForwardIndex idx = (TrevniForwardIndex) impl.getForwardIndex(colName);
+       int sum = 0;
+       for (int i=1; i < idx.getLength(); i++) {
+         sum += idx.getValueIndex(i);
+       }
+       double avg = sum/idx.getLength();
+       assertNotNull(avg);
+       assertNotSame(0.0, avg);
+     }
+   }
 }

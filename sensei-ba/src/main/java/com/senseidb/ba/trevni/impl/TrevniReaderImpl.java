@@ -103,7 +103,7 @@ public class TrevniReaderImpl implements PinotIndexReader {
 
   @Override
   public int getLength() {
-    return 0;
+    return (int)_rowCount;
   }
 
 }
