@@ -26,12 +26,10 @@ public class TrevniReaderImplTest {
   private Schema schema;
   
   @Before
-  public void setUp() throws IOException, ClassNotFoundException {
-    String baseDir = System.getProperty("user.dir");
-    String path = baseDir + "/sensei-ba/src/test/resources/data/sample_data.avro";
-    File indexDir = new File(baseDir + "/sensei-ba/src/test/resources/data/index");
+  public void setUp() throws Exception {
+    File indexDir = new File(new File(getClass().getClassLoader().getResource("data/").toURI()), "index"); 
     indexDir.mkdir();
-    File avroFile = new File(path);
+    File avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
     schema = DataMaker.createTrevniFilesForAndReturnSchema(avroFile, indexDir.getAbsolutePath());
     File baseIndexDir = new File(indexDir.getAbsolutePath());
     impl = new TrevniReaderImpl(baseIndexDir);
@@ -42,6 +40,13 @@ public class TrevniReaderImplTest {
   /*
    * Simple null check tests
    * */
+  
+  @Test
+  public void testGetLength() throws Exception {
+    assertNotNull(impl.getLength());
+    assertNotSame(0, impl.getLength());
+  }
+
   @Test
   public void testGetColumnTypes() throws Exception {
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
@@ -88,7 +93,8 @@ public class TrevniReaderImplTest {
     }
   }
 
-  public void valiFowradIndexLength() throws Exception {
+  @Test
+  public void validFowradIndexLength() throws Exception {
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
     assertNotNull(colTypes);
     for (String colName : colNames) {
@@ -97,5 +103,18 @@ public class TrevniReaderImplTest {
       assertNotSame(0, idx.getLength());
     }
   }
-  
+
+   @Test
+   public void computeAvgValuePerForwardIndex() throws Exception {
+     for (String colName : colNames) {
+       TrevniForwardIndex idx = (TrevniForwardIndex) impl.getForwardIndex(colName);
+       int sum = 0;
+       for (int i=1; i < idx.getLength(); i++) {
+         sum += idx.getValueIndex(i);
+       }
+       double avg = sum/idx.getLength();
+       assertNotNull(avg);
+       assertNotSame(0.0, avg);
+     }
+   }
 }
