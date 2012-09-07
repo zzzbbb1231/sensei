@@ -4,16 +4,17 @@ import java.io.IOException;
 
 import org.apache.trevni.ColumnValues;
 
-import com.senseidb.ba.trevni.*;
+import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.ba.ForwardIndex;
 
 public class TrevniForwardIndex implements ForwardIndex {
   private ColumnValues<?> _colValReader;
-  private String _colType;
   private int _length;
+  private final TermValueList valueList;
 
-  public TrevniForwardIndex(ColumnValues<?> colValreader, String type, long count) {
+  public TrevniForwardIndex(ColumnValues<?> colValreader, long count,  TermValueList valueList) {
     _colValReader = colValreader;
-    _colType = type;
+    this.valueList = valueList;
     _length = (int) count;
   }
 
@@ -30,16 +31,11 @@ public class TrevniForwardIndex implements ForwardIndex {
       e.printStackTrace();
       return 0;
     }
-    if (_colType.equals("dim") || _colType.equals("shrd") || _colType.equals("sort")) {
+    
       Integer i = (Integer) _colValReader.next();
       return i.intValue();
-    } else if (_colType.equals("time")) {
-      Long f = (Long) _colValReader.next();
-      return f.intValue();
-    } else {
-      Double d = (Double) _colValReader.next();
-      return d.intValue();
-    }
+   
+    
   }
 
   @Override
@@ -48,5 +44,10 @@ public class TrevniForwardIndex implements ForwardIndex {
      * Not going to be implemented in the first run
      * */
     return 0;
+  }
+
+  @Override
+  public TermValueList<?> getDictionary() {
+    return valueList;
   }
 }

@@ -31,16 +31,9 @@ public class DataMaker {
   private static ColumnFileWriter columnFileWriter;
   private static Map<String, Map<String, Integer>> dictionaries;
   private static Map<String, Integer> highestDictMappingInts;
-  private static Map<String, Map<String, Integer>> dictValueFrequencies;
   private static String rootOutputDir;
-  private static long numRowsInWriter;
 
-  private static String shardingField;
-  private static String timeField;
-  private static String sortingField;
-  private static Object timeFieldValue;
-  private static Object beginShardingFieldValue;
-  private static Object endShardingFieldValue;
+  private static Object timeFieldValue = "test";
   
   public static Schema createTrevniFilesForAndReturnSchema(File avroFile, String dir) throws IOException {
     InputStream inStream = new FileInputStream(avroFile);
@@ -72,12 +65,7 @@ public class DataMaker {
   private static void writeFileMetaData() {
     columnFileWriter.getMetaData().set("source", "test");
     columnFileWriter.getMetaData().set("time", timeFieldValue.toString());
-    columnFileWriter.getMetaData().set("shardDim", shardingField);
-    columnFileWriter.getMetaData().set("shardValueBegin", beginShardingFieldValue.toString());
-    columnFileWriter.getMetaData().set("shardValueEnd", endShardingFieldValue.toString());
-    if (sortingField != null) {
-      columnFileWriter.getMetaData().set("sortDim", sortingField.toString());
-    }
+    
   }
 
   private static void writeDimsMetaData() {
@@ -119,10 +107,9 @@ public class DataMaker {
 
       columnDictFileWriter.getMetaData().set("mappedType",
           getTypeFromAvroSchema(schema, entry.getKey()).toString());
-      for (Map.Entry<String, Integer> columnIdxEntry : entry.getValue().entrySet()) {
+      for (Map.Entry<String, Integer> columnIdxEntry : entry.getValue().entrySet()) {       
         columnDictFileWriter.writeRow(columnIdxEntry.getKey() + ":"
-            + columnIdxEntry.getValue().toString() + ":"
-            + dictValueFrequencies.get(entry.getKey()).get(columnIdxEntry.getKey()));
+            + columnIdxEntry.getValue().toString());
       }
       String path = rootOutputDir+"/" + entry.getKey() + "-" + "test" + "-" + timeFieldValue + ".dict";
       columnDictFileWriter.writeTo(new File(path));
@@ -141,14 +128,10 @@ public class DataMaker {
   }
 
   private static void writeRecord(GenericRecord record) throws IOException {
-    if (beginShardingFieldValue == null) {
-      beginShardingFieldValue = record.get(shardingField);
-    }
-    endShardingFieldValue = record.get(shardingField);
+   
     Object[] trevniRow = getTrevniRow(record);
     columnFileWriter.writeRow(trevniRow);
-    numRowsInWriter += 1;
-    timeFieldValue = record.get(timeField);
+   
   }
 
   private static Object[] getTrevniRow(GenericRecord record) {
@@ -157,7 +140,7 @@ public class DataMaker {
     for (int i = 0; i < columnMetaDataArr.length; i++) {
       String columnName = columnMetaDataArr[i].getName();
       Object valueToIndex = null;
-      if (shouldCreateDictionary(columnName)) {
+     
         String value = record.get(columnName).toString();
         if (value.equals("")) {
           dictionaries.get(columnName).put("", 0);
@@ -171,20 +154,8 @@ public class DataMaker {
           }
         }
 
-        Integer frequency = dictValueFrequencies.get(columnName).get(value);
-        if (frequency == null) {
-          dictValueFrequencies.get(columnName).put(value, 1);
-        } else {
-          dictValueFrequencies.get(columnName).put(value, frequency + 1);
-        }
-
-      } else {
-        if (columnName.startsWith("met_")) {
-          valueToIndex = Double.parseDouble(record.get(columnName).toString());
-        } else if (columnName.startsWith("time_")) {
-          valueToIndex = Long.parseLong(record.get(columnName).toString());
-        }
-      }
+       
+     
       trevniRow[i] = valueToIndex;
     }
     return trevniRow;
@@ -193,16 +164,14 @@ public class DataMaker {
   private static void setUpTrevniMeatadatForIndexing() throws IOException {
     dictionaries = new HashMap<String, Map<String, Integer>>();
     highestDictMappingInts = new HashMap<String, Integer>();
-    dictValueFrequencies = new HashMap<String, Map<String, Integer>>();
     initializeColumnMetaData();
     columnFileWriter = new ColumnFileWriter(new org.apache.trevni.ColumnFileMetaData().setChecksum(
         "null").setCodec("null"), columnMetaDataArr);
     for (ColumnMetaData cmd : columnMetaDataArr) {
-      if (shouldCreateDictionary(cmd.getName())) {
+     
         dictionaries.put(cmd.getName(), new HashMap<String, Integer>());
         highestDictMappingInts.put(cmd.getName(), 0);
-        dictValueFrequencies.put(cmd.getName(), new HashMap<String, Integer>());
-      }
+     
     }
   }
 
@@ -217,43 +186,19 @@ public class DataMaker {
       }
       if (type != null) {
         ColumnMetaData mData = new ColumnMetaData(currFieldName, type);
-        if (currFieldName.startsWith("shrd_")) {
+     
           mData.hasIndexValues(true);
           cMetadataList.add(0, mData);
-        } else if (currFieldName.startsWith("sort_")) {
-          if (shardingField == null) {
-            cMetadataList.add(0, mData);
-          } else {
-            cMetadataList.add(1, mData);
-          }
-        } else {
-          cMetadataList.add(mData);
-        }
       }
-    }
+      }
+    
     columnMetaDataArr = cMetadataList.toArray(new ColumnMetaData[0]);
   }
 
   private static ValueType getIndexColumnValueType(String fieldName) {
-    if (fieldName.startsWith("dim_")) {
+   
       return ValueType.INT;
-    } else if (fieldName.startsWith("met_")) {
-      return ValueType.DOUBLE;
-    } else if (fieldName.startsWith("time_")) {
-      timeField = fieldName;
-      return ValueType.LONG;
-    } else if (fieldName.startsWith("shrd_")) {
-      shardingField = fieldName;
-      return ValueType.INT;
-    } else if (fieldName.startsWith("sort_")) {
-      sortingField = fieldName;
-      return ValueType.INT;
-    }
-    return null;
+   
   }
 
-  private static boolean shouldCreateDictionary(String fieldName) {
-    return fieldName.startsWith("shrd_") || fieldName.startsWith("sort_")
-        || fieldName.startsWith("dim_");
-  }
 }

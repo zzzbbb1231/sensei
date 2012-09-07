@@ -10,6 +10,8 @@ import org.apache.avro.Schema;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.browseengine.bobo.facets.data.TermIntList;
+import com.browseengine.bobo.facets.data.TermLongList;
 import com.senseidb.ba.trevni.impl.TrevniForwardIndex;
 import com.senseidb.ba.trevni.impl.TrevniReaderImpl;
 
@@ -63,10 +65,10 @@ public class TrevniReaderImplTest {
     /*
      * Every non-metric and non-time column should have a dictionary 
      * */
-    for (String colName : colNames) {
-      if (!colName.startsWith("time_") && !colName.startsWith("met_"))
+    for (String colName : colNames) 
+      
         assertNotNull(impl.getDictionary(colName));
-    }
+   
   }
 
   @Test
@@ -105,7 +107,8 @@ public class TrevniReaderImplTest {
   }
 
    @Test
-   public void computeAvgValuePerForwardIndex() throws Exception {
+   public void testComputeAvgValuePerForwardIndex() throws Exception {
+     
      for (String colName : colNames) {
        TrevniForwardIndex idx = (TrevniForwardIndex) impl.getForwardIndex(colName);
        int sum = 0;
@@ -116,5 +119,19 @@ public class TrevniReaderImplTest {
        assertNotNull(avg);
        assertNotSame(0.0, avg);
      }
+   }
+   @Test
+   public void testSumForMemberRegion() throws Exception {
+     
+     ForwardIndex forwardIndex = impl.getForwardIndex("met_impressionCount");
+     TermLongList dictionary = (TermLongList) forwardIndex.getDictionary();
+     double sum = 0;
+    
+       for (int i=1; i < forwardIndex.getLength(); i++) {
+         sum += dictionary.getPrimitiveValue(forwardIndex.getValueIndex(i));
+       }
+      
+     
+     assertEquals(2.89, sum / impl.getLength(), 0.6);
    }
 }

@@ -4,8 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.ba.ForwardIndex;
+import com.senseidb.ba.IndexSegment;
 import com.senseidb.ba.trevni.*;
 
+import org.apache.lucene.search.DocIdSet;
 import org.apache.trevni.ColumnFileMetaData;
 import org.apache.trevni.ColumnFileReader;
 import org.apache.trevni.ColumnValues;
@@ -15,9 +20,9 @@ import org.apache.trevni.ColumnValues;
  * This is in a work in progress. 
  * 
  * */
-public class TrevniReaderImpl implements PinotIndexReader {
+public class TrevniReaderImpl implements IndexSegment {
   private Map<String, Class<?>> _columnTypes;
-  private HashMap<String, TrevniDictionary> _dictionaryMap;
+  private HashMap<String, com.browseengine.bobo.facets.data.TermValueList> _dictionaryMap;
   private ColumnFileReader _columnReader;
   private ColumnFileMetaData _metadata;
   private String[] _dimensions;
@@ -45,19 +50,19 @@ public class TrevniReaderImpl implements PinotIndexReader {
       _columnTypes.put(dimName, DataType.getClassFromStringType(dimDataType));
     }
     _dimensions = _metadata.getString("orderedDimNames").split(",");
-    constructForwardIndex();
     constructDictionary(dir.getAbsolutePath());
+    constructForwardIndex();
   }
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void constructDictionary(String basePath) throws IOException {
-    _dictionaryMap = new HashMap<String, TrevniDictionary>();
+    _dictionaryMap = new HashMap<String, com.browseengine.bobo.facets.data.TermValueList>();
     String[] dictArray = _metadata.getString("dictMapping").split(",");
     for (String dict : dictArray) {
       String dimName = dict.split(":")[0];
       String dictFileName = dict.split(":")[1];
       File file = new File(basePath + "/" + dictFileName);
-      _dictionaryMap.put(dimName, new TrevniDictionary(file, _columnTypes.get(dimName)));
+      _dictionaryMap.put(dimName,  TrevniDictionary.createTermValueList(file, _columnTypes.get(dimName)));
     }
   }
 
@@ -65,19 +70,11 @@ public class TrevniReaderImpl implements PinotIndexReader {
     _forwardIndexMap = new HashMap<String, TrevniForwardIndex>();
     
     for (String dim : _dimensions) {
-      if (dim.startsWith("shrd") || dim.startsWith("sort") || dim.startsWith("dim")) {
+     
         ColumnValues<Integer> intReader = _columnReader.getValues(dim);
-        TrevniForwardIndex fIndex = new TrevniForwardIndex(intReader, "dim", _rowCount);
+        TrevniForwardIndex fIndex = new TrevniForwardIndex(intReader, _rowCount, _dictionaryMap.get(dim));
         _forwardIndexMap.put(dim, fIndex);
-      } else if (dim.startsWith("time")) {
-        ColumnValues<Integer> longReader = _columnReader.getValues(dim);
-        TrevniForwardIndex fIndex = new TrevniForwardIndex(longReader, "time", _rowCount);
-        _forwardIndexMap.put(dim, fIndex);
-      } else {
-        ColumnValues<Integer> doubleReader = _columnReader.getValues(dim);
-        TrevniForwardIndex fIndex = new TrevniForwardIndex(doubleReader, "met", _rowCount);
-        _forwardIndexMap.put(dim, fIndex);
-      }
+      
     }
   }
 

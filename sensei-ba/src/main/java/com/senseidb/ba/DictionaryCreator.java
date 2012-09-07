@@ -23,9 +23,24 @@ public class DictionaryCreator {
   private LongAVLTreeSet longAVLTreeSet;
   private TreeSet<String> stringSet;
   private Int2IntOpenHashMap int2IntMap;
+  
+  
   public DictionaryCreator() {
     intAVLTreeSet = new IntAVLTreeSet();
-    
+    longAVLTreeSet = new LongAVLTreeSet();
+    stringSet = new TreeSet<String>();
+  }
+  
+  public void add(Object value) {
+    if (value instanceof Integer) {
+      addIntValue((Integer) value);
+    } else if (value instanceof Long) {
+      addLongValue((Long) value);
+    } else if (value instanceof String) {
+      addStringValue((String) value);
+    }   else {
+      throw new UnsupportedOperationException("" + value);
+    }
   }
   public void addIntValue(int value) {
     intAVLTreeSet.add(value); 
