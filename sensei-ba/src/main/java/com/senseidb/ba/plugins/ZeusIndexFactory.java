@@ -2,6 +2,7 @@ package com.senseidb.ba.plugins;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,6 +27,7 @@ import com.browseengine.bobo.api.BoboIndexReader;
 import com.senseidb.ba.IndexSegmentCreator;
 import com.senseidb.ba.IndexSegment;
 import com.senseidb.ba.SegmentToZoieAdapter;
+import com.senseidb.ba.trevni.impl.TrevniReaderImpl;
 import com.senseidb.plugin.SenseiPluginRegistry;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
@@ -41,31 +43,6 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
     }
 
   
-
-  public void init(Map<String, String> config, SenseiPluginRegistry pluginRegistry) {
-    String fileLocations = config.get("file.path");
-    if (fileLocations == null) {
-      throw new IllegalStateException("fileLocations should be specified");
-    }
-    try {
-      for (String location : fileLocations.split(",")) {
-        if (!StringUtils.isEmpty(location)) {
-          LineIterator lineIterator;
-          lineIterator = FileUtils.lineIterator(new File(location));
-          ArrayList<String> docs = new ArrayList<String>();
-          while (lineIterator.hasNext()) {
-            String car = lineIterator.next();
-            if (car != null && car.contains("{"))
-              docs.add(car);
-          }
-          IndexSegment offlineSegment = IndexSegmentCreator.convert(docs.toArray(new String[docs.size()]), new HashSet<String>());
-
-        }
-      }
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
-    }
-  }
 
   @Override
   public void consume(Collection<proj.zoie.api.DataConsumer.DataEvent<Object>> data) throws ZoieException {
@@ -124,6 +101,21 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
       }
       IndexSegment offlineSegment = IndexSegmentCreator.convert(docs.toArray(new String[docs.size()]), new HashSet<String>());
       offlineSegments.add(new SegmentToZoieAdapter(offlineSegment, decorator));
+    }
+    for (File directory : idxDir.listFiles()) {
+      if (!directory.isDirectory()) {
+        continue;
+      }
+      String[] trevniFiles = directory.list(new FilenameFilter() {
+        
+        @Override
+        public boolean accept(File dir, String name) {
+          return name.endsWith("trv");
+        }
+      });
+      if (trevniFiles.length > 0) {
+        offlineSegments.add(new SegmentToZoieAdapter(new TrevniReaderImpl(directory), decorator));
+      }
     }
     } catch (Exception ex) {
       throw new RuntimeException(ex);

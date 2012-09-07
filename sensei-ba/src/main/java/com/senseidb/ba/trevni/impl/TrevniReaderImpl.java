@@ -65,9 +65,7 @@ public class TrevniReaderImpl implements IndexSegment {
 
   public void constructForwardIndex() throws IOException {
     _forwardIndexMap = new HashMap<String, TrevniForwardIndex>();
-    
     for (String column : _columnTypes.keySet()) {
-     
         ColumnValues<Integer> intReader = _columnReader.getValues(column);
         TrevniForwardIndex fIndex = new TrevniForwardIndex(intReader, _rowCount, _dictionaryMap.get(column));
         _forwardIndexMap.put(column, fIndex);

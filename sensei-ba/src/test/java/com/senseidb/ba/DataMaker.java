@@ -121,7 +121,7 @@ public class DataMaker {
         return type.getType();
       }
     }
-    return null;
+    throw new IllegalStateException();
   }
 
   private static void writeRecord(GenericRecord record) throws IOException {
@@ -150,9 +150,6 @@ public class DataMaker {
             dictionaries.get(columnName).put(value, (Integer) valueToIndex);
           }
         }
-
-       
-     
       trevniRow[i] = valueToIndex;
     }
     return trevniRow;
@@ -193,9 +190,6 @@ public class DataMaker {
   }
 
   private static ValueType getIndexColumnValueType(String fieldName) {
-   
       return ValueType.INT;
-   
   }
-
 }
