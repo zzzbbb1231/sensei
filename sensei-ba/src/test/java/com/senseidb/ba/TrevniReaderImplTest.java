@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.avro.Schema;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,6 +15,7 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.senseidb.ba.trevni.impl.TrevniForwardIndex;
 import com.senseidb.ba.trevni.impl.TrevniReaderImpl;
+import com.senseidb.util.SingleNodeStarter;
 
 public class TrevniReaderImplTest {
   
@@ -29,7 +31,8 @@ public class TrevniReaderImplTest {
   
   @Before
   public void setUp() throws Exception {
-    File indexDir = new File(new File(getClass().getClassLoader().getResource("data/").toURI()), "index"); 
+    File indexDir = new File("index"); 
+    SingleNodeStarter.rmrf(indexDir);
     indexDir.mkdir();
     File avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
     schema = DataMaker.createTrevniFilesForAndReturnSchema(avroFile, indexDir.getAbsolutePath());
@@ -38,7 +41,12 @@ public class TrevniReaderImplTest {
     Map<String, Class<?>> colTypes = impl.getColumnTypes();
     colNames = colTypes.keySet().toArray(new String[0]);
   }
-
+  @After
+  public void tearDown() throws Exception {
+    File indexDir = new File("index"); 
+    SingleNodeStarter.rmrf(indexDir);
+  
+  }
   /*
    * Simple null check tests
    * */

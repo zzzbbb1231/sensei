@@ -25,8 +25,6 @@ public class TrevniReaderImpl implements IndexSegment {
   private HashMap<String, com.browseengine.bobo.facets.data.TermValueList> _dictionaryMap;
   private ColumnFileReader _columnReader;
   private ColumnFileMetaData _metadata;
-  private String[] _dimensions;
-  private String[] _dimTypes;
   private HashMap<String, TrevniForwardIndex> _forwardIndexMap;
   private long _rowCount;
 
@@ -43,13 +41,12 @@ public class TrevniReaderImpl implements IndexSegment {
     }
     _columnTypes = new HashMap<String, Class<?>>();
     _metadata = _columnReader.getMetaData();
-    String dimTypes = _metadata.getString("dimTypes");
+    String dimTypes = _metadata.getString("columnTypes");
     for (String dimType : dimTypes.split(",")) {
       String dimName = dimType.split(":")[0];
       String dimDataType = dimType.split(":")[1];
       _columnTypes.put(dimName, DataType.getClassFromStringType(dimDataType));
     }
-    _dimensions = _metadata.getString("orderedDimNames").split(",");
     constructDictionary(dir.getAbsolutePath());
     constructForwardIndex();
   }
@@ -69,11 +66,11 @@ public class TrevniReaderImpl implements IndexSegment {
   public void constructForwardIndex() throws IOException {
     _forwardIndexMap = new HashMap<String, TrevniForwardIndex>();
     
-    for (String dim : _dimensions) {
+    for (String column : _columnTypes.keySet()) {
      
-        ColumnValues<Integer> intReader = _columnReader.getValues(dim);
-        TrevniForwardIndex fIndex = new TrevniForwardIndex(intReader, _rowCount, _dictionaryMap.get(dim));
-        _forwardIndexMap.put(dim, fIndex);
+        ColumnValues<Integer> intReader = _columnReader.getValues(column);
+        TrevniForwardIndex fIndex = new TrevniForwardIndex(intReader, _rowCount, _dictionaryMap.get(column));
+        _forwardIndexMap.put(column, fIndex);
       
     }
   }

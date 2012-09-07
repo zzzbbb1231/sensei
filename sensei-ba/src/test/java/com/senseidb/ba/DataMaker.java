@@ -33,9 +33,10 @@ public class DataMaker {
   private static Map<String, Integer> highestDictMappingInts;
   private static String rootOutputDir;
 
-  private static Object timeFieldValue = "test";
+  private static String fileName;
   
   public static Schema createTrevniFilesForAndReturnSchema(File avroFile, String dir) throws IOException {
+    fileName = avroFile.getName();
     InputStream inStream = new FileInputStream(avroFile);
     rootOutputDir = dir;
     DatumReader<GenericRecord> datumReader = new GenericDatumReader<GenericRecord>();
@@ -59,29 +60,25 @@ public class DataMaker {
     writeFileMetaData();
     writeDimsMetaData();
     writeDictsMetaData();
-    columnFileWriter.writeTo(new File(rootOutputDir + "/test-" + timeFieldValue.toString() + ".trv"));
+    columnFileWriter.writeTo(new File(rootOutputDir + "/test-" + fileName.toString() + ".trv"));
   }
 
   private static void writeFileMetaData() {
     columnFileWriter.getMetaData().set("source", "test");
-    columnFileWriter.getMetaData().set("time", timeFieldValue.toString());
     
   }
 
   private static void writeDimsMetaData() {
     if (columnMetaDataArr != null && columnMetaDataArr.length > 0) {
       String initFieldName = columnMetaDataArr[0].getName();
-      StringBuilder colNames = new StringBuilder(initFieldName);
-      StringBuilder dimTypes = new StringBuilder(initFieldName + ":"
+      StringBuilder columnTypes = new StringBuilder(initFieldName + ":"
           + getTypeFromAvroSchema(schema, initFieldName).toString());
-      for (int i = 1; i < columnMetaDataArr.length; i++) {
+      for (int i = 0; i < columnMetaDataArr.length; i++) {
         String fieldName = columnMetaDataArr[i].getName();
-        colNames.append("," + fieldName);
-        dimTypes
+        columnTypes
             .append("," + fieldName + ":" + getTypeFromAvroSchema(schema, fieldName).toString());
       }
-      columnFileWriter.getMetaData().set("orderedDimNames", colNames.toString());
-      columnFileWriter.getMetaData().set("dimTypes", dimTypes.toString());
+      columnFileWriter.getMetaData().set("columnTypes", columnTypes.toString());
     }
   }
 
@@ -89,10 +86,10 @@ public class DataMaker {
     String[] dictNames = dictionaries.keySet().toArray(new String[0]);
     if (dictNames != null && dictNames.length > 0) {
       StringBuilder dictMapping = new StringBuilder(dictNames[0] + ":" + dictNames[0] + "-"
-          + "test" + "-" + timeFieldValue + ".dict");
+          + "test" + "-" + fileName + ".dict");
       for (int i = 1; i < dictNames.length; i++) {
         dictMapping.append("," + dictNames[i] + ":" + dictNames[i]
-            + "-" + "test" + "-" + timeFieldValue + ".dict");
+            + "-" + "test" + "-" + fileName + ".dict");
       }
       columnFileWriter.getMetaData()
           .set("dictMapping", dictMapping.toString());
@@ -111,7 +108,7 @@ public class DataMaker {
         columnDictFileWriter.writeRow(columnIdxEntry.getKey() + ":"
             + columnIdxEntry.getValue().toString());
       }
-      String path = rootOutputDir+"/" + entry.getKey() + "-" + "test" + "-" + timeFieldValue + ".dict";
+      String path = rootOutputDir+"/" + entry.getKey() + "-" + "test" + "-" + fileName + ".dict";
       columnDictFileWriter.writeTo(new File(path));
     }
   }
