@@ -12,14 +12,18 @@ import java.nio.channels.FileChannel.MapMode;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.IndexSegmentImpl;
 import com.senseidb.ba.util.CompressedIntArray;
+import com.senseidb.indexing.activity.CompositeActivityStorage;
 
 public class SegmentPersistentManager {
-	private static final String METADATA_PROPERTIES = "metadata.properties";
-	private static final String INDEX_FILE_NAME = "index.blob";
+    private static Logger logger = Logger.getLogger(SegmentPersistentManager.class);
+    
+    public static final String METADATA_PROPERTIES = "metadata.properties";
+	public static final String INDEX_FILE_NAME = "index.blob";
 	public void persist(File directory, IndexSegmentImpl indexSegmentImpl) throws Exception {
 		directory.mkdirs();
 		File forwardIndexStorage = new File(directory, INDEX_FILE_NAME);
@@ -64,11 +68,15 @@ public class SegmentPersistentManager {
         			}
         			CompressedIntArray compressedIntArray = new CompressedIntArray(columnMetadata.getNumberOfElements(), CompressedIntArray.getNumOfBits(columnMetadata.getNumberOfDictionaryValues()), byteBuffer); 
         			indexSegmentImpl.getForwardIndexes().put(column, new ForwardIndexImpl(column, compressedIntArray, dictionary, columnMetadata));
+        			indexSegmentImpl.setLength(columnMetadata.getNumberOfElements());
     		    } finally {
     		        IOUtils.closeQuietly(inputStream);
     		    }
     		}
     		return indexSegmentImpl;
+		} catch (Exception ex) {
+            logger.error(ex.getMessage(), ex);
+            throw new RuntimeException(ex);
 		} finally {
     		if (!memoryMappedMode && forwardIndexFile != null) {
     			forwardIndexFile.close();
@@ -77,7 +85,8 @@ public class SegmentPersistentManager {
 		
 	}
     public PropertiesConfiguration getPropertiesMetadata(File directory) throws ConfigurationException {
-        return new PropertiesConfiguration(new File(directory, METADATA_PROPERTIES));
+        PropertiesConfiguration propertiesConfiguration = new PropertiesConfiguration(new File(directory, METADATA_PROPERTIES));
+        return propertiesConfiguration;
     }
 	private File getDictionaryFile(File directory, String column) {
 		return new File(directory, column + ".dict");

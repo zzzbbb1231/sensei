@@ -38,7 +38,7 @@ public class TrevniReaderImplTest {
     schema = DataMaker.createTrevniFilesForAndReturnSchema(avroFile, indexDir.getAbsolutePath());
     File baseIndexDir = new File(indexDir.getAbsolutePath());
     impl = new TrevniReaderImpl(baseIndexDir);
-    Map<String, Class<?>> colTypes = impl.getColumnTypes();
+    Map<String, ColumnType> colTypes = impl.getColumnTypes();
     colNames = colTypes.keySet().toArray(new String[0]);
   }
   @After
@@ -59,7 +59,7 @@ public class TrevniReaderImplTest {
 
   @Test
   public void testGetColumnTypes() throws Exception {
-    Map<String, Class<?>> colTypes = impl.getColumnTypes();
+    Map<String, ColumnType> colTypes = impl.getColumnTypes();
     assertNotNull(colTypes);
     for (String colName : colTypes.keySet()) {
       assertNotNull(colTypes.get(colName));
@@ -68,7 +68,7 @@ public class TrevniReaderImplTest {
 
   @Test
   public void testGetDictionary() throws Exception {
-    Map<String, Class<?>> colTypes = impl.getColumnTypes();
+    Map<String, ColumnType> colTypes = impl.getColumnTypes();
     assertNotNull(colTypes);
     /*
      * Every non-metric and non-time column should have a dictionary 
@@ -81,7 +81,7 @@ public class TrevniReaderImplTest {
 
   @Test
   public void testGetForwardIndex() throws Exception {
-    Map<String, Class<?>> colTypes = impl.getColumnTypes();
+    Map<String, ColumnType> colTypes = impl.getColumnTypes();
     assertNotNull(colTypes);
     for (String colName : colNames) {
       assertNotNull(impl.getForwardIndex(colName));
@@ -95,7 +95,7 @@ public class TrevniReaderImplTest {
   // Forward index tests
   @Test
   public void validateGetForwardIndexResponse() throws Exception {
-    Map<String, Class<?>> colTypes = impl.getColumnTypes();
+    Map<String, ColumnType> colTypes = impl.getColumnTypes();
     assertNotNull(colTypes);
     for (String colName : colNames) {
       TrevniForwardIndex idx = (TrevniForwardIndex) impl.getForwardIndex(colName);
@@ -105,7 +105,7 @@ public class TrevniReaderImplTest {
 
   @Test
   public void validFowradIndexLength() throws Exception {
-    Map<String, Class<?>> colTypes = impl.getColumnTypes();
+    Map<String, ColumnType> colTypes = impl.getColumnTypes();
     assertNotNull(colTypes);
     for (String colName : colNames) {
       TrevniForwardIndex idx = (TrevniForwardIndex) impl.getForwardIndex(colName);

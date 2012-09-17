@@ -22,7 +22,7 @@ import com.senseidb.ba.trevni.DataType;
  * 
  * */
 public class TrevniReaderImpl implements IndexSegment {
-  private Map<String, Class<?>> _columnTypes;
+  private Map<String, ColumnType> _columnTypes;
   private HashMap<String, TermValueList> _dictionaryMap;
   private ColumnFileReader _columnReader;
   private ColumnFileMetaData _metadata;
@@ -40,13 +40,13 @@ public class TrevniReaderImpl implements IndexSegment {
         _rowCount = _columnReader.getRowCount();
       }
     }
-    _columnTypes = new HashMap<String, Class<?>>();
+    _columnTypes = new HashMap<String, ColumnType>();
     _metadata = _columnReader.getMetaData();
     String dimTypes = _metadata.getString("columnTypes");
     for (String dimType : dimTypes.split(",")) {
       String dimName = dimType.split(":")[0];
       String dimDataType = dimType.split(":")[1];
-      _columnTypes.put(dimName, DataType.getClassFromStringType(dimDataType));
+      _columnTypes.put(dimName, ColumnType.valueOfStr((dimDataType)));
     }
     constructDictionary(dir.getAbsolutePath());
     constructForwardIndex();

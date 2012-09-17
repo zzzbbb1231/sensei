@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
 
+import org.apache.avro.util.Utf8;
+
 import com.browseengine.bobo.facets.data.TermFloatList;
 import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
@@ -99,8 +101,8 @@ public class DictionaryCreator {
 			return getIntIndex((Integer) value);
 		} else if (value instanceof Long) {
 			return getLongIndex((Long) value);
-		} else if (value instanceof String) {
-			return getStringIndex((String) value);
+		} else if (value instanceof String || value instanceof Utf8) {
+			return getStringIndex(value.toString());
 		} else if (value instanceof Float) {
 			return getFloatIndex((Float) value);
 		} else if (value instanceof Double) {

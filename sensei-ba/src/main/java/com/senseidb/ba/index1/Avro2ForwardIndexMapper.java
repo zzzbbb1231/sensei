@@ -27,15 +27,15 @@ import com.senseidb.ba.IndexSegmentImpl;
 import com.senseidb.ba.util.CompressedIntArray;
 
 public abstract class Avro2ForwardIndexMapper {
-	private final InputStream avroFile;
+	private final File avroFile;
 	
-	public Avro2ForwardIndexMapper(InputStream avroFile) {
+	public Avro2ForwardIndexMapper(File avroFile) {
 		this.avroFile = avroFile;
 	}
 	public IndexSegmentImpl build() throws Exception {
 		Map<String, ForwardIndexImpl> ret = new HashMap<String, ForwardIndexImpl>();
 		DatumReader<GenericRecord> datumReader = new GenericDatumReader<GenericRecord>();
-	    DataFileStream<GenericRecord> dataFileReader = new DataFileStream<GenericRecord>(avroFile, datumReader);
+	    DataFileStream<GenericRecord> dataFileReader = new DataFileStream<GenericRecord>(new FileInputStream(avroFile), datumReader);
 	    
 	    Schema schema = dataFileReader.getSchema();
 		if (dataFileReader.getSchema() == null) {
@@ -88,12 +88,16 @@ public abstract class Avro2ForwardIndexMapper {
 	    for (int j = 0; j < columnTypes.length; j++) {
 	    	intArrays[j] = new CompressedIntArray(count, CompressedIntArray.getNumOfBits(dictionaries[j].size()), getByteBuffer(count, dictionaries[j].size()));
 		}
+	    dataFileReader.close();
+	    datumReader = new GenericDatumReader<GenericRecord>();
+         dataFileReader = new DataFileStream<GenericRecord>(new FileInputStream(avroFile), datumReader);
+       
 	    iterator = dataFileReader.iterator();
 	    i = 0;
 	    while (dataFileReader.hasNext()) {
 		      GenericRecord record = dataFileReader.next();
 		      for (int j = 0; j < columnTypes.length; j++) {
-		    	  intArrays[j].addInt(j, creators[j].getIndex(record.get(j)));
+		    	  intArrays[j].addInt(i, creators[j].getIndex(record.get(j)));
 			}
 		      i++;
 		}
@@ -104,6 +108,7 @@ public abstract class Avro2ForwardIndexMapper {
 	    	indexSegmentImpl.getDictionaries().put(columnNames[j], dictionaries[j]);
 	    	indexSegmentImpl.getForwardIndexes().put(columnNames[j], new ForwardIndexImpl(columnNames[j], intArrays[j], dictionaries[j], getColumnMetadata(dictionaries[j], count, columnNames[j], columnTypes[j])));
 		}
+	    indexSegmentImpl.setLength(count);
 	    return indexSegmentImpl;
 	}
 	public abstract ColumnMetadata getColumnMetadata(TermValueList dictionaries, int count, String columnName, ColumnType columnType);

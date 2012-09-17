@@ -42,12 +42,16 @@ public class SegmentPersistentManagerTest extends TestCase{
 @Test
     public void test1() throws Exception {
         FileInputStream avroFileStream = new FileInputStream(avroFile);
-        InMemoryAvroMapper avroMapper = new InMemoryAvroMapper(avroFileStream);
+        InMemoryAvroMapper avroMapper = new InMemoryAvroMapper(avroFile);
         IndexSegmentImpl indexSegmentImpl = avroMapper.build();
+        for (int i = 0; i < indexSegmentImpl.getLength(); i++) {
+            System.out.println(indexSegmentImpl.getForwardIndex("dim_memberRegion").getValueIndex(i));
+        }
         SegmentPersistentManager segmentPersistentManager = new SegmentPersistentManager();
         segmentPersistentManager.persist(indexDir, indexSegmentImpl);
         IndexSegmentImpl persistedIndexSegment = segmentPersistentManager.read(indexDir, false);
         System.out.println(FileUtils.readFileToString(segmentPersistentManager.getPropertiesMetadata(indexDir).getFile()));
+        
         IOUtils.closeQuietly(avroFileStream);
     }
 

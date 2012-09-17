@@ -2,8 +2,10 @@ package com.senseidb.ba.plugins;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -14,6 +16,7 @@ import java.util.Map;
 import javax.management.StandardMBean;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
@@ -27,6 +30,8 @@ import com.browseengine.bobo.api.BoboIndexReader;
 import com.senseidb.ba.IndexSegmentCreator;
 import com.senseidb.ba.IndexSegment;
 import com.senseidb.ba.SegmentToZoieAdapter;
+import com.senseidb.ba.index1.InMemoryAvroMapper;
+import com.senseidb.ba.index1.SegmentPersistentManager;
 import com.senseidb.ba.trevni.impl.TrevniReaderImpl;
 import com.senseidb.plugin.SenseiPluginRegistry;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
@@ -103,7 +108,12 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
       offlineSegments.add(new SegmentToZoieAdapter(offlineSegment, decorator));
     }
     for (File directory : idxDir.listFiles()) {
-      if (!directory.isDirectory()) {
+      if (directory.getName().endsWith(".avro")) {
+          InputStream inputStream = new FileInputStream(directory) ;
+          offlineSegments.add(new SegmentToZoieAdapter(new InMemoryAvroMapper(directory).build(), decorator));
+          IOUtils.closeQuietly(inputStream);
+      }
+       if (!directory.isDirectory()) {
         continue;
       }
       String[] trevniFiles = directory.list(new FilenameFilter() {
@@ -116,6 +126,16 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
       if (trevniFiles.length > 0) {
         offlineSegments.add(new SegmentToZoieAdapter(new TrevniReaderImpl(directory), decorator));
       }
+      String[] persistentIndexes = directory.list(new FilenameFilter() {
+          
+          @Override
+          public boolean accept(File dir, String name) {
+            return name.contains(SegmentPersistentManager.INDEX_FILE_NAME);
+          }
+        });
+        if (persistentIndexes.length > 0) {
+          offlineSegments.add(new SegmentToZoieAdapter( new SegmentPersistentManager().read(directory, false), decorator));
+        }
     }
     } catch (Exception ex) {
       throw new RuntimeException(ex);

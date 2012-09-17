@@ -1,5 +1,6 @@
 package com.senseidb.ba.index1;
 
+import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
@@ -12,7 +13,7 @@ import com.senseidb.ba.util.CompressedIntArray;
 
 public class InMemoryAvroMapper extends Avro2ForwardIndexMapper {
 	private long startOffset = 0;
-	public InMemoryAvroMapper(InputStream avroFile) {
+	public InMemoryAvroMapper(File avroFile) {
 		super(avroFile);
 		
 	}

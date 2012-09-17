@@ -72,8 +72,7 @@ public class DictionaryPersistentManager {
     			ret = termStringList;
     			ret.seal();
     		}
-    	}
-    	if (columnType == ColumnType.INT) {
+    	} else if (columnType == ColumnType.INT) {
     		TermIntList termIntList = new TermIntList(DefaultSenseiInterpreter.DEFAULT_FORMAT_STRING_MAP.get(int.class));
     		int[] arr = new int[dictionarySize];
     		for (int i = 0; i < dictionarySize; i++) {

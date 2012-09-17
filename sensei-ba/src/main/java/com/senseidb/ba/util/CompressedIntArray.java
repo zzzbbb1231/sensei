@@ -26,6 +26,7 @@ private byte[] tempBuf;
     this.numOfBitsPerElement = numOfBitsPerElement;
     capacity = numOfElements;
     buf = byteBuffer;
+    tempBuf = getByteBuf();
   }
 
   /**

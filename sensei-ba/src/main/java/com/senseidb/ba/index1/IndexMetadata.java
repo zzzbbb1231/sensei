@@ -5,22 +5,24 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 public class IndexMetadata {
 	private Map<String, ColumnMetadata> metadata = new TreeMap<String, ColumnMetadata>();
 
-	public static IndexMetadata readFromConfiguration(Configuration config) {
+	public static IndexMetadata readFromConfiguration(PropertiesConfiguration config) throws ConfigurationException {
+	    config.load();
 		IndexMetadata ret = new IndexMetadata();
-		Iterator keys = config.getKeys("column.");
+		Iterator keys = config.getKeys("column");
 		while (keys.hasNext()) {
 			String key = (String) keys.next();
 			key = key.substring("column.".length());
-			ret.metadata.put(key.substring(0, key.indexOf(",")), null);
+			String property = key.substring(0, key.indexOf("."));
+            ret.metadata.put(property, ColumnMetadata.readFromConfiguration(property,
+                    config));
 		}
-		for (Map.Entry<String, ColumnMetadata> entry : ret.metadata.entrySet()) {
-			entry.setValue(ColumnMetadata.readFromConfiguration(entry.getKey(),
-					config));
-		}
+		
 		return ret;
 	}
 
