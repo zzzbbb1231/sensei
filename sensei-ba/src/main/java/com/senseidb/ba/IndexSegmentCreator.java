@@ -15,7 +15,7 @@ public class IndexSegmentCreator {
     public static IndexSegment convert(String[] jsonDocs, Set<String> excludedColumns)  {
       Map<String, List> columnValues = new HashMap<String, List>();
       try {
-      Map<String, Class<?>> columnTypes = getColumnTypes(jsonDocs, excludedColumns, 10);
+      Map<String, ColumnType> columnTypes = getColumnTypes(jsonDocs, excludedColumns, 10);
       for (String column : columnTypes.keySet()) {
         columnValues.put(column, new ArrayList(jsonDocs.length));
       }
@@ -24,7 +24,7 @@ public class IndexSegmentCreator {
         JSONObject jsonDoc = new JSONObject(jsonDocStr);
         for (String column : columnTypes.keySet()) {
           Object value = jsonDoc.opt(column);
-          if (value instanceof Integer && columnTypes.get(column) == long.class) {
+          if (value instanceof Integer && columnTypes.get(column) == ColumnType.LONG) {
             value = Long.valueOf((Integer) value);
           }
           columnValues.get(column).add(value);
@@ -33,12 +33,12 @@ public class IndexSegmentCreator {
       IndexSegmentImpl offlineSegmentImpl = new IndexSegmentImpl(); 
       for (String column : columnTypes.keySet()) {
         ForwardIndexBackedByArray forwardIndexBackedByArray = new ForwardIndexBackedByArray(column);
-        Class<?> type = columnTypes.get(column);
-        if (type == int.class) {
+        ColumnType type = columnTypes.get(column);
+        if (type == ColumnType.INT) {
           forwardIndexBackedByArray.initByIntValues(columnValues.get(column));
-        } else if (type == long.class) {
+        } else if (type == ColumnType.LONG) {
           forwardIndexBackedByArray.initByLongValues(columnValues.get(column));
-        } else if (type == String.class) {
+        } else if (type == ColumnType.STRING) {
           forwardIndexBackedByArray.initByStringValues(columnValues.get(column));
         }
         offlineSegmentImpl.forwardIndexes.put(column, forwardIndexBackedByArray);
@@ -52,9 +52,9 @@ public class IndexSegmentCreator {
       }
     }
 
-    public static Map<String, Class<?>> getColumnTypes(String[] jsonDocs, Set<String> excludedColumns, int mod)
+    public static Map<String, ColumnType> getColumnTypes(String[] jsonDocs, Set<String> excludedColumns, int mod)
         throws JSONException {
-      Map<String, Class<?>> columnTypes = new HashMap<String, Class<?>>();
+      Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();
       int i = 0; 
       for (String jsonDocStr : jsonDocs) {
         if (i++ % mod != 0) {
@@ -70,14 +70,14 @@ public class IndexSegmentCreator {
           if (excludedColumns.contains(key)) {
             continue;
           }
-          if (!columnTypes.containsKey(key) || columnTypes.get(key) == int.class) {
+          if (!columnTypes.containsKey(key) || columnTypes.get(key) == ColumnType.INT) {
             Object object = jsonDoc.get(key);
-             if (columnTypes.get(key) == int.class && object instanceof Long) {
-               columnTypes.put(key, long.class);
+             if (columnTypes.get(key) == ColumnType.INT && object instanceof Long) {
+               columnTypes.put(key, ColumnType.LONG);
              } else {            
-                if (object instanceof String) columnTypes.put(key, String.class);
-                if (object instanceof Integer) columnTypes.put(key, int.class);
-                if (object instanceof Long) columnTypes.put(key, long.class);
+                if (object instanceof String) columnTypes.put(key, ColumnType.STRING);
+                if (object instanceof Integer) columnTypes.put(key, ColumnType.INT);
+                if (object instanceof Long) columnTypes.put(key, ColumnType.LONG);
              }
           }
         }

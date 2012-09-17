@@ -2,22 +2,27 @@ package com.senseidb.ba.util;
 
 import java.nio.ByteBuffer;
 
-public class FixedSizeEncodingWrapper {
-  private ByteBuffer buf;
+public class CompressedIntArray {
+  private final ByteBuffer buf;
   private int capacity;
   private final int numOfBitsPerElement;
+private byte[] tempBuf;
 
-  public FixedSizeEncodingWrapper(int numOfElements, int numOfBitsPerElement) {
+  public CompressedIntArray(int numOfElements, int numOfBitsPerElement) {
     this.numOfBitsPerElement = numOfBitsPerElement;
     capacity = numOfElements;
     buf = ByteBuffer.allocateDirect(getRequiredBufferSize(numOfElements, numOfBitsPerElement));
+    tempBuf = getByteBuf();
   }
 
-  public int getRequiredBufferSize(int numOfElements, int numOfBitsPerElement) {
+  public static int getRequiredBufferSize(int numOfElements, int numOfBitsPerElement) {
     return (int) Math.ceil((float) numOfElements / 8 * numOfBitsPerElement);
   }
+  public static int getNumOfBits(int dictionarySize) {
+	    return  (int) Math.ceil(Math.log(dictionarySize)/Math.log(2));
+	  }
 
-  public FixedSizeEncodingWrapper(int numOfElements, int numOfBitsPerElement, ByteBuffer byteBuffer) {
+  public CompressedIntArray(int numOfElements, int numOfBitsPerElement, ByteBuffer byteBuffer) {
     this.numOfBitsPerElement = numOfBitsPerElement;
     capacity = numOfElements;
     buf = byteBuffer;
@@ -29,7 +34,14 @@ public class FixedSizeEncodingWrapper {
   public byte[] getByteBuf() {
     return new byte[numOfBitsPerElement / 8 + (numOfBitsPerElement % 8 < 2 ? 1 : 2)];
   }
-
+  /**
+   * This method is not threadsafe
+ * @param position
+ * @param number
+ */
+public void addInt(int position, int number) {
+	addInt(position, number, tempBuf);
+  }
   public void addInt(int position, int number, byte[] tempBuf) {
     int bytePosition = position * numOfBitsPerElement / 8;
     int startBitOffset = (position * numOfBitsPerElement) % 8;
@@ -57,7 +69,7 @@ public class FixedSizeEncodingWrapper {
     buf.put(tempBuf, 0, numberOfBytesUsed);
   }
 
-  public int readInt(int position, byte[] tempBuf) {
+  public int readInt(int position) {
 
     /*
      * int bytePosition = position * numOfBitsPerElement / 8; int startBitOffset
@@ -93,4 +105,12 @@ public class FixedSizeEncodingWrapper {
     return (int) number;
   }
 
+public int getCapacity() {
+	return capacity;
+}
+
+public ByteBuffer getStorage() {
+	return buf;
+}
+  
 }
