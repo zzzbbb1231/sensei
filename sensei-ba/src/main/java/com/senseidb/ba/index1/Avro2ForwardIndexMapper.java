@@ -19,6 +19,8 @@ import org.apache.avro.io.DatumReader;
 import org.apache.avro.util.Utf8;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ColumnType;
@@ -27,15 +29,21 @@ import com.senseidb.ba.IndexSegmentImpl;
 import com.senseidb.ba.util.CompressedIntArray;
 
 public abstract class Avro2ForwardIndexMapper {
-	private final File avroFile;
+    private static Logger logger = Logger.getLogger(Avro2ForwardIndexMapper.class);
+    
+    private final File avroFile;
 	
 	public Avro2ForwardIndexMapper(File avroFile) {
 		this.avroFile = avroFile;
 	}
 	public IndexSegmentImpl build() throws Exception {
-		Map<String, ForwardIndexImpl> ret = new HashMap<String, ForwardIndexImpl>();
+	    FileInputStream inputStream1 = null;
+	    FileInputStream inputStream2 = null;
+	    try {
+	    Map<String, ForwardIndexImpl> ret = new HashMap<String, ForwardIndexImpl>();
 		DatumReader<GenericRecord> datumReader = new GenericDatumReader<GenericRecord>();
-	    DataFileStream<GenericRecord> dataFileReader = new DataFileStream<GenericRecord>(new FileInputStream(avroFile), datumReader);
+	    inputStream1 = new FileInputStream(avroFile);
+        DataFileStream<GenericRecord> dataFileReader = new DataFileStream<GenericRecord>(inputStream1, datumReader);
 	    
 	    Schema schema = dataFileReader.getSchema();
 		if (dataFileReader.getSchema() == null) {
@@ -90,7 +98,9 @@ public abstract class Avro2ForwardIndexMapper {
 		}
 	    dataFileReader.close();
 	    datumReader = new GenericDatumReader<GenericRecord>();
-         dataFileReader = new DataFileStream<GenericRecord>(new FileInputStream(avroFile), datumReader);
+	    inputStream2 = new FileInputStream(avroFile);
+        
+	    dataFileReader = new DataFileStream<GenericRecord>(inputStream2, datumReader);
        
 	    iterator = dataFileReader.iterator();
 	    i = 0;
@@ -110,6 +120,13 @@ public abstract class Avro2ForwardIndexMapper {
 		}
 	    indexSegmentImpl.setLength(count);
 	    return indexSegmentImpl;
+	    } catch (Exception ex) {
+	      logger.error(ex.getMessage(), ex);
+	      throw new RuntimeException(ex);
+	    } finally {
+	        IOUtils.closeQuietly(inputStream1);
+	        IOUtils.closeQuietly(inputStream2);
+	    }
 	}
 	public abstract ColumnMetadata getColumnMetadata(TermValueList dictionaries, int count, String columnName, ColumnType columnType);
 	public abstract ByteBuffer getByteBuffer(int numOfElements, int dictionarySize);
