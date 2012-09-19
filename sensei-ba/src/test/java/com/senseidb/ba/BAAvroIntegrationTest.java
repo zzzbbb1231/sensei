@@ -77,7 +77,7 @@ public class BAAvroIntegrationTest extends TestCase {
         "            }" + 
         "        }" + 
         "    }" + 
-        "   ]," +
+        "   ], \"sort\": [{\"dim_memberCompany\": \"desc\"}]," +
         "    \"facets\": {\n" + 
         "        \"dim_memberCompany\": {\n" + 
         "            \"max\": 10,\n" + 

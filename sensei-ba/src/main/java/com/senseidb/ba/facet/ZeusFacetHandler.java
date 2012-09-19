@@ -106,7 +106,9 @@ public class ZeusFacetHandler extends FacetHandler<ZeusDataCache> {
 
           @Override
           public void collectAll() {
-            _count = fakeCache.freqs;
+            for (int i = 0; i < forwardIndex.getLength(); i++) {
+                collect(i);
+            }
             
           }
           

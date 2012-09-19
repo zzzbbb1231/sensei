@@ -1,7 +1,9 @@
 package com.senseidb.ba;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 
 import org.apache.avro.util.Utf8;
@@ -12,6 +14,7 @@ import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.indexing.DefaultSenseiInterpreter;
+import com.senseidb.indexing.MetaType;
 
 import it.unimi.dsi.fastutil.floats.Float2IntOpenHashMap;
 import it.unimi.dsi.fastutil.floats.FloatAVLTreeSet;
@@ -31,7 +34,13 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 public class DictionaryCreator {
-	private IntAVLTreeSet intAVLTreeSet;
+    public static final Map<ColumnType,String> DEFAULT_FORMAT_STRING_MAP = new HashMap<ColumnType,String>();
+    static {
+        DEFAULT_FORMAT_STRING_MAP.put(ColumnType.INT, "0000000000");
+        DEFAULT_FORMAT_STRING_MAP.put(ColumnType.LONG, "00000000000000000000");
+        DEFAULT_FORMAT_STRING_MAP.put(ColumnType.FLOAT, "0000000000.0000");
+    }
+    private IntAVLTreeSet intAVLTreeSet;
 	private Int2IntOpenHashMap int2IntMap;
 	private FloatAVLTreeSet floatAVLTreeSet;
 	private Float2IntOpenHashMap float2IntMap;
@@ -114,8 +123,7 @@ public class DictionaryCreator {
 
 	public TermIntList produceIntDictionary() {
 		TermIntList termIntList = new TermIntList(intAVLTreeSet.size(),
-				DefaultSenseiInterpreter.DEFAULT_FORMAT_STRING_MAP
-						.get(int.class));
+		        DEFAULT_FORMAT_STRING_MAP.get(ColumnType.INT));
 		IntBidirectionalIterator iterator = intAVLTreeSet.iterator();
 		termIntList.add(null);
 		while (iterator.hasNext()) {
@@ -131,8 +139,7 @@ public class DictionaryCreator {
 	}
 	public TermFloatList produceFloatDictionary() {
 		TermFloatList termFloatList = new TermFloatList(floatAVLTreeSet.size(),
-				DefaultSenseiInterpreter.DEFAULT_FORMAT_STRING_MAP
-						.get(float.class));
+		        DEFAULT_FORMAT_STRING_MAP.get(ColumnType.FLOAT));
 		FloatBidirectionalIterator iterator = floatAVLTreeSet.iterator();
 		termFloatList.add(null);
 		while (iterator.hasNext()) {
@@ -162,8 +169,7 @@ public class DictionaryCreator {
 	}
 	public TermLongList produceLongDictionary() {
 		TermLongList termlongList = new TermLongList(longAVLTreeSet.size(),
-				DefaultSenseiInterpreter.DEFAULT_FORMAT_STRING_MAP
-						.get(long.class));
+				DEFAULT_FORMAT_STRING_MAP.get(ColumnType.LONG));
 		LongBidirectionalIterator iterator = longAVLTreeSet.iterator();
 		termlongList.add(null);
 		while (iterator.hasNext()) {
