@@ -19,7 +19,7 @@ import com.browseengine.bobo.facets.impl.SimpleFacetHandler;
 import com.browseengine.bobo.sort.DocComparatorSource;
 import com.senseidb.ba.IndexSegment;
 import com.senseidb.ba.SegmentToZoieAdapter;
-import com.senseidb.ba.facet.ZeusFacetHandler;
+import com.senseidb.ba.facet.BaFacetHandler;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
 public class ZeusIndexReaderDecorator extends SenseiIndexReaderDecorator {
@@ -32,7 +32,7 @@ public BoboIndexReader decorate(ZoieIndexReader<BoboIndexReader> zoieReader) thr
   
  
   for (String column : offlineSegment.getColumnTypes().keySet()) {
-    facetHandlers.add(new ZeusFacetHandler(column, column, IndexSegment.class.getSimpleName()));
+    facetHandlers.add(new BaFacetHandler(column, column, IndexSegment.class.getSimpleName()));
   }
   BoboIndexReader indexReader =  new BoboIndexReader(adapter,  facetHandlers, Collections.EMPTY_LIST, new BoboIndexReader.WorkArea(), false) {
     public void facetInit() throws IOException {

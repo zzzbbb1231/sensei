@@ -1,6 +1,7 @@
 package com.senseidb.ba.facet;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.apache.lucene.index.IndexReader;
@@ -24,12 +25,13 @@ import com.browseengine.bobo.sort.DocComparator;
 import com.browseengine.bobo.sort.DocComparatorSource;
 import com.senseidb.ba.ForwardIndex;
 import com.senseidb.ba.IndexSegment;
+import com.senseidb.ba.SortedForwardIndex;
 
-public class ZeusFacetHandler extends FacetHandler<ZeusDataCache> {
+public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
   private final String bootsrapFacetHandlerName;
   private final String columnName;
 
-  public ZeusFacetHandler(String name, String columnName, String bootsrapFacetHandlerName) {
+  public BaFacetHandler(String name, String columnName, String bootsrapFacetHandlerName) {
     super(name);
     this.columnName = columnName;
     this.bootsrapFacetHandlerName = bootsrapFacetHandlerName;
@@ -53,17 +55,20 @@ public class ZeusFacetHandler extends FacetHandler<ZeusDataCache> {
     return new RandomAccessFilter() {
       @Override
       public double getFacetSelectivity(BoboIndexReader reader) {
-        final ZeusDataCache zeusDataCache = ZeusFacetHandler.this.load(reader);
+        final ZeusDataCache zeusDataCache = BaFacetHandler.this.load(reader);
         final int index = zeusDataCache.getDictionary().indexOf(value);
         if (index < 0) return 0.0;
-        return ((double)zeusDataCache.getForwardIndex().getFrequency(index)) / zeusDataCache.getForwardIndex().getLength();
+        return ((double)zeusDataCache.getForwardIndex().getDictionary().size()) / zeusDataCache.getForwardIndex().getLength();
       }
       @Override
       public RandomAccessDocIdSet getRandomAccessDocIdSet(BoboIndexReader reader) throws IOException {
-        final ZeusDataCache zeusDataCache = ZeusFacetHandler.this.load(reader);
+        final ZeusDataCache zeusDataCache = BaFacetHandler.this.load(reader);
         final int index = zeusDataCache.getDictionary().indexOf(value);
         if (index < 0) {
           return EmptyDocIdSet.getInstance();
+        }
+        if (zeusDataCache.getForwardIndex() instanceof SortedForwardIndex) {
+            return new SortedFacetUtils.SortedForwardDocIdSet((SortedForwardIndex) zeusDataCache.getForwardIndex(), index);
         }
         //Go by inverted index path
         if (zeusDataCache.invertedIndexPresent(index)) {
@@ -95,7 +100,11 @@ public class ZeusFacetHandler extends FacetHandler<ZeusDataCache> {
       public FacetCountCollector getFacetCountCollector(BoboIndexReader reader, int docBase) {
         ZeusDataCache dataCache = load(reader);
         final ForwardIndex forwardIndex = dataCache.getForwardIndex();
+        
         final FacetDataCache fakeCache = dataCache.getFakeCache();
+        if (forwardIndex instanceof SortedForwardIndex) {
+            return new SortedFacetUtils.SortedFacetCountCollector((SortedForwardIndex)forwardIndex, getName(), fakeCache, docBase, sel, fspec);
+        }
         return new DefaultFacetCountCollector(getName(), dataCache.getFakeCache(), docBase, sel, fspec) {
          
           @Override
@@ -120,6 +129,14 @@ public class ZeusFacetHandler extends FacetHandler<ZeusDataCache> {
   @Override
   public String[] getFieldValues(BoboIndexReader reader, int id) {
     ForwardIndex forwardIndex = load(reader).getForwardIndex();
+    if (forwardIndex instanceof SortedForwardIndex) {
+        int dictionaryValueId = SortedFacetUtils.getDictionaryValueId((SortedForwardIndex) forwardIndex, id);
+        if (dictionaryValueId < 0) {
+            return new String[0];
+        } else {
+            return new String[] { forwardIndex.getDictionary().get(dictionaryValueId)};
+        }
+    }
     return new String[] { forwardIndex.getDictionary().get(forwardIndex.getValueIndex(id))};
   }
 
@@ -128,8 +145,11 @@ public class ZeusFacetHandler extends FacetHandler<ZeusDataCache> {
     return new DocComparatorSource() {
       @Override
       public DocComparator getComparator(IndexReader reader, int docbase) throws IOException {
-        final ZeusDataCache zeusDataCache = ZeusFacetHandler.this.load((BoboIndexReader) reader);
-          return new DocComparator() {
+        final ZeusDataCache zeusDataCache = BaFacetHandler.this.load((BoboIndexReader) reader);
+        if (zeusDataCache.getForwardIndex() instanceof SortedForwardIndex) {
+            return new SortedFacetUtils.SortedDocComparator();
+        }
+        return new DocComparator() {
           @Override
           public Comparable value(ScoreDoc doc) {
             int index = zeusDataCache.getForwardIndex().getValueIndex(doc.doc);
