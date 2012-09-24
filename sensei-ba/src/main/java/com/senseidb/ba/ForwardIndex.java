@@ -1,6 +1,7 @@
 package com.senseidb.ba;
 
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.ba.index1.ColumnMetadata;
 
 /**
  * The forward index, that allows to get the dictionary value by docId in constant time. Without compression it would be just the int array
@@ -19,4 +20,5 @@ public interface ForwardIndex {
    */
   int getFrequency(int valueId);
   TermValueList<?> getDictionary();
+  ColumnMetadata getColumnMetadata();
 }

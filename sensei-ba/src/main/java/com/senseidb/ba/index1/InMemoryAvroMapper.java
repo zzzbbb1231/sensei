@@ -20,19 +20,25 @@ public class InMemoryAvroMapper extends Avro2ForwardIndexMapper {
 
 	@Override
 	public synchronized ColumnMetadata getColumnMetadata(TermValueList dictionary,
-			int count, String columnName, ColumnType columnType) {
-		int numOfBits = CompressedIntArray.getNumOfBits(dictionary.size());
-		int bufferSize = CompressedIntArray.getRequiredBufferSize(count, numOfBits); 
-		ColumnMetadata columnMetadata = new ColumnMetadata();
-		columnMetadata.setBitsPerElement(numOfBits);
-		columnMetadata.setByteLength(bufferSize);
+			int count, String columnName, ColumnType columnType, boolean isSorted) {
+	    ColumnMetadata columnMetadata = new ColumnMetadata();
+	    if (!isSorted) {
+    	    int numOfBits = CompressedIntArray.getNumOfBits(dictionary.size());
+    		int bufferSize = CompressedIntArray.getRequiredBufferSize(count, numOfBits); 
+    		columnMetadata.setBitsPerElement(numOfBits);
+    		columnMetadata.setByteLength(bufferSize);
+    		columnMetadata.setStartOffset(startOffset);
+    		startOffset += bufferSize;
+		} else {
+		    columnMetadata.setBitsPerElement(-1);
+            columnMetadata.setByteLength(-1);
+            columnMetadata.setStartOffset(-1);
+		}
 		columnMetadata.setColumn(columnName);
 		columnMetadata.setNumberOfDictionaryValues(dictionary.size());
 		columnMetadata.setNumberOfElements(count);
-		columnMetadata.setSorted(false);
-		columnMetadata.setStartOffset(startOffset);
+		columnMetadata.setSorted(isSorted);
 		columnMetadata.setColumnType(columnType);
-		startOffset += bufferSize;
 		return columnMetadata;
 	}
 

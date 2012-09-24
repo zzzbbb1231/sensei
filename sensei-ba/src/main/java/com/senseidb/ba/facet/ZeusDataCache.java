@@ -26,7 +26,7 @@ public class ZeusDataCache {
     newDataCache.valArray = forwardIndex.getDictionary(); 
     newDataCache.freqs =  new int[forwardIndex.getDictionary().size()];
     for (int i = 0 ; i < forwardIndex.getDictionary().size(); i++) {
-      newDataCache.freqs[i] = forwardIndex.getFrequency(i);
+      newDataCache.freqs[i] = 1;
     }    
     return newDataCache;
   }

@@ -15,6 +15,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.ba.ForwardIndex;
 import com.senseidb.ba.IndexSegmentImpl;
 import com.senseidb.ba.util.CompressedIntArray;
 import com.senseidb.indexing.activity.CompositeActivityStorage;
@@ -30,17 +31,26 @@ public class SegmentPersistentManager {
 		RandomAccessFile forwardIndexFile = new RandomAccessFile(forwardIndexStorage, "rw");
 		PropertiesConfiguration propertiesConfiguration = getPropertiesMetadata(directory);
 		for (String column : indexSegmentImpl.getColumnTypes().keySet()) {
-			ForwardIndexImpl forwardIndex = (ForwardIndexImpl) indexSegmentImpl.getForwardIndex(column);
+			ForwardIndex forwardIndex =  indexSegmentImpl.getForwardIndex(column);
 			forwardIndex.getColumnMetadata().save(propertiesConfiguration);
 			File dictionaryFile = getDictionaryFile(directory, column);
 			OutputStream outputStream = new FileOutputStream(dictionaryFile);
 			DictionaryPersistentManager.persist(outputStream, forwardIndex.getDictionary());
 			outputStream.close();
-			forwardIndexFile.getChannel().write(forwardIndex.getCompressedIntArray().getStorage(), forwardIndex.getColumnMetadata().getStartOffset());
-			forwardIndexFile.getChannel().force(true);
+			if (forwardIndex instanceof ForwardIndexImpl) {
+			    ForwardIndexImpl forwardIndexImpl = (ForwardIndexImpl) forwardIndex;
+			    forwardIndexImpl.getCompressedIntArray().getStorage().rewind();
+			    forwardIndexFile.getChannel().write(forwardIndexImpl.getCompressedIntArray().getStorage(), forwardIndex.getColumnMetadata().getStartOffset());
+	            forwardIndexFile.getChannel().force(true);
+			} else if (forwardIndex instanceof SortedForwardIndexImpl){
+			    String sortedIndexFileName = forwardIndex.getColumnMetadata().getColumn() + ".ranges";
+                SortedIndexPersistentManager.persist(new FileOutputStream(new File(directory, sortedIndexFileName)), (SortedForwardIndexImpl) forwardIndex);
+			}
 		}
 		propertiesConfiguration.save();
+		forwardIndexFile.getFD().sync();
 		forwardIndexFile.getChannel().close();
+		forwardIndexFile.close();
 	}
 	public IndexSegmentImpl read(File directory, boolean memoryMappedMode) throws Exception {
 		RandomAccessFile forwardIndexFile = null;
@@ -59,15 +69,22 @@ public class SegmentPersistentManager {
         			TermValueList dictionary = DictionaryPersistentManager.read(inputStream, columnMetadata.getNumberOfDictionaryValues(), columnMetadata.getColumnType());
         			indexSegmentImpl.getDictionaries().put(column, dictionary);
         			inputStream.close();
-        			ByteBuffer byteBuffer = null;
-        			if (memoryMappedMode) {
-        				forwardIndexFile.getChannel().map(MapMode.READ_ONLY, columnMetadata.getStartOffset(), columnMetadata.getByteLength());
+        			if (columnMetadata.isSorted()) {
+        			    SortedForwardIndexImpl sortedForwardIndexImpl = new SortedForwardIndexImpl(dictionary, new int[columnMetadata.getNumberOfDictionaryValues()], new int[columnMetadata.getNumberOfDictionaryValues()], columnMetadata.getNumberOfElements(), columnMetadata);
+        			    String sortedIndexFileName = columnMetadata.getColumn() + ".ranges";
+        			    SortedIndexPersistentManager.readMinMaxRanges(new FileInputStream(new File(directory, sortedIndexFileName)), sortedForwardIndexImpl);
+        			    indexSegmentImpl.getForwardIndexes().put(column, sortedForwardIndexImpl);
         			} else {
-        				byteBuffer =  ByteBuffer.allocateDirect((int)columnMetadata.getByteLength());
-        				forwardIndexFile.getChannel().read(byteBuffer, columnMetadata.getStartOffset());
-        			}
-        			CompressedIntArray compressedIntArray = new CompressedIntArray(columnMetadata.getNumberOfElements(), CompressedIntArray.getNumOfBits(columnMetadata.getNumberOfDictionaryValues()), byteBuffer); 
-        			indexSegmentImpl.getForwardIndexes().put(column, new ForwardIndexImpl(column, compressedIntArray, dictionary, columnMetadata));
+            			ByteBuffer byteBuffer = null;
+            			if (memoryMappedMode) {
+            				forwardIndexFile.getChannel().map(MapMode.READ_ONLY, columnMetadata.getStartOffset(), columnMetadata.getByteLength());
+            			} else {
+            				byteBuffer =  ByteBuffer.allocateDirect((int)columnMetadata.getByteLength());
+            				forwardIndexFile.getChannel().read(byteBuffer, columnMetadata.getStartOffset());
+            			}
+            			CompressedIntArray compressedIntArray = new CompressedIntArray(columnMetadata.getNumberOfElements(), CompressedIntArray.getNumOfBits(columnMetadata.getNumberOfDictionaryValues()), byteBuffer); 
+            			indexSegmentImpl.getForwardIndexes().put(column, new ForwardIndexImpl(column, compressedIntArray, dictionary, columnMetadata));
+            		}
         			indexSegmentImpl.setLength(columnMetadata.getNumberOfElements());
     		    } finally {
     		        IOUtils.closeQuietly(inputStream);

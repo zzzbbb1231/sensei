@@ -78,9 +78,6 @@ public abstract class Avro2ForwardIndexMapper {
 		      for (int j = 0; j < columnTypes.length; j++) {
 				
 		        Object value = record.get(j);
-				if ("dim_memberEducation".equalsIgnoreCase(columnNames[j])) {
-				    //System.out.println("!!!" + value);
-				}
 		        if (value instanceof Utf8) {
 				    value = ((Utf8) value).toString();
 				}
@@ -93,9 +90,14 @@ public abstract class Avro2ForwardIndexMapper {
 	    	dictionaries[j] = creators[j].produceDictionary();
 		}
 	    CompressedIntArray[] intArrays = new CompressedIntArray[schema.getFields().size()];
+	    SortedForwardIndexImpl[] sortedForwardIndexes = new SortedForwardIndexImpl[schema.getFields().size()];
 	    for (int j = 0; j < columnTypes.length; j++) {
-	    	intArrays[j] = new CompressedIntArray(count, CompressedIntArray.getNumOfBits(dictionaries[j].size()), getByteBuffer(count, dictionaries[j].size()));
-		}
+	    	if (!creators[j].isSorted()) {
+	    	    intArrays[j] = new CompressedIntArray(count, CompressedIntArray.getNumOfBits(dictionaries[j].size()), getByteBuffer(count, dictionaries[j].size()));
+	    	} else {
+	    	    sortedForwardIndexes[j] = new SortedForwardIndexImpl(dictionaries[j], new int[dictionaries[j].size()], new int[dictionaries[j].size()], count, getColumnMetadata(dictionaries[j], count, columnNames[j], columnTypes[j], true));
+	    	}
+	    }
 	    dataFileReader.close();
 	    datumReader = new GenericDatumReader<GenericRecord>();
 	    inputStream2 = new FileInputStream(avroFile);
@@ -107,7 +109,11 @@ public abstract class Avro2ForwardIndexMapper {
 	    while (dataFileReader.hasNext()) {
 		      GenericRecord record = dataFileReader.next();
 		      for (int j = 0; j < columnTypes.length; j++) {
-		    	  intArrays[j].addInt(i, creators[j].getIndex(record.get(j)));
+		          if (!creators[j].isSorted()) {
+		              intArrays[j].addInt(i, creators[j].getIndex(record.get(j)));
+		          } else {
+		              sortedForwardIndexes[j].add(i, creators[j].getIndex(record.get(j)));
+		          }
 			}
 		      i++;
 		}
@@ -116,7 +122,12 @@ public abstract class Avro2ForwardIndexMapper {
 	    for (int j = 0; j < columnTypes.length; j++) {
 	    	indexSegmentImpl.getColumnTypes().put(columnNames[j], columnTypes[j]);
 	    	indexSegmentImpl.getDictionaries().put(columnNames[j], dictionaries[j]);
-	    	indexSegmentImpl.getForwardIndexes().put(columnNames[j], new ForwardIndexImpl(columnNames[j], intArrays[j], dictionaries[j], getColumnMetadata(dictionaries[j], count, columnNames[j], columnTypes[j])));
+	    	if (!creators[j].isSorted()) {
+	    	    indexSegmentImpl.getForwardIndexes().put(columnNames[j], new ForwardIndexImpl(columnNames[j], intArrays[j], dictionaries[j], getColumnMetadata(dictionaries[j], count, columnNames[j], columnTypes[j], false)));
+	    	} else {
+	    	    sortedForwardIndexes[j].seal();
+	    	    indexSegmentImpl.getForwardIndexes().put(columnNames[j], sortedForwardIndexes[j]);
+	    	}
 		}
 	    indexSegmentImpl.setLength(count);
 	    return indexSegmentImpl;
@@ -128,7 +139,7 @@ public abstract class Avro2ForwardIndexMapper {
 	        IOUtils.closeQuietly(inputStream2);
 	    }
 	}
-	public abstract ColumnMetadata getColumnMetadata(TermValueList dictionaries, int count, String columnName, ColumnType columnType);
+	public abstract ColumnMetadata getColumnMetadata(TermValueList dictionaries, int count, String columnName, ColumnType columnType, boolean isSorted);
 	public abstract ByteBuffer getByteBuffer(int numOfElements, int dictionarySize);
 	
 

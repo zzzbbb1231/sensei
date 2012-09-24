@@ -84,10 +84,10 @@ public class SortedFacetUtils {
         @Override
         public void collect(int docid) {
             if (currentValueId == -1) {
-                if (maxDocIds[0] >= docid) {
-                    currentValueId = 0;
+                if (maxDocIds[1] >= docid) {
+                    currentValueId = 1;
                 } else {
-                    int index = Arrays.binarySearch(maxDocIds, docid);
+                    int index = Arrays.binarySearch(maxDocIds, 1, maxDocIds.length, docid);
                     if (index < 0) {
                         index = (index + 1) * -1;
                     }
@@ -140,7 +140,7 @@ public class SortedFacetUtils {
         
     }
     public static int getDictionaryValueId(SortedForwardIndex forwardIndex, int docId) {
-        int index = Arrays.binarySearch(forwardIndex.getMaxDocIds(), docId);
+        int index = Arrays.binarySearch(forwardIndex.getMaxDocIds(), 1, forwardIndex.getMaxDocIds().length, docId);
         if (index < 0) {
             index = (index + 1) * -1;
         }

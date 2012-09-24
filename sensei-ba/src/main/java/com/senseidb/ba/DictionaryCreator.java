@@ -50,6 +50,8 @@ public class DictionaryCreator {
 	private int count;
 	private Object2IntMap<String> obj2IntMap;
 
+	private Comparable maximumValue;
+	private boolean isSorted = true;
 	public DictionaryCreator() {
 		intAVLTreeSet = new IntAVLTreeSet();
 		longAVLTreeSet = new LongAVLTreeSet();
@@ -58,7 +60,25 @@ public class DictionaryCreator {
 	}
 
 	public void add(Object value) {
-		if (value instanceof Integer) {
+		if (value == null) {
+		    if  (maximumValue != null) {
+		        isSorted = false;
+		    }
+		    return;
+		}
+		if (isSorted) {
+		    if (maximumValue == null) {
+		        maximumValue = (Comparable) value; 
+		    } else {
+		        if (maximumValue.compareTo((Comparable) value) <= 0) {
+		            maximumValue = (Comparable) value;
+		        } else {
+		            isSorted = false;
+		        }
+		    }
+		    
+		}
+	    if (value instanceof Integer) {
 			addIntValue((Integer) value);
 		} else if (value instanceof Long) {
 			addLongValue((Long) value);
@@ -198,8 +218,12 @@ public class DictionaryCreator {
 		}
 		return termStringList;
 	}
+    
+	public boolean isSorted() {
+        return isSorted;
+    }
 
-	public int getCount() {
+    public int getCount() {
 		return count;
 	}
 	

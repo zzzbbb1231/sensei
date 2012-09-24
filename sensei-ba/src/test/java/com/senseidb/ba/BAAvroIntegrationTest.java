@@ -57,7 +57,7 @@ public class BAAvroIntegrationTest extends TestCase {
   @After
   public void tearDown() throws Exception {
     File indexDir = new File("avroIndex"); 
-    SingleNodeStarter.rmrf(indexDir);
+    //SingleNodeStarter.rmrf(indexDir);
     SingleNodeStarter.shutdown(); 
   
   }

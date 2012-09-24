@@ -10,6 +10,7 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.ba.index1.ColumnMetadata;
 import com.senseidb.indexing.DefaultSenseiInterpreter;
 import com.senseidb.util.SenseiDefaults;
 
@@ -141,5 +142,10 @@ public class ForwardIndexBackedByArray implements ForwardIndex {
   public TermValueList<?> getDictionary() {
     return dictionary;
   }
+@Override
+public ColumnMetadata getColumnMetadata() {
+    // TODO Auto-generated method stub
+    return null;
+}
   
 }
