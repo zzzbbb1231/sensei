@@ -27,22 +27,22 @@ import com.yammer.metrics.core.MetricName;
 
 public class BoboIndexTracker implements BoboListener {
   private final static Logger logger = Logger.getLogger(PluggableSearchEngineManager.class);
-  private Object dummyValue = new Object();
-  private Map<BoboIndexReader, Object> readers = new WeakHashMap<BoboIndexReader, Object>();
+//  private Object dummyValue = new Object();
+//  private Map<BoboIndexReader, Object> readers = new WeakHashMap<BoboIndexReader, Object>();
   private static Counter recoveredIndexInBoboFacetDataCache;
   private static Counter facetMappingMismatch;
-  private static Counter numberOfCachedReaders;
-  private static Counter numberOfDeletedReaders;
-  private static Counter numberOfCreatedReaders;
+//  private static Counter numberOfCachedReaders;
+//  private static Counter numberOfDeletedReaders;
+//  private static Counter numberOfCreatedReaders;
 
   private  SenseiCore senseiCore;
   static {
     recoveredIndexInBoboFacetDataCache = Metrics.newCounter(new MetricName(CompositeActivityManager.class,
         "recoveredIndexInBoboFacetDataCache"));
     facetMappingMismatch = Metrics.newCounter(new MetricName(BoboIndexTracker.class, "facetMappingMismatch"));
-    numberOfCachedReaders = Metrics.newCounter(new MetricName(BoboIndexTracker.class, "numberOfCachedReaders"));
-    numberOfDeletedReaders = Metrics.newCounter(new MetricName(BoboIndexTracker.class, "numberOfDeletedReaders"));
-    numberOfCreatedReaders = Metrics.newCounter(new MetricName(BoboIndexTracker.class, "numberOfCreatedReaders"));
+//    numberOfCachedReaders = Metrics.newCounter(new MetricName(BoboIndexTracker.class, "numberOfCachedReaders"));
+//    numberOfDeletedReaders = Metrics.newCounter(new MetricName(BoboIndexTracker.class, "numberOfDeletedReaders"));
+//    numberOfCreatedReaders = Metrics.newCounter(new MetricName(BoboIndexTracker.class, "numberOfCreatedReaders"));
   }
  
 
@@ -55,14 +55,14 @@ public class BoboIndexTracker implements BoboListener {
         indexReaders = indexReaderFactory.getIndexReaders();
         List<BoboIndexReader> boboReaders = ZoieSegmentReader.extractDecoratedReaders(indexReaders);
         for (BoboIndexReader boboIndexReader : boboReaders) {
-          ZoieSegmentReader<BoboIndexReader> zoieSegmentReader = (ZoieSegmentReader<BoboIndexReader>) boboIndexReader.getInnerReader();   
-          if (!isSegmentOnDisk(zoieSegmentReader)) {
-            continue;
-          }
-          if (readers.remove(boboIndexReader) != null) {
-            numberOfDeletedReaders.inc();
-            deletedSegments = true;
-          }         
+//          ZoieSegmentReader<BoboIndexReader> zoieSegmentReader = (ZoieSegmentReader<BoboIndexReader>) boboIndexReader.getInnerReader();   
+//          if (!isSegmentOnDisk(zoieSegmentReader)) {
+//            continue;
+//          }
+//          if (readers.remove(boboIndexReader) != null) {
+//            numberOfDeletedReaders.inc();
+//            deletedSegments = true;
+//          }         
           recoverReaderIfNeeded(uid, index, facets, boboIndexReader);
         }
       } catch (IOException ex) {
@@ -74,15 +74,15 @@ public class BoboIndexTracker implements BoboListener {
       }
      
     }
-    if (deletedSegments) {
-      numberOfCachedReaders.clear();
-      numberOfCachedReaders.inc(readers.size());
-    }
-    for (BoboIndexReader boboSegmentReader : readers.keySet()) {
-      if (boboSegmentReader != null) {
-        recoverReaderIfNeeded(uid, index, facets, boboSegmentReader);
-      }
-    }
+//    if (deletedSegments) {
+//      numberOfCachedReaders.clear();
+//      numberOfCachedReaders.inc(readers.size());
+//    }
+//    for (BoboIndexReader boboSegmentReader : readers.keySet()) {
+//      if (boboSegmentReader != null) {
+//        recoverReaderIfNeeded(uid, index, facets, boboSegmentReader);
+//      }
+//    }
   }
 
   private final  void recoverReaderIfNeeded(long uid, int index, Set<String> facets, BoboIndexReader boboIndexReader) {
@@ -121,28 +121,28 @@ public class BoboIndexTracker implements BoboListener {
     return;
   }
 
-  protected boolean isSegmentOnDiskAndBig(ZoieSegmentReader zoieSegmentReader) {
-    return isSegmentOnDisk(zoieSegmentReader) && zoieSegmentReader.getUIDArray().length > 2000;
-  }
-
-  protected boolean isSegmentOnDisk(ZoieSegmentReader zoieSegmentReader) {
-    return zoieSegmentReader.directory() != null && !(zoieSegmentReader.directory() instanceof RAMDirectory);
-  }
+//  protected boolean isSegmentOnDiskAndBig(ZoieSegmentReader zoieSegmentReader) {
+//    return isSegmentOnDisk(zoieSegmentReader) && zoieSegmentReader.getUIDArray().length > 2000;
+//  }
+//
+//  protected boolean isSegmentOnDisk(ZoieSegmentReader zoieSegmentReader) {
+//    return zoieSegmentReader.directory() != null && !(zoieSegmentReader.directory() instanceof RAMDirectory);
+//  }
 
   @Override
   public void indexCreated(BoboIndexReader boboIndexReader) {
-    ZoieSegmentReader<BoboIndexReader> zoieSegmentReader = (ZoieSegmentReader<BoboIndexReader>) boboIndexReader.getInnerReader();
-    if (isSegmentOnDiskAndBig(zoieSegmentReader)) {
-      synchronized (this) {
-        if (readers.containsKey(boboIndexReader)) {
-          return;
-        }
-        readers.put(boboIndexReader, dummyValue);
-        numberOfCachedReaders.clear();
-        numberOfCachedReaders.inc(readers.size());
-        numberOfCreatedReaders.inc();
-      }
-    }
+//    ZoieSegmentReader<BoboIndexReader> zoieSegmentReader = (ZoieSegmentReader<BoboIndexReader>) boboIndexReader.getInnerReader();
+//    if (isSegmentOnDiskAndBig(zoieSegmentReader)) {
+//      synchronized (this) {
+//        if (readers.containsKey(boboIndexReader)) {
+//          return;
+//        }
+//        readers.put(boboIndexReader, dummyValue);
+//        numberOfCachedReaders.clear();
+//        numberOfCachedReaders.inc(readers.size());
+//        numberOfCreatedReaders.inc();
+//      }
+//    }
   }
 
   @Override
