@@ -1,6 +1,7 @@
 package com.senseidb.gateway.kafka;
 
 import java.nio.ByteBuffer;
+import java.text.DecimalFormat;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -19,29 +20,36 @@ import org.json.JSONObject;
 
 import proj.zoie.api.DataConsumer.DataEvent;
 import proj.zoie.impl.indexing.StreamDataProvider;
+import proj.zoie.impl.indexing.ZoieConfig;
 
 import com.senseidb.indexing.DataSourceFilter;
 
 public class KafkaStreamDataProvider extends StreamDataProvider<JSONObject>{
-
-  private final String _topic;
-  private final String _consumerGroupId;
-  private Properties _kafkaConfig;
-  private ConsumerConnector _consumerConnector;
-  private ConsumerIterator<Message> _consumerIterator;
-
-  
   private static Logger logger = Logger.getLogger(KafkaStreamDataProvider.class);
-    private final String _zookeeperUrl;
-    private final int _kafkaSoTimeout;
+
+  private  String _topic;
+  private  String _consumerGroupId;
+  private Properties _kafkaConfig;
+  protected ConsumerConnector _consumerConnector;
+  private ConsumerIterator<Message> _consumerIterator;
+  private ThreadLocal<DecimalFormat> formatter = new ThreadLocal<DecimalFormat>() {
+    protected DecimalFormat initialValue() {
+      return new DecimalFormat("00000000000000000000");
+    }
+  };
+  
+    private  String _zookeeperUrl;
+    private  int _kafkaSoTimeout;
     private volatile boolean _started = false;
-    private final DataSourceFilter<DataPacket> _dataConverter;
+    private  DataSourceFilter<DataPacket> _dataConverter;
   
   public KafkaStreamDataProvider(Comparator<String> versionComparator,String zookeeperUrl,int soTimeout,int batchSize,
                                  String consumerGroupId,String topic,long startingOffset,DataSourceFilter<DataPacket> dataConverter){
-    this(versionComparator, zookeeperUrl, soTimeout, batchSize, consumerGroupId, topic, startingOffset, dataConverter, null);
+    this(versionComparator, zookeeperUrl, soTimeout, batchSize, consumerGroupId, topic, startingOffset, dataConverter, new Properties());
   }
-
+  public KafkaStreamDataProvider() {
+    super(ZoieConfig.DEFAULT_VERSION_COMPARATOR);
+  }
   public KafkaStreamDataProvider(Comparator<String> versionComparator,String zookeeperUrl,int soTimeout,int batchSize,
                                  String consumerGroupId,String topic,long startingOffset,DataSourceFilter<DataPacket> dataConverter,Properties kafkaConfig){
     super(versionComparator);
@@ -63,7 +71,9 @@ public class KafkaStreamDataProvider extends StreamDataProvider<JSONObject>{
       throw new IllegalArgumentException("kafka data converter is null");
     }
   }
-  
+  public void commit() {
+    _consumerConnector.commitOffsets();
+  }
   @Override
   public void setStartingOffset(String version){
   }
@@ -87,7 +97,7 @@ public class KafkaStreamDataProvider extends StreamDataProvider<JSONObject>{
     if (logger.isDebugEnabled()){
       logger.debug("got new message: "+msg);
     }
-    long version = System.currentTimeMillis();
+    long version = getNextVersion();
     
     JSONObject data;
     try {
@@ -100,13 +110,18 @@ public class KafkaStreamDataProvider extends StreamDataProvider<JSONObject>{
       if (logger.isDebugEnabled()){
         logger.debug("message converted: "+data);
       }
-      return new DataEvent<JSONObject>(data, String.valueOf(version));
+      return new DataEvent<JSONObject>(data, getStringVersionRepresentation(version));
     } catch (Exception e) {
       logger.error(e.getMessage(),e);
       return null;
     }
   }
-
+  public long getNextVersion() {
+    return System.currentTimeMillis();
+  }
+  public String getStringVersionRepresentation(long version) {
+    return formatter.get().format(version);
+  }
   @Override
   public void reset() {
   }
@@ -132,7 +147,6 @@ public class KafkaStreamDataProvider extends StreamDataProvider<JSONObject>{
     List<KafkaMessageStream<Message>> streams = topicMessageStreams.get(_topic);
     KafkaMessageStream<Message> kafkaMessageStream = streams.iterator().next();
     _consumerIterator = kafkaMessageStream.iterator();
-
     super.start();
     _started = true;
   }
