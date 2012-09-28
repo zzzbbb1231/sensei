@@ -5,15 +5,16 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.browseengine.bobo.facets.data.TermValueList;
-import com.senseidb.ba.ForwardIndex;
-import com.senseidb.ba.IndexSegment;
-import com.senseidb.ba.trevni.*;
-
 import org.apache.lucene.search.DocIdSet;
 import org.apache.trevni.ColumnFileMetaData;
 import org.apache.trevni.ColumnFileReader;
 import org.apache.trevni.ColumnValues;
+
+import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.ba.ColumnType;
+import com.senseidb.ba.ForwardIndex;
+import com.senseidb.ba.IndexSegment;
+import com.senseidb.ba.trevni.DataType;
 
 
 /*
@@ -22,7 +23,7 @@ import org.apache.trevni.ColumnValues;
  * */
 public class TrevniReaderImpl implements IndexSegment {
   private Map<String, Class<?>> _columnTypes;
-  private HashMap<String, com.browseengine.bobo.facets.data.TermValueList> _dictionaryMap;
+  private HashMap<String, TermValueList> _dictionaryMap;
   private ColumnFileReader _columnReader;
   private ColumnFileMetaData _metadata;
   private HashMap<String, TrevniForwardIndex> _forwardIndexMap;
@@ -74,7 +75,7 @@ public class TrevniReaderImpl implements IndexSegment {
   }
 
   @Override
-  public Map<String, Class<?>> getColumnTypes() {
+  public Map<String, ColumnType> getColumnTypes() {
     return _columnTypes;
   }
 

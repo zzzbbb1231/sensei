@@ -11,10 +11,11 @@ import com.browseengine.bobo.facets.data.TermValueList;
 public class IndexSegmentImpl implements IndexSegment {
   Map<String, ForwardIndex> forwardIndexes = new HashMap<String, ForwardIndex>();
   Map<String, TermValueList> dictionaries = new HashMap<String, TermValueList>();
-  Map<String, Class<?>> columnTypes = new HashMap<String, Class<?>>();
+  Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();
+  
   int length;
   @Override
-  public Map<String, Class<?>> getColumnTypes() {
+  public Map<String, ColumnType> getColumnTypes() {
     
     return columnTypes;
   }
@@ -39,8 +40,20 @@ public class IndexSegmentImpl implements IndexSegment {
     return length;
   }
 
-  public void setColumnTypes(Map<String, Class<?>> columnTypes) {
+  public void setColumnTypes(Map<String, ColumnType> columnTypes) {
     this.columnTypes = columnTypes;
   }
+
+public Map<String, ForwardIndex> getForwardIndexes() {
+	return forwardIndexes;
+}
+
+public Map<String, TermValueList> getDictionaries() {
+	return dictionaries;
+}
+
+public void setLength(int length) {
+	this.length = length;
+}
   
 }

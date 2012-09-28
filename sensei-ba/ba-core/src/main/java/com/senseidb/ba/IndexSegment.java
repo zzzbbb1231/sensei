@@ -12,7 +12,7 @@ import com.browseengine.bobo.facets.data.TermValueList;
  *
  */
 public interface IndexSegment {
-   Map<String, Class<?>> getColumnTypes();
+   Map<String, ColumnType> getColumnTypes();
    /**
    * get the sorted array of unique column values
    */
