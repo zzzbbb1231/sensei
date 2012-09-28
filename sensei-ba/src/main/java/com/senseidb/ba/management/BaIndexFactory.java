@@ -1,4 +1,4 @@
-package com.senseidb.ba.plugins;
+package com.senseidb.ba.management;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -14,9 +14,11 @@ import java.util.List;
 
 import javax.management.StandardMBean;
 
+import org.I0Itec.zkclient.ZkClient;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.lucene.analysis.Analyzer;
 
 import proj.zoie.api.Zoie;
@@ -32,14 +34,22 @@ import com.senseidb.ba.index1.InMemoryAvroMapper;
 import com.senseidb.ba.index1.SegmentPersistentManager;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
-public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
+public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
   List<ZoieIndexReader<BoboIndexReader>> offlineSegments = new ArrayList<ZoieIndexReader<BoboIndexReader>>();
   private final File idxDir;
   private final SenseiIndexReaderDecorator decorator;
+  private final ZkClient zkClient;
+  private final FileSystem fileSystem;
+  private final int partitionId;
+  private ZookeeperTracker zookeeperTracker;
+  private SegmentTracker segmentTracker;
 
-  public ZeusIndexFactory(File idxDir, SenseiIndexReaderDecorator decorator) {
+  public BaIndexFactory(File idxDir, SenseiIndexReaderDecorator decorator, ZkClient zkClient, FileSystem fileSystem, int partitionId) {
     this.idxDir = idxDir;
     this.decorator = decorator;
+    this.zkClient = zkClient;
+    this.fileSystem = fileSystem;
+    this.partitionId = partitionId;
    
     }
 
@@ -84,54 +94,17 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
 
   @Override
   public void start() {
-    try {
-      File[] jsonFiles = idxDir.listFiles(new FileFilter() {
-      @Override
-      public boolean accept(File pathname) {
-        return pathname.getName().endsWith("json");
-      }
-    });
-    for (File jsonFile : jsonFiles) {
-      LineIterator lineIterator;
-      lineIterator = FileUtils.lineIterator(jsonFile);
-      ArrayList<String> docs = new ArrayList<String>();
-      while (lineIterator.hasNext()) {
-        String car = lineIterator.next();
-        if (car != null && car.contains("{"))
-          docs.add(car);
-      }
-      IndexSegment offlineSegment = IndexSegmentCreator.convert(docs.toArray(new String[docs.size()]), new HashSet<String>());
-      offlineSegments.add(new SegmentToZoieReaderAdapter(offlineSegment, "", decorator));
-    }
-    for (File directory : idxDir.listFiles()) {
-      if (directory.getName().endsWith(".avro")) {
-          InputStream inputStream = new FileInputStream(directory) ;
-          offlineSegments.add(new SegmentToZoieReaderAdapter(new InMemoryAvroMapper(directory).build(), directory.getName(), decorator));
-          IOUtils.closeQuietly(inputStream);
-      }
-       if (!directory.isDirectory()) {
-        continue;
-      }
-     
-      String[] persistentIndexes = directory.list(new FilenameFilter() {
-          
-          @Override
-          public boolean accept(File dir, String name) {
-            return name.contains(SegmentPersistentManager.INDEX_FILE_NAME);
-          }
-        });
-        if (persistentIndexes.length > 0) {
-          offlineSegments.add(new SegmentToZoieReaderAdapter( new SegmentPersistentManager().read(directory, false), directory.getName(), decorator));
-        }
-    }
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
-    }
+    segmentTracker = new SegmentTracker();
+    segmentTracker.start(idxDir, fileSystem);
+    zookeeperTracker = new ZookeeperTracker(zkClient, partitionId, segmentTracker);
+    zookeeperTracker.start();
+    
   }
 
   @Override
   public void shutdown() {
-
+    zookeeperTracker.stop();
+    segmentTracker.stop();
   }
 
   @Override
@@ -159,5 +132,4 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
   public void flushEvents(long timeout) throws ZoieException {
 
   }
-
 }

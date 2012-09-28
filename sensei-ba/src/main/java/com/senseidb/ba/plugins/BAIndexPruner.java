@@ -8,7 +8,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.SortField;
 
 import com.browseengine.bobo.api.BoboIndexReader;
-import com.senseidb.ba.SegmentToZoieAdapter;
+import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.indexing.SenseiIndexPruner;
 import com.senseidb.search.req.SenseiRequest;
 
@@ -27,8 +27,8 @@ public class BAIndexPruner implements SenseiIndexPruner {
             @Override
             public boolean isSelected(BoboIndexReader reader) throws IOException {
                 IndexReader innerReader = reader.getInnerReader();
-                if (innerReader instanceof SegmentToZoieAdapter) {
-                    return ((SegmentToZoieAdapter) innerReader).getOfflineSegment().getColumnTypes().keySet().containsAll(fields);
+                if (innerReader instanceof SegmentToZoieReaderAdapter) {
+                    return ((SegmentToZoieReaderAdapter) innerReader).getOfflineSegment().getColumnTypes().keySet().containsAll(fields);
                 }
                 return false;
             }

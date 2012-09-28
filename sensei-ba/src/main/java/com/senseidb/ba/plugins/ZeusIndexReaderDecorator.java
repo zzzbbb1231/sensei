@@ -18,7 +18,7 @@ import com.browseengine.bobo.facets.filter.RandomAccessFilter;
 import com.browseengine.bobo.facets.impl.SimpleFacetHandler;
 import com.browseengine.bobo.sort.DocComparatorSource;
 import com.senseidb.ba.IndexSegment;
-import com.senseidb.ba.SegmentToZoieAdapter;
+import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.ba.facet.BaFacetHandler;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
@@ -26,7 +26,7 @@ public class ZeusIndexReaderDecorator extends SenseiIndexReaderDecorator {
   final static String[] emptyString = new String[0];
   @Override
 public BoboIndexReader decorate(ZoieIndexReader<BoboIndexReader> zoieReader) throws IOException {
-  SegmentToZoieAdapter adapter = (SegmentToZoieAdapter<?>)zoieReader;
+  SegmentToZoieReaderAdapter adapter = (SegmentToZoieReaderAdapter<?>)zoieReader;
   final IndexSegment offlineSegment = adapter.getOfflineSegment();
   List<FacetHandler<?>> facetHandlers = new ArrayList(offlineSegment.getColumnTypes().size() + 1);
   

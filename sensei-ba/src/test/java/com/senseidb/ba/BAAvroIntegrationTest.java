@@ -1,39 +1,27 @@
 package com.senseidb.ba;
 
-import static org.junit.Assert.*;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.apache.avro.Schema;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 
-import com.browseengine.bobo.facets.data.TermIntList;
-import com.browseengine.bobo.facets.data.TermLongList;
 import com.senseidb.ba.index1.InMemoryAvroMapper;
 import com.senseidb.ba.index1.SegmentPersistentManager;
-import com.senseidb.ba.trevni.impl.TrevniForwardIndex;
-import com.senseidb.ba.trevni.impl.TrevniReaderImpl;
 import com.senseidb.util.SingleNodeStarter;
 
 public class BAAvroIntegrationTest extends TestCase {
   
-  
+   
   
   
   @Before

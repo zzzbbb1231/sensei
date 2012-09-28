@@ -25,7 +25,7 @@ public class SegmentPersistentManager {
     
     public static final String METADATA_PROPERTIES = "metadata.properties";
 	public static final String INDEX_FILE_NAME = "index.blob";
-	public void persist(File directory, IndexSegmentImpl indexSegmentImpl) throws Exception {
+	public static void persist(File directory, IndexSegmentImpl indexSegmentImpl) throws Exception {
 		directory.mkdirs();
 		File forwardIndexStorage = new File(directory, INDEX_FILE_NAME);
 		RandomAccessFile forwardIndexFile = new RandomAccessFile(forwardIndexStorage, "rw");
@@ -52,7 +52,7 @@ public class SegmentPersistentManager {
 		forwardIndexFile.getChannel().close();
 		forwardIndexFile.close();
 	}
-	public IndexSegmentImpl read(File directory, boolean memoryMappedMode) throws Exception {
+	public static IndexSegmentImpl read(File directory, boolean memoryMappedMode) throws Exception {
 		RandomAccessFile forwardIndexFile = null;
 		try {
     		IndexMetadata indexMetadata = IndexMetadata.readFromConfiguration(getPropertiesMetadata(directory));
@@ -101,11 +101,11 @@ public class SegmentPersistentManager {
 		}
 		
 	}
-    public PropertiesConfiguration getPropertiesMetadata(File directory) throws ConfigurationException {
+    public static PropertiesConfiguration getPropertiesMetadata(File directory) throws ConfigurationException {
         PropertiesConfiguration propertiesConfiguration = new PropertiesConfiguration(new File(directory, METADATA_PROPERTIES));
         return propertiesConfiguration;
     }
-	private File getDictionaryFile(File directory, String column) {
+	private static File getDictionaryFile(File directory, String column) {
 		return new File(directory, column + ".dict");
 	}
 }
