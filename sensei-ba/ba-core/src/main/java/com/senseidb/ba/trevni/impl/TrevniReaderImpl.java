@@ -14,7 +14,6 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ColumnType;
 import com.senseidb.ba.ForwardIndex;
 import com.senseidb.ba.IndexSegment;
-import com.senseidb.ba.trevni.DataType;
 
 
 /*
