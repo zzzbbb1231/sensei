@@ -20,6 +20,7 @@ import org.apache.commons.collections.Predicate;
 import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.linkedin.gazelle.Segment;
 import com.linkedin.gazelle.utils.ColumnMedata;
 import com.linkedin.gazelle.utils.ColumnType;
 import com.linkedin.gazelle.utils.CompressedIntArray;
@@ -86,7 +87,7 @@ public class SegmentWriter {
     }
   }
 
-  public void process() {
+  public Segment process() {
     try {
       _numOfElements = 1;
       FileInputStream fs1 = new FileInputStream(_avroFile);
@@ -136,11 +137,13 @@ public class SegmentWriter {
       setUpDictionaryMap();
       setUpForwardIndexMap();
       setUpMetadataMap();
+      return new Segment(_metadataMap, _termValueListMap, _compressedIntArrMap, _numOfElements);
     } catch (FileNotFoundException e) {
       logger.error(e);
     } catch (IOException e) {
       logger.error(e);
     }
+    return null;
   }
 
   private void setUpDictionaryMap() {
