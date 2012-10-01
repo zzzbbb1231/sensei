@@ -2,20 +2,21 @@ package com.senseidb.ba.plugins;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 import javax.management.StandardMBean;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
-import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 
 import proj.zoie.api.Zoie;
@@ -24,11 +25,11 @@ import proj.zoie.api.ZoieIndexReader;
 import proj.zoie.mbean.ZoieAdminMBean;
 
 import com.browseengine.bobo.api.BoboIndexReader;
-import com.senseidb.ba.IndexSegmentCreator;
 import com.senseidb.ba.IndexSegment;
-import com.senseidb.ba.SegmentToZoieAdapter;
-import com.senseidb.ba.trevni.impl.TrevniReaderImpl;
-import com.senseidb.plugin.SenseiPluginRegistry;
+import com.senseidb.ba.IndexSegmentCreator;
+import com.senseidb.ba.SegmentToZoieReaderAdapter;
+import com.senseidb.ba.index1.InMemoryAvroMapper;
+import com.senseidb.ba.index1.SegmentPersistentManager;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
 public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
@@ -100,22 +101,28 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
           docs.add(car);
       }
       IndexSegment offlineSegment = IndexSegmentCreator.convert(docs.toArray(new String[docs.size()]), new HashSet<String>());
-      offlineSegments.add(new SegmentToZoieAdapter(offlineSegment, decorator));
+      offlineSegments.add(new SegmentToZoieReaderAdapter(offlineSegment, "", decorator));
     }
     for (File directory : idxDir.listFiles()) {
-      if (!directory.isDirectory()) {
+      if (directory.getName().endsWith(".avro")) {
+          InputStream inputStream = new FileInputStream(directory) ;
+          offlineSegments.add(new SegmentToZoieReaderAdapter(new InMemoryAvroMapper(directory).build(), directory.getName(), decorator));
+          IOUtils.closeQuietly(inputStream);
+      }
+       if (!directory.isDirectory()) {
         continue;
       }
-      String[] trevniFiles = directory.list(new FilenameFilter() {
-        
-        @Override
-        public boolean accept(File dir, String name) {
-          return name.endsWith("trv");
+     
+      String[] persistentIndexes = directory.list(new FilenameFilter() {
+          
+          @Override
+          public boolean accept(File dir, String name) {
+            return name.contains(SegmentPersistentManager.INDEX_FILE_NAME);
+          }
+        });
+        if (persistentIndexes.length > 0) {
+          offlineSegments.add(new SegmentToZoieReaderAdapter( new SegmentPersistentManager().read(directory, false), directory.getName(), decorator));
         }
-      });
-      if (trevniFiles.length > 0) {
-        offlineSegments.add(new SegmentToZoieAdapter(new TrevniReaderImpl(directory), decorator));
-      }
     }
     } catch (Exception ex) {
       throw new RuntimeException(ex);

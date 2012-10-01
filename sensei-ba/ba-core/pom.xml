@@ -91,24 +91,20 @@
     </dependency>
 
     <dependency>
-      <artifactId>trevni-core</artifactId>
-      <groupId>org.apache.trevni</groupId>
-      <version>0.1-SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/lib/trevni-core-0.1-SNAPSHOT.jar</systemPath>
-    </dependency>
-    <dependency>
-      <artifactId>trevni-avro</artifactId>
-      <groupId>org.apache.trevni</groupId>
-      <version>0.1-SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/lib/trevni-avro-0.1-SNAPSHOT.jar</systemPath>
-    </dependency>
-    <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>avro</artifactId>
       <version>1.3.3</version>
     </dependency>
+    <dependency>
+			<groupId>com.github.sgroschupf</groupId>
+			<artifactId>zkclient</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-compress</artifactId>
+			<version>1.2</version>
+		</dependency>
   </dependencies>
 
 </project>

@@ -26,8 +26,8 @@ public class ByteBufferStorageTest {
     check(new CompressedIntArray(10000, 8), new int[] {255,0,255});
     
   }
-  //@Test
-  public void ntest2() {
+  @Test
+  public void test2() {
     CompressedIntArray byteBufferStorage = new CompressedIntArray(2000000, 10);
     byte[] byteBuf = byteBufferStorage.getByteBuf();
     

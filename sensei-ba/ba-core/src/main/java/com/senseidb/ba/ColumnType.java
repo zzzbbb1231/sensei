@@ -4,7 +4,7 @@ import org.apache.avro.Schema.Type;
 
 public enum ColumnType {
 	INT,LONG, STRING, FLOAT; 
-	
+	 
 	public static ColumnType valueOfStr(String name) {
 		name = name.toUpperCase();
 		if ("DOUBLE".equals(name)) {
