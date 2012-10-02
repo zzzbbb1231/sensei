@@ -11,6 +11,8 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.management.StandardMBean;
 
@@ -35,7 +37,6 @@ import com.senseidb.ba.index1.SegmentPersistentManager;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
 public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
-  List<ZoieIndexReader<BoboIndexReader>> offlineSegments = new ArrayList<ZoieIndexReader<BoboIndexReader>>();
   private final File idxDir;
   private final SenseiIndexReaderDecorator decorator;
   private final ZkClient zkClient;
@@ -43,13 +44,15 @@ public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
   private final int partitionId;
   private ZookeeperTracker zookeeperTracker;
   private SegmentTracker segmentTracker;
+  private final ExecutorService executorService;
 
-  public BaIndexFactory(File idxDir, SenseiIndexReaderDecorator decorator, ZkClient zkClient, FileSystem fileSystem, int partitionId) {
+  public BaIndexFactory(File idxDir, SenseiIndexReaderDecorator decorator, ZkClient zkClient, FileSystem fileSystem, int partitionId, ExecutorService executorService) {
     this.idxDir = idxDir;
     this.decorator = decorator;
     this.zkClient = zkClient;
     this.fileSystem = fileSystem;
     this.partitionId = partitionId;
+    this.executorService = executorService != null ? executorService : Executors.newSingleThreadExecutor();
    
     }
 
@@ -72,8 +75,8 @@ public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
   }
 
   @Override
-  public List<ZoieIndexReader<BoboIndexReader>> getIndexReaders() throws IOException {
-    return offlineSegments;
+  public List<ZoieIndexReader<BoboIndexReader>> getIndexReaders()  {
+    return segmentTracker.getIndexReaders();
   }
 
   @Override
@@ -83,7 +86,7 @@ public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
 
   @Override
   public void returnIndexReaders(List<ZoieIndexReader<BoboIndexReader>> r) {
-    // TODO Auto-generated method stub
+    segmentTracker.returnIndexReaders(r);
 
   }
 
@@ -94,8 +97,11 @@ public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
 
   @Override
   public void start() {
+    if (!idxDir.exists()) {
+      idxDir.mkdirs();
+    }
     segmentTracker = new SegmentTracker();
-    segmentTracker.start(idxDir, fileSystem);
+    segmentTracker.start(idxDir, fileSystem, decorator, executorService);
     zookeeperTracker = new ZookeeperTracker(zkClient, partitionId, segmentTracker);
     zookeeperTracker.start();
     
@@ -132,4 +138,11 @@ public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
   public void flushEvents(long timeout) throws ZoieException {
 
   }
+
+
+
+  public SegmentTracker getSegmentTracker() {
+    return segmentTracker;
+  }
+  
 }

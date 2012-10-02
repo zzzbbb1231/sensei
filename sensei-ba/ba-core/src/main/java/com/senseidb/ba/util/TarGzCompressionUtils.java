@@ -119,32 +119,40 @@ public class TarGzCompressionUtils {
    */
   public static List<File> unTar(final File inputFile, final File outputDir) throws FileNotFoundException, IOException, ArchiveException {
 
-    logger.info(String.format("Untaring %s to dir %s.", inputFile.getAbsolutePath(), outputDir.getAbsolutePath()));
-
-      final List<File> untaredFiles = new LinkedList<File>();
-      final InputStream is = new GzipCompressorInputStream(new FileInputStream(inputFile)); 
-      final TarArchiveInputStream debInputStream = (TarArchiveInputStream) new ArchiveStreamFactory().createArchiveInputStream("tar", is);
+    logger.debug(String.format("Untaring %s to dir %s.", inputFile.getAbsolutePath(), outputDir.getAbsolutePath()));
+    TarArchiveInputStream debInputStream = null;
+    InputStream is = null;
+     final List<File> untaredFiles = new LinkedList<File>();
+      try {
+        is = new GzipCompressorInputStream(new FileInputStream(inputFile)); 
+       debInputStream = (TarArchiveInputStream) new ArchiveStreamFactory().createArchiveInputStream("tar", is);
       TarArchiveEntry entry = null; 
       while ((entry = (TarArchiveEntry)debInputStream.getNextEntry()) != null) {
           final File outputFile = new File(outputDir, entry.getName());
           if (entry.isDirectory()) {
-            logger.info(String.format("Attempting to write output directory %s.", outputFile.getAbsolutePath()));
+            logger.debug(String.format("Attempting to write output directory %s.", outputFile.getAbsolutePath()));
               if (!outputFile.exists()) {
-                logger.info(String.format("Attempting to create output directory %s.", outputFile.getAbsolutePath()));
+                logger.debug(String.format("Attempting to create output directory %s.", outputFile.getAbsolutePath()));
                   if (!outputFile.mkdirs()) {
                       throw new IllegalStateException(String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
                   }
               }
           } else {
-            logger.info(String.format("Creating output file %s.", outputFile.getAbsolutePath()));
-              final OutputStream outputFileStream = new FileOutputStream(outputFile); 
+            logger.debug(String.format("Creating output file %s.", outputFile.getAbsolutePath()));
+            OutputStream outputFileStream = null;  
+            try {
+              outputFileStream = new FileOutputStream(outputFile); 
               IOUtils.copy(debInputStream, outputFileStream);
-              outputFileStream.close();
+            } finally {
+              IOUtils.closeQuietly(outputFileStream);
+            }
           }
           untaredFiles.add(outputFile);
       }
-      debInputStream.close(); 
-
+      } finally {
+        IOUtils.closeQuietly(debInputStream); 
+        IOUtils.closeQuietly(is); 
+      }
       return untaredFiles;
   }
 }

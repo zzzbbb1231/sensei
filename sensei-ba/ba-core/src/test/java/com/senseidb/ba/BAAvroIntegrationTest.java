@@ -17,6 +17,7 @@ import org.junit.Before;
 
 import com.senseidb.ba.index1.InMemoryAvroMapper;
 import com.senseidb.ba.index1.SegmentPersistentManager;
+import com.senseidb.ba.util.TestUtil;
 import com.senseidb.util.SingleNodeStarter;
 
 public class BAAvroIntegrationTest extends TestCase {
@@ -76,31 +77,11 @@ public class BAAvroIntegrationTest extends TestCase {
         "    }" + 
         "}";
       
-     JSONObject resp = search(new URL("http://localhost:8076/sensei"), new JSONObject(req).toString());
-     resp = search(new URL("http://localhost:8076/sensei"), new JSONObject(req).toString());
+     JSONObject resp = TestUtil.search(new URL("http://localhost:8076/sensei"), new JSONObject(req).toString());
+     resp = TestUtil.search(new URL("http://localhost:8076/sensei"), new JSONObject(req).toString());
      System.out.println(resp.toString(1));
      assertEquals("numhits is wrong", 13224, resp.getInt("numhits"));
   }
   
-  public static JSONObject search(URL url, String req) throws Exception {
-    URLConnection conn = url.openConnection();
-    conn.setDoOutput(true);
-    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream(), "UTF-8"));
-    String reqStr = req;
-    System.out.println("req: " + reqStr);
-    writer.write(reqStr, 0, reqStr.length());
-    writer.flush();
-    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
-    StringBuilder sb = new StringBuilder();
-    String line = null;
-    while((line = reader.readLine()) != null)
-      sb.append(line);
-    String res = sb.toString();
-    // System.out.println("res: " + res);
-    JSONObject ret = new JSONObject(res);
-    if (ret.opt("totaldocs") !=null){
-     // assertEquals(15000L, ret.getLong("totaldocs"));
-    }
-    return ret;
-  }
+ 
 }
