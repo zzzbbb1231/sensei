@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
-import com.linkedin.gazelle.utils.ColumnMedata;
+import com.linkedin.gazelle.utils.GazelleColumnMedata;
 import com.linkedin.gazelle.utils.CompressedIntArray;
 import com.linkedin.gazelle.utils.GazelleUtils;
 import com.linkedin.gazelle.utils.ReadMode;
@@ -20,12 +20,12 @@ public class SegmentReader {
 
   public static GazelleIndexSegmentImpl read(File indexDir, ReadMode mode) throws ConfigurationException, IOException {
     File file = new File(indexDir, GazelleUtils.METADATA_FILENAME);
-    HashMap<String, ColumnMedata> metadataMap = ColumnMedata.readFromFile(new PropertiesConfiguration(file));
+    HashMap<String, GazelleColumnMedata> metadataMap = GazelleColumnMedata.readFromFile(new PropertiesConfiguration(file));
     return new GazelleIndexSegmentImpl(metadataMap, getCompressedIntArrayMap(metadataMap, indexDir, mode),
         getTermValueListMap(metadataMap, indexDir));
   }
 
-  private static HashMap<String, CompressedIntArray> getCompressedIntArrayMap(HashMap<String, ColumnMedata> metadataMap, File indexDir, ReadMode mode) {
+  private static HashMap<String, CompressedIntArray> getCompressedIntArrayMap(HashMap<String, GazelleColumnMedata> metadataMap, File indexDir, ReadMode mode) {
     HashMap<String, CompressedIntArray> compressedIntArrayMap = new HashMap<String, CompressedIntArray>();
     for (String column : metadataMap.keySet()) {
       File file = new File(indexDir, GazelleUtils.INDEX_FILENAME);
@@ -34,7 +34,7 @@ public class SegmentReader {
     return compressedIntArrayMap;
   }
 
-  private static HashMap<String, TermValueList> getTermValueListMap(HashMap<String, ColumnMedata> metadataMap, File indexDir) throws IOException {
+  private static HashMap<String, TermValueList> getTermValueListMap(HashMap<String, GazelleColumnMedata> metadataMap, File indexDir) throws IOException {
     HashMap<String, TermValueList> dictionaryMap = new HashMap<String, TermValueList>();
     for (String column : metadataMap.keySet()) {
       File file = new File(indexDir, (column + ".dict"));

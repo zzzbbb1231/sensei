@@ -22,14 +22,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.linkedin.gazelle.TestHelper;
-import com.linkedin.gazelle.utils.ColumnMedata;
+import com.linkedin.gazelle.utils.GazelleColumnMedata;
 
 public class DictionaryWriterTest {
 
   private DictionaryCreator _dictionaryWriter;
   private File _indexDir;
   private Schema _avroSchema;
-  private ColumnMedata[] _columnMetaMedataArr;
+  private GazelleColumnMedata[] _columnMetaMedataArr;
   DataFileStream<GenericRecord> _dataFileReader;
 
   @Before

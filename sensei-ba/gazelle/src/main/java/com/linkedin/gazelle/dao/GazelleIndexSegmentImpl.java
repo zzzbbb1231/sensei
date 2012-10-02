@@ -7,7 +7,7 @@ import org.apache.lucene.search.DocIdSet;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.linkedin.gazelle.creators.MetadataCreator;
-import com.linkedin.gazelle.utils.ColumnMedata;
+import com.linkedin.gazelle.utils.GazelleColumnMedata;
 import com.linkedin.gazelle.utils.GazelleColumnType;
 import com.linkedin.gazelle.utils.CompressedIntArray;
 import com.senseidb.ba.ColumnType;
@@ -16,15 +16,15 @@ import com.senseidb.ba.IndexSegment;
 
 public class GazelleIndexSegmentImpl implements IndexSegment {
   private Map<String, ColumnType> _columnTypeMap;
-  private HashMap<String, ColumnMedata> _columnMetatdaMap;
+  private HashMap<String, GazelleColumnMedata> _columnMetatdaMap;
   private HashMap<String, TermValueList> _termValueListMap;
   private HashMap<String, CompressedIntArray> _compressedIntArrayMap;
   private HashMap<String, GazelleForwardIndexImpl> _forwardIndexMap;
 
-  public GazelleIndexSegmentImpl(CompressedIntArray[] compressedIntArr, TermValueList[] termValueListArr, ColumnMedata[] columnMetadataArr, int length) {
+  public GazelleIndexSegmentImpl(CompressedIntArray[] compressedIntArr, TermValueList[] termValueListArr, GazelleColumnMedata[] columnMetadataArr, int length) {
     MetadataCreator _metadataWriter = new MetadataCreator();
-    HashMap<String, ColumnMedata> tempMap = new HashMap<String, ColumnMedata>(); 
-    _columnMetatdaMap = new HashMap<String, ColumnMedata>();
+    HashMap<String, GazelleColumnMedata> tempMap = new HashMap<String, GazelleColumnMedata>(); 
+    _columnMetatdaMap = new HashMap<String, GazelleColumnMedata>();
     _termValueListMap = new HashMap<String, TermValueList>();
     _compressedIntArrayMap = new HashMap<String, CompressedIntArray>();
     _columnTypeMap = new HashMap<String, ColumnType>();
@@ -43,7 +43,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
     }
   }
 
-  public GazelleIndexSegmentImpl(HashMap<String, ColumnMedata> metadataMap, HashMap<String, CompressedIntArray> compressedIntArrayMap, HashMap<String, TermValueList> termValueListMap) {
+  public GazelleIndexSegmentImpl(HashMap<String, GazelleColumnMedata> metadataMap, HashMap<String, CompressedIntArray> compressedIntArrayMap, HashMap<String, TermValueList> termValueListMap) {
     _columnTypeMap = new HashMap<String, ColumnType>();
     _forwardIndexMap = new HashMap<String, GazelleForwardIndexImpl>();
     for (String column : metadataMap.keySet()) {
@@ -55,11 +55,11 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
     _termValueListMap = termValueListMap;
   }
 
-  public HashMap<String, ColumnMedata> getColumnMetatdaMap() {
+  public HashMap<String, GazelleColumnMedata> getColumnMetatdaMap() {
     return _columnMetatdaMap;
   }
 
-  public void setColumnMetatdaMap(HashMap<String, ColumnMedata> columnMetatdaMap) {
+  public void setColumnMetatdaMap(HashMap<String, GazelleColumnMedata> columnMetatdaMap) {
     this._columnMetatdaMap = columnMetatdaMap;
   }
 

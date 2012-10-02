@@ -9,7 +9,7 @@ import java.nio.channels.FileChannel.MapMode;
 
 import org.apache.log4j.Logger;
 
-import com.linkedin.gazelle.utils.ColumnMedata;
+import com.linkedin.gazelle.utils.GazelleColumnMedata;
 import com.linkedin.gazelle.utils.CompressedIntArray;
 import com.linkedin.gazelle.utils.ReadMode;
 
@@ -18,7 +18,7 @@ public class ForwardIndexReader {
   public static Logger logger = Logger.getLogger(ForwardIndexReader.class);
   public static int count = 0;
 
-  public static CompressedIntArray readForwardIndex(ColumnMedata metadata, File file, ReadMode mode) {
+  public static CompressedIntArray readForwardIndex(GazelleColumnMedata metadata, File file, ReadMode mode) {
     count++;
     CompressedIntArray compressedIntArray = null;
     RandomAccessFile forwardIndexFile;

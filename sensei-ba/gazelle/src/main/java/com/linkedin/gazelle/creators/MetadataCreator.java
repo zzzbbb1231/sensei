@@ -8,7 +8,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.utils.ColumnMedata;
+import com.linkedin.gazelle.utils.GazelleColumnMedata;
 import com.linkedin.gazelle.utils.GazelleColumnType;
 import com.linkedin.gazelle.utils.CompressedIntArray;
 
@@ -20,8 +20,8 @@ public class MetadataCreator {
   private static Logger logger = Logger.getLogger(MetadataCreator.class);
   private long _startOffset = 0;
 
-  public ColumnMedata getMetadataFor(String column, TermValueList list, GazelleColumnType type, int numOfElements) {
-    ColumnMedata metadata = new ColumnMedata();
+  public GazelleColumnMedata getMetadataFor(String column, TermValueList list, GazelleColumnType type, int numOfElements) {
+    GazelleColumnMedata metadata = new GazelleColumnMedata();
     int numOfBits = CompressedIntArray.getNumOfBits(list.size());
     int bufferSize = CompressedIntArray.getRequiredBufferSize(numOfElements, numOfBits);
     metadata.setName(column);

@@ -22,7 +22,7 @@ import org.mortbay.io.RuntimeIOException;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
-import com.linkedin.gazelle.utils.ColumnMedata;
+import com.linkedin.gazelle.utils.GazelleColumnMedata;
 import com.linkedin.gazelle.utils.GazelleColumnType;
 import com.linkedin.gazelle.utils.CompressedIntArray;
 
@@ -34,7 +34,7 @@ public class SegmentCreator {
   private DatumReader<GenericRecord> _datumReader;
   private DataFileStream<GenericRecord> _dataFileReader;
   private Schema _schema;
-  private ColumnMedata[] _columnMetadataArr;
+  private GazelleColumnMedata[] _columnMetadataArr;
   private DictionaryCreator[] _dictionaryWriterArr;
   private TermValueList[] _termValueLists;
   private CompressedIntArray[] _compressedIntArr;
@@ -50,7 +50,7 @@ public class SegmentCreator {
         throw new IllegalStateException("Cannot read the Schema File");
       }
       int i = 0;
-      _columnMetadataArr = new ColumnMedata[_schema.getFields().size()];
+      _columnMetadataArr = new GazelleColumnMedata[_schema.getFields().size()];
       _dictionaryWriterArr = new DictionaryCreator[_schema.getFields().size()];
       for (Field field : _schema.getFields()) {
         Type type = field.schema().getType();
@@ -61,7 +61,7 @@ public class SegmentCreator {
               return ((Schema) object).getType() != Type.NULL;
             }
           })).getType();
-          _columnMetadataArr[i] = new ColumnMedata(field.name(), GazelleColumnType.getType(type.toString()));
+          _columnMetadataArr[i] = new GazelleColumnMedata(field.name(), GazelleColumnType.getType(type.toString()));
           _dictionaryWriterArr[i] = new DictionaryCreator(GazelleColumnType.getType(type.toString()));
           i++;
         }
