@@ -1,5 +1,6 @@
 package com.senseidb.ba.management;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +35,10 @@ public  class ZookeeperTracker implements IZkChildListener {
   }
   @Override
   public  void handleChildChange(String parentPath, List<String> currentChilds) throws Exception {
+    if (currentChilds == null) {
+      //deleted
+      currentChilds = Collections.EMPTY_LIST;
+    }
     Set<String> toDelete = null;
     Map<String, SegmentInfo> toAdd = null;
     Set<String> currentSegments = new HashSet<String>(segmentTracker.getActiveSegments());

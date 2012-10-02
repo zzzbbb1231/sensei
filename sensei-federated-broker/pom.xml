@@ -5,7 +5,9 @@
 	<parent>
 		<groupId>com.senseidb</groupId>
 		<artifactId>sensei-parent</artifactId>
+
 		<version>1.5.1-SNAPSHOT</version>
+
 		<relativePath>../sensei-parent/pom.xml</relativePath>
 	</parent>
 	

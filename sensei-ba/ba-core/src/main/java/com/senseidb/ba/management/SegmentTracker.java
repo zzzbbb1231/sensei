@@ -32,16 +32,20 @@ public class SegmentTracker {
   private List<String> activeSegments = new ArrayList<String>();
   private Map<String, SegmentToZoieReaderAdapter> segmentsMap = new HashMap<String, SegmentToZoieReaderAdapter>();
   private List<String> loadingSegments = new CopyOnWriteArrayList<String>();
-  private  ExecutorService executorService = Executors.newFixedThreadPool(1);
+  private  ExecutorService executorService;
   protected Object globalLock = new Object();
   protected static Configuration configuration = new Configuration(false);
   protected Map<String, AtomicInteger> referenceCounts = new HashMap<String, AtomicInteger>();
   private IndexReaderDecorator senseiDecorator;
   private volatile boolean isStopped;
   private FileSystem fileSystem;
-  public void start(File indexDir, FileSystem fileSystem) {
+  @SuppressWarnings("rawtypes")
+  public void start(File indexDir, FileSystem fileSystem, IndexReaderDecorator senseiDecorator, ExecutorService executorService) {
+   
     this.indexDir = indexDir;
     this.fileSystem = fileSystem;
+    this.senseiDecorator = senseiDecorator;
+    this.executorService = executorService;
     synchronized (globalLock) {
       for (File file : indexDir.listFiles()) {
         try {
@@ -79,8 +83,7 @@ public class SegmentTracker {
       @Override
       public void run() {
         instantiateSegment(segmentId, segmentInfo);
-        activeSegments.add(segmentId);
-        loadingSegments.remove(segmentId);
+       
       }
     });
   }
@@ -94,6 +97,7 @@ public class SegmentTracker {
       } else {
         TarGzCompressionUtils.unTar(new File(uri), indexDir);
         File file = new File(indexDir, segmentId);
+        Thread.sleep(100);
         if (!file.exists()) {
           throw new IllegalStateException("The index directory hasn't been created");
         }
@@ -105,7 +109,11 @@ public class SegmentTracker {
           throw new IllegalStateException("The directory " + file.getAbsolutePath() + " doesn't contain the fully loaded segment");
         }
         synchronized (globalLock) {
+          
           segmentsMap.put(segmentId, new SegmentToZoieReaderAdapter(indexSegment, segmentId, senseiDecorator));
+          activeSegments.add(segmentId);
+          loadingSegments.remove(segmentId);
+          referenceCounts.put(segmentId, new AtomicInteger(1));
         }
       }
     } catch (Exception ex) {
@@ -171,11 +179,20 @@ public class SegmentTracker {
   public List<String> getLoadingSegments() {
     return loadingSegments;
   }
-  public List<ZoieIndexReader<BoboIndexReader>> getIndexReaders() throws IOException {
+  public List<ZoieIndexReader<BoboIndexReader>> getIndexReaders()  {
     List<ZoieIndexReader<BoboIndexReader>> ret = new ArrayList<ZoieIndexReader<BoboIndexReader>>();
     synchronized(globalLock) {
       for (SegmentToZoieReaderAdapter adapter : segmentsMap.values()) {
         incrementCount(adapter.getSegmentId());
+        ret.add(adapter);
+      }
+    }
+    return ret;
+  }
+  public List<ZoieIndexReader<BoboIndexReader>> getIndexReadersWithNoCounts()  {
+    List<ZoieIndexReader<BoboIndexReader>> ret = new ArrayList<ZoieIndexReader<BoboIndexReader>>();
+    synchronized(globalLock) {
+      for (SegmentToZoieReaderAdapter adapter : segmentsMap.values()) {
         ret.add(adapter);
       }
     }
