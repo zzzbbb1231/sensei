@@ -1,4 +1,4 @@
-package com.linkedin.gazelle.writers;
+package com.linkedin.gazelle.creators;
 
 import it.unimi.dsi.fastutil.floats.Float2IntOpenHashMap;
 import it.unimi.dsi.fastutil.floats.FloatAVLTreeSet;
@@ -33,19 +33,18 @@ import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.linkedin.gazelle.utils.ColumnMedata;
-import com.linkedin.gazelle.utils.ColumnType;
+import com.linkedin.gazelle.utils.GazelleColumnType;
+import com.linkedin.gazelle.utils.GazelleUtils;
 
 /**
  * @author dpatel
  */
 
-public class DictionaryWriter {
+public class DictionaryCreator {
 
-  private static Logger logger = Logger.getLogger(DictionaryWriter.class);
+  private static Logger logger = Logger.getLogger(DictionaryCreator.class);
 
-  private ColumnMedata _columnMetadata;
-  private String _dictFileName;
-  private ColumnType _columnType;
+  private GazelleColumnType _columnType;
   /*
    * Tree Sets
    */
@@ -65,11 +64,9 @@ public class DictionaryWriter {
 
   int _counter;
 
-  public DictionaryWriter(ColumnMedata columnMedata) {
-    _columnMetadata = columnMedata;
-    _dictFileName = columnMedata.getName() + ".dict";
+  public DictionaryCreator(GazelleColumnType type) {
     _counter = 1;
-    _columnType = _columnMetadata.getOriginalType();
+    _columnType = type;
     /*
      * Tree Sets Intialization
      */
@@ -178,7 +175,7 @@ public class DictionaryWriter {
   }
 
   private TermValueList getTermIntList() {
-    _termIntList = new TermIntList(_intAVLTreeSet.size(), Primitive2StringInterpreter.INT);
+    _termIntList = new TermIntList(_intAVLTreeSet.size(), GazelleUtils.INT_STRING_REPSENTATION);
     IntBidirectionalIterator iterator = _intAVLTreeSet.iterator();
     _termIntList.add(null);
     while (iterator.hasNext()) {
@@ -194,7 +191,7 @@ public class DictionaryWriter {
   }
 
   private TermValueList getTermLongList() {
-    _termLongList = new TermLongList(_longAVLTreeSet.size(), Primitive2StringInterpreter.LONG);
+    _termLongList = new TermLongList(_longAVLTreeSet.size(), GazelleUtils.LONG_STRING_REPSENTATION);
     LongBidirectionalIterator iterator = _longAVLTreeSet.iterator();
     _termLongList.add(null);
     while (iterator.hasNext()) {
@@ -210,7 +207,7 @@ public class DictionaryWriter {
   }
 
   private TermValueList getTermFloatList() {
-    _termFloatList = new TermFloatList(_floatAVLTreeSet.size(), Primitive2StringInterpreter.FLOAT);
+    _termFloatList = new TermFloatList(_floatAVLTreeSet.size(), GazelleUtils.FLOAT_STRING_REPSENTATION);
     FloatBidirectionalIterator iterator = _floatAVLTreeSet.iterator();
     _termFloatList.add(null);
     while (iterator.hasNext()) {
@@ -238,50 +235,5 @@ public class DictionaryWriter {
       _obj2IntMap.put(_termStringList.get(i), i);
     }
     return _termStringList;
-  }
-
-  public void flush(String baseDir) {
-    try {
-      OutputStream out = new FileOutputStream(baseDir + "/" + _dictFileName);
-      DataOutputStream ds = new DataOutputStream(out);
-      switch (_columnType) {
-        case FLOAT:
-          for (int i = 0; i < _termFloatList.size(); i++) {
-            ds.writeFloat(_termFloatList.getPrimitiveValue(i));
-          }
-          break;
-        case INT:
-          for (int i = 0; i < _termIntList.size(); i++) {
-            ds.writeInt(_termIntList.getPrimitiveValue(i));
-          }
-          break;
-        case LONG:
-          for (int i = 0; i < _termLongList.size(); i++) {
-            ds.writeLong(_termLongList.getPrimitiveValue(i));
-          }
-          break;
-        case STRING:
-          for (int i = 0; i < _termStringList.size(); i++) {
-            String entry = _termStringList.get(i);
-            byte[] entryInBytes = entry.getBytes("UTF8");
-            ds.writeShort(entryInBytes.length);
-            ds.write(entryInBytes);
-          }
-          break;
-      }
-      ds.flush();
-      ds.close();
-      out.close();
-    } catch (FileNotFoundException e) {
-      logger.error(e);
-    } catch (IOException e) {
-      logger.error(e);
-    }
-  }
-
-  private static class Primitive2StringInterpreter {
-    public static String INT = "0000000000";
-    public static String LONG = "00000000000000000000";
-    public static String FLOAT = "0000000000.00000";
   }
 }

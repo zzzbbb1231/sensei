@@ -17,7 +17,7 @@ public class ColumnMedata {
    * TODO: dpatel will keep adding things as needed.
    */
   private String _name;
-  private ColumnType _columnType;
+  private GazelleColumnType _columnType;
   private long _startOffset;
   private long _byteLength;
   private int _numberOfElements;
@@ -37,7 +37,7 @@ public class ColumnMedata {
        metadata.setNumberOfElements(config.getInt("column." + columnName + ".numberOfElements"));
        metadata.setNumberOfDictionaryValues(config.getInt("column." + columnName + ".numberOfDictionaryValues"));
        metadata.setBitsPerElement(config.getInt("column." + columnName + ".bitsPerElement"));
-       metadata.setOriginalType(ColumnType.getType(config.getString("column." + columnName + ".columnType")));
+       metadata.setColumnType(GazelleColumnType.getType(config.getString("column." + columnName + ".columnType")));
        metadata.setSorted(config.getBoolean("column." + columnName + ".sorted"));
        metadata.setName(columnName);
        if (!columnMetadataMap.containsKey(columnName)) {
@@ -47,7 +47,7 @@ public class ColumnMedata {
     return columnMetadataMap;
   }
   
-  public ColumnMedata(String name, ColumnType type) {
+  public ColumnMedata(String name, GazelleColumnType type) {
     _name = name;
     _columnType = type;
   }
@@ -73,11 +73,11 @@ public class ColumnMedata {
     this._name = name;
   }
 
-  public ColumnType getOriginalType() {
+  public GazelleColumnType getColumnType() {
     return _columnType;
   }
 
-  public void setOriginalType(ColumnType originalType) {
+  public void setColumnType(GazelleColumnType originalType) {
     this._columnType = originalType;
   }
 

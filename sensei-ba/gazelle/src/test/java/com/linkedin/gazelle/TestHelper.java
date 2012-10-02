@@ -9,7 +9,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 
 import com.linkedin.gazelle.utils.ColumnMedata;
-import com.linkedin.gazelle.utils.ColumnType;
+import com.linkedin.gazelle.utils.GazelleColumnType;
 
 public class TestHelper {
   
@@ -20,12 +20,12 @@ public class TestHelper {
     for (int i = 0; i < fields.size(); i++) {
       columnMetadataArr[i] = new ColumnMedata();
       columnMetadataArr[i].setName(fields.get(i).name());
-      columnMetadataArr[i].setOriginalType(getOriginalColumnTypeFromField(fields.get(i)));
+      columnMetadataArr[i].setColumnType(getOriginalColumnTypeFromField(fields.get(i)));
     }
     return columnMetadataArr;
   }
 
-  public static ColumnType getOriginalColumnTypeFromField(Field field) {
+  public static GazelleColumnType getOriginalColumnTypeFromField(Field field) {
     Type type = field.schema().getType();
     if (type == Type.UNION) {
       type = ((Schema) CollectionUtils.find(field.schema().getTypes(), new Predicate() {
@@ -35,6 +35,6 @@ public class TestHelper {
         }
       })).getType();
     }
-    return ColumnType.getType(type.toString());
+    return GazelleColumnType.getType(type.toString());
   }
 }

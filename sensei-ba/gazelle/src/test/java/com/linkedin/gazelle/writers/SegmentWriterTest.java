@@ -8,7 +8,7 @@ import org.junit.Test;
 
 
 public class SegmentWriterTest {
-  private DictionaryWriter _dictionaryWriter;
+  private DictionaryCreator _dictionaryWriter;
   private File _indexDir;
   private File _avroFile;
 
@@ -25,7 +25,7 @@ public class SegmentWriterTest {
 
   @Test
   public void validate() {
-    SegmentWriter writer = new SegmentWriter(_avroFile);
+    SegmentCreator writer = new SegmentCreator(_avroFile);
     writer.process();
     writer.flushTo(_indexDir);
   }

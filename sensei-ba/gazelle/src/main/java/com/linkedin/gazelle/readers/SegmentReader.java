@@ -9,62 +9,40 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
 import com.linkedin.gazelle.utils.ColumnMedata;
 import com.linkedin.gazelle.utils.CompressedIntArray;
+import com.linkedin.gazelle.utils.GazelleUtils;
 import com.linkedin.gazelle.utils.ReadMode;
 
 public class SegmentReader {
-  private static String METADATA_FILE_NAME = "metadata.properties";
-  private static String FORWARD_INDEX_FILE_NAME = "gazelle.fIdx";
   private static Logger logger = Logger.getLogger(SegmentReader.class);
 
-  private HashMap<String, ColumnMedata> _metadataMap;
-  private static ReadMode _mode;
-
-  private File _indexDir;
-
-  public SegmentReader(File dir) throws ConfigurationException {
-    _indexDir = dir;
-    File file = new File(_indexDir, METADATA_FILE_NAME);
-    setUpColumnMetadataMetadata(new PropertiesConfiguration(file));
-    _mode = ReadMode.MMAPPED;
+  public static GazelleIndexSegmentImpl read(File indexDir, ReadMode mode) throws ConfigurationException, IOException {
+    File file = new File(indexDir, GazelleUtils.METADATA_FILENAME);
+    HashMap<String, ColumnMedata> metadataMap = ColumnMedata.readFromFile(new PropertiesConfiguration(file));
+    return new GazelleIndexSegmentImpl(metadataMap, getCompressedIntArrayMap(metadataMap, indexDir, mode),
+        getTermValueListMap(metadataMap, indexDir));
   }
 
-  public SegmentReader(File dir, ReadMode mode) throws ConfigurationException {
-    _indexDir = dir;
-    File file = new File(_indexDir, METADATA_FILE_NAME);
-    setUpColumnMetadataMetadata(new PropertiesConfiguration(file));
-    _mode = mode;
+  private static HashMap<String, CompressedIntArray> getCompressedIntArrayMap(HashMap<String, ColumnMedata> metadataMap, File indexDir, ReadMode mode) {
+    HashMap<String, CompressedIntArray> compressedIntArrayMap = new HashMap<String, CompressedIntArray>();
+    for (String column : metadataMap.keySet()) {
+      File file = new File(indexDir, GazelleUtils.INDEX_FILENAME);
+      compressedIntArrayMap.put(column, ForwardIndexReader.readForwardIndex(metadataMap.get(column), file, mode));
+    }
+    return compressedIntArrayMap;
   }
 
-  private void setUpColumnMetadataMetadata(PropertiesConfiguration config) throws ConfigurationException {
-    _metadataMap = ColumnMedata.readFromFile(config);
-  }
-
-  public HashMap<String, ColumnMedata> readColumnMetadataMap() {
-    return _metadataMap;
-  }
-
-  public HashMap<String, TermValueList> readDictionaryMap() {
+  private static HashMap<String, TermValueList> getTermValueListMap(HashMap<String, ColumnMedata> metadataMap, File indexDir) throws IOException {
     HashMap<String, TermValueList> dictionaryMap = new HashMap<String, TermValueList>();
-    for (String column : _metadataMap.keySet()) {
-      File file = new File(_indexDir, (column + ".dict"));
+    for (String column : metadataMap.keySet()) {
+      File file = new File(indexDir, (column + ".dict"));
       TermValueList list =
-          DictionaryReader.read(file, _metadataMap.get(column).getOriginalType(), _metadataMap.get(column)
+          DictionaryReader.read(file, metadataMap.get(column).getColumnType(), metadataMap.get(column)
               .getNumberOfDictionaryValues());
       dictionaryMap.put(column, list);
     }
     return dictionaryMap;
   }
-
-  public HashMap<String, CompressedIntArray> readForwardIndexMap() throws IOException {
-    HashMap<String, CompressedIntArray> forwardIndexMap = new HashMap<String, CompressedIntArray>();
-
-    for (String column : _metadataMap.keySet()) {
-      File file = new File(_indexDir, FORWARD_INDEX_FILE_NAME);
-      forwardIndexMap.put(column, ForwardIndexReader.readForwardIndex(_metadataMap.get(column), file, _mode));
-    }
-    return forwardIndexMap;
-  }
-
 }

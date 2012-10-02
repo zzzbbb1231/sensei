@@ -5,10 +5,12 @@ import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -20,114 +22,79 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.linkedin.gazelle.dao.GazelleForwardIndexImpl;
+import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
+import com.linkedin.gazelle.flushers.SegmentFlusher;
 import com.linkedin.gazelle.utils.ColumnMedata;
 import com.linkedin.gazelle.utils.CompressedIntArray;
 import com.linkedin.gazelle.utils.ReadMode;
-import com.linkedin.gazelle.writers.SegmentWriter;
+import com.linkedin.gazelle.creators.SegmentCreator;
 
 public class SegmentReaderTest {
 
+  private static Logger logger = Logger.getLogger(SegmentReaderTest.class);
   private File _indexDir;
   private File _avroFile;
   private String _jsonFilePath;
   private ReadMode _mode;
+  private GazelleIndexSegmentImpl _segment;
   
   @Before
-  public void setup() throws IOException {
+  public void setup() throws IOException, ConfigurationException, URISyntaxException {
     _indexDir = new File("index");
-    _indexDir.delete();
+    FileUtils.deleteDirectory(_indexDir);
     _indexDir.mkdir();
+    System.out.println(getClass().getClassLoader().getResource("data/sample_data.avro"));
     String avroFilepath = System.getProperty("user.dir")
         + "/sensei-ba/gazelle/src/test/resources/data/sample_data.avro";
     _jsonFilePath = System.getProperty("user.dir") + "/sensei-ba/gazelle/src/test/resources/data/sample_data.json";
     _avroFile = new File(avroFilepath);
-    SegmentWriter writer = new SegmentWriter(_avroFile);
-    writer.process();
-    writer.flushTo(_indexDir);
-  }
-  
-  @Test
-  public void testMMappedReadMode() throws ConfigurationException, IOException, JSONException {
-    _mode = ReadMode.MMAPPED;
-    validate();
-    metadataDataAccessTest();
-    dictionaryDataAccessTest();
-    forwardIndexDataAccessTest();
-    segmentIndexDataValidityTest();
-  }
-  
-  @Test
-  public void testDBBufferReadMode() throws ConfigurationException, IOException, JSONException {
-    _mode = ReadMode.DBBuffer;
-    validate();
-    metadataDataAccessTest();
-    dictionaryDataAccessTest();
-    forwardIndexDataAccessTest();
-    segmentIndexDataValidityTest();
+    SegmentCreator writer = new SegmentCreator();
+    _segment = writer.process(_avroFile);
+    SegmentFlusher.flush(_segment, _indexDir.getAbsolutePath());
   }
 
-  private void validate() throws ConfigurationException, IOException {
-    SegmentReader reader = new SegmentReader(_indexDir, _mode);
-    assertNotNull(reader);
-    assertNotNull(reader.readColumnMetadataMap());
-    assertNotNull(reader.readDictionaryMap());
-    assertNotNull(reader.readForwardIndexMap());
-    HashMap<String, ColumnMedata> metadataMap = reader.readColumnMetadataMap();
-    for (String column : metadataMap.keySet()) {
-      assertNotNull(metadataMap.get(column));
-    }
-    
-    HashMap<String, CompressedIntArray> compressedIntMap = reader.readForwardIndexMap();
-    for (String column: compressedIntMap.keySet()) {
-      assertNotNull(compressedIntMap.get(column));
-    }
-    
-    HashMap<String, TermValueList> termValueListmap = reader.readDictionaryMap();
-    for (String column : termValueListmap.keySet()) {
-      assertNotNull(termValueListmap.get(column));
-    }
-  }
-
-  private void metadataDataAccessTest() throws ConfigurationException {
-    SegmentReader reader = new SegmentReader(_indexDir, _mode);
-    HashMap<String, ColumnMedata> metadataMap = reader.readColumnMetadataMap();
+  @Test
+  public void testmetadataDataAccess() throws ConfigurationException, IOException {
+    GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.DBBuffer);
+    HashMap<String, ColumnMedata> metadataMap = segment.getColumnMetatdaMap();
     for (String column : metadataMap.keySet()) {
       assertNotNull(metadataMap.get(column).getName());
       assertNotNull(metadataMap.get(column).getBitsPerElement());
       assertNotNull(metadataMap.get(column).getByteLength());
       assertNotNull(metadataMap.get(column).getNumberOfDictionaryValues());
       assertNotNull(metadataMap.get(column).getNumberOfElements());
-      assertNotNull(metadataMap.get(column).getOriginalType());
+      assertNotNull(metadataMap.get(column).getColumnType());
       assertNotNull(metadataMap.get(column).getStartOffset());
     }
   }
 
-  private void dictionaryDataAccessTest() throws ConfigurationException {
-    SegmentReader reader = new SegmentReader(_indexDir, _mode);
-    HashMap<String, TermValueList> termValueListMap = reader.readDictionaryMap();
-    HashMap<String, ColumnMedata> metadataMap = reader.readColumnMetadataMap();
-    for (String column : termValueListMap.keySet()) {
-      switch (metadataMap.get(column).getOriginalType()) {
+  @Test
+  public void testdictionaryDataAccess() throws ConfigurationException, IOException {
+    GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.DBBuffer);
+    HashMap<String, ColumnMedata> metadataMap = segment.getColumnMetatdaMap();
+    for (String column : metadataMap.keySet()) {
+      switch (metadataMap.get(column).getColumnType()) {
         case FLOAT:
-          TermFloatList floatList = (TermFloatList) termValueListMap.get(column);
+          TermFloatList floatList = (TermFloatList) segment.getDictionary(column);
           for (int i = 0; i < floatList.size(); i++) {
             assertNotNull(floatList.get(i));
           }
           break;
         case INT:
-          TermIntList intList = (TermIntList) termValueListMap.get(column);
+          TermIntList intList = (TermIntList) segment.getDictionary(column);
           for (int i=0; i < intList.size(); i++) {
             assertNotNull(intList.get(i));
           }
           break;
         case LONG:
-          TermLongList longList = (TermLongList) termValueListMap.get(column);
+          TermLongList longList = (TermLongList) segment.getDictionary(column);
           for (int i=0; i < longList.size(); i++) {
             assertNotNull(longList.get(i));
           }
           break;
         case STRING:
-          TermStringList stringList = (TermStringList) termValueListMap.get(column);
+          TermStringList stringList = (TermStringList) segment.getDictionary(column);
           for (int i=0; i < stringList.size(); i++) {
             assertNotNull(stringList.get(i));
           }
@@ -138,31 +105,25 @@ public class SegmentReaderTest {
     }
   }
 
-  private void forwardIndexDataAccessTest() throws ConfigurationException, IOException {
-    SegmentReader reader = new SegmentReader(_indexDir, _mode);
-    HashMap<String, ColumnMedata> metadataMap = reader.readColumnMetadataMap();
-    HashMap<String, CompressedIntArray> compressedIntArrMap = reader.readForwardIndexMap();
-    
-    for (String column : compressedIntArrMap.keySet()) {
-      for (int i = 0; i < compressedIntArrMap.get(column).getCapacity(); i++) {
-        assertNotNull(compressedIntArrMap.get(column).readInt(i));
-      }
-    }
+  @Test
+  public void testgetLength() throws ConfigurationException, IOException {
+    GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.DBBuffer);
+    assertNotNull(segment.getLength());    
   }
 
-  private void segmentIndexDataValidityTest() throws IOException, JSONException, ConfigurationException {
-    SegmentReader reader = new SegmentReader(_indexDir, _mode);
-    HashMap<String, CompressedIntArray> compressedIntArrMap = reader.readForwardIndexMap();
-    HashMap<String, TermValueList> termValueListMap = reader.readDictionaryMap();
+  @Test
+  public void testsegmentIndexDataValidityDBBufferMode() throws IOException, JSONException, ConfigurationException {
+    GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.DBBuffer);
+    HashMap<String, ColumnMedata> metadataMap = segment.getColumnMetatdaMap();
     int i =1;
     File jsonFile = new File(_jsonFilePath);
     for (String line : FileUtils.readLines(jsonFile)) {
       JSONObject obj = new JSONObject(line);
-      for (String column : compressedIntArrMap.keySet()) {
-        CompressedIntArray arr = compressedIntArrMap.get(column);
-        TermValueList<?> list = termValueListMap.get(column);
+      for (String column : metadataMap.keySet()) {
+        GazelleForwardIndexImpl index = (GazelleForwardIndexImpl) segment.getForwardIndex(column);
+        TermValueList<?> list = index.getDictionary();
         String valueFromJson = obj.get(column).toString();
-        int forwardIndexValue = arr.readInt(i);
+        int forwardIndexValue = index.getValueIndex(i);
         String valueFromDict = list.get(forwardIndexValue).toString();
         valueFromDict = valueFromDict.replaceFirst("^0+(?!$)", "");
         valueFromDict = valueFromDict.replaceFirst("^-0+(?!$)", "-");
@@ -172,7 +133,96 @@ public class SegmentReaderTest {
     }
   }
 
+  @Test
+  public void testsegmentIndexDataValidityMMappedMode() throws IOException, JSONException, ConfigurationException {
+    GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.MMAPPED);
+    HashMap<String, ColumnMedata> metadataMap = segment.getColumnMetatdaMap();
+    int i =1;
+    File jsonFile = new File(_jsonFilePath);
+    for (String line : FileUtils.readLines(jsonFile)) {
+      JSONObject obj = new JSONObject(line);
+      for (String column : metadataMap.keySet()) {
+        GazelleForwardIndexImpl index = (GazelleForwardIndexImpl) segment.getForwardIndex(column);
+        TermValueList<?> list = index.getDictionary();
+        String valueFromJson = obj.get(column).toString();
+        int forwardIndexValue = index.getValueIndex(i);
+        String valueFromDict = list.get(forwardIndexValue).toString();
+        valueFromDict = valueFromDict.replaceFirst("^0+(?!$)", "");
+        valueFromDict = valueFromDict.replaceFirst("^-0+(?!$)", "-");
+        assertEquals(valueFromJson,valueFromDict);
+      }
+     i++; 
+    }
+  }
+
+  @Test
+  public void testrandomScanPerfForMMappedMode() throws ConfigurationException, IOException {
+    GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.MMAPPED);
+    HashMap<String, ColumnMedata> metadataMap = segment.getColumnMetatdaMap();
+    long start = System.currentTimeMillis();
+    for (String column : metadataMap.keySet()) {
+      GazelleForwardIndexImpl forwardIndex = (GazelleForwardIndexImpl) segment.getForwardIndex(column);
+      int min = 0;
+      int max = forwardIndex.getLength() - 1;
+      for (int i = 0; i < forwardIndex.getLength(); i++) {
+        int rand = min + (int)(Math.random() * ((max - min)));
+        assertNotNull(forwardIndex.getValueIndex(rand));
+      }
+    }
+    long stop = System.currentTimeMillis();
+    logger.info("Time taken for a random scan on the entire Index in MMApped Mode is :" + (stop-start));
+  }
+
+  @Test
+  public void testrandomScanPerfForDBBufferMode() throws ConfigurationException, IOException {
+    GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.DBBuffer);
+    HashMap<String, ColumnMedata> metadataMap = segment.getColumnMetatdaMap();
+    long start = System.currentTimeMillis();
+    for (String column : metadataMap.keySet()) {
+      GazelleForwardIndexImpl forwardIndex = (GazelleForwardIndexImpl) segment.getForwardIndex(column);
+      int min = 0;
+      int max = forwardIndex.getLength() - 1;
+      for (int i = 0; i < forwardIndex.getLength(); i++) {
+        int rand = min + (int)(Math.random() * ((max - min)));
+        assertNotNull(forwardIndex.getValueIndex(rand));
+      }
+    }
+    long stop = System.currentTimeMillis();
+    logger.info("Time taken for a random scan on the entire Index in DBBUffer Mode is :" + (stop-start));
+  }
+
+  @Test
+  public void testsequentialScanPerfForMMappedMode() throws ConfigurationException, IOException {
+    GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.MMAPPED);
+    HashMap<String, ColumnMedata> metadataMap = segment.getColumnMetatdaMap();
+    long start = System.currentTimeMillis();
+    for (String column : metadataMap.keySet()) {
+      GazelleForwardIndexImpl forwardIndex = (GazelleForwardIndexImpl) segment.getForwardIndex(column);
+      for (int i = 0; i < forwardIndex.getLength(); i++) {
+        assertNotNull(forwardIndex.getValueIndex(i));
+      }
+    }
+    long stop = System.currentTimeMillis();
+    logger.info("Time taken for a sequential scan on on the entire in MMApped Mode Index is :" + (stop-start));
+  }
+
+  @Test
+  public void testsequentialScanPerfForDBBufferMode() throws ConfigurationException, IOException {
+    GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.DBBuffer);
+    HashMap<String, ColumnMedata> metadataMap = segment.getColumnMetatdaMap();
+    long start = System.currentTimeMillis();
+    for (String column : metadataMap.keySet()) {
+      GazelleForwardIndexImpl forwardIndex = (GazelleForwardIndexImpl) segment.getForwardIndex(column);
+      for (int i = 0; i < forwardIndex.getLength(); i++) {
+        assertNotNull(forwardIndex.getValueIndex(i));
+      }
+    }
+    long stop = System.currentTimeMillis();
+    logger.info("Time taken for a sequential scan on the entire Index in DBBuffer Mode is :" + (stop-start));
+  }
+
   @After
-  public void tearDown() {
+  public void tearDown() throws IOException {
+    FileUtils.deleteDirectory(_indexDir);
   }
 }

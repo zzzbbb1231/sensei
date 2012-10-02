@@ -6,10 +6,10 @@ import org.apache.avro.util.Utf8;
  * @author dpatel
  */
 
-public enum ColumnType {
+public enum GazelleColumnType {
   INT, LONG, STRING, FLOAT;
 
-  public static ColumnType getTypeFromObject(Object obj) {
+  public static GazelleColumnType getTypeFromObject(Object obj) {
     if (obj instanceof Long) {
       return LONG;
     }
@@ -25,7 +25,7 @@ public enum ColumnType {
     throw new UnsupportedOperationException(obj.toString());
   }
 
-  public static ColumnType getType(String klassName) {
+  public static GazelleColumnType getType(String klassName) {
     if (klassName.toUpperCase().equals("DOUBLE") || klassName.toUpperCase().equals("FLOAT")) {
       return FLOAT;
     } else if (klassName.toUpperCase().equals("INT")) {

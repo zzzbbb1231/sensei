@@ -36,9 +36,7 @@ public class ForwardIndexReader {
             forwardIndexFile.getChannel().map(MapMode.READ_ONLY, metadata.getStartOffset(), metadata.getByteLength());
         break;
       default:
-        byteBuffer =
-            forwardIndexFile.getChannel().map(MapMode.READ_ONLY, metadata.getStartOffset(), metadata.getByteLength());
-        break;
+        throw new UnsupportedOperationException();
       }
       compressedIntArray =
           new CompressedIntArray(metadata.getNumberOfElements(), CompressedIntArray.getNumOfBits(metadata
@@ -46,7 +44,7 @@ public class ForwardIndexReader {
     } catch (FileNotFoundException e) {
       logger.error(e);
     } catch (IOException e) {
-      logger.error(e);
+      e.printStackTrace();
     }
     return compressedIntArray;
   }

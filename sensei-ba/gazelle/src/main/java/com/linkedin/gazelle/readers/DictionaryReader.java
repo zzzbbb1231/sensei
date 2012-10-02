@@ -7,13 +7,15 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 
 import org.apache.log4j.Logger;
+import org.mortbay.io.RuntimeIOException;
 
 import com.browseengine.bobo.facets.data.TermFloatList;
 import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.utils.ColumnType;
+import com.linkedin.gazelle.utils.GazelleColumnType;
+import com.linkedin.gazelle.utils.GazelleUtils;
 
 public class DictionaryReader {
 
@@ -21,11 +23,13 @@ public class DictionaryReader {
   
   @SuppressWarnings("rawtypes")
 
-  public static TermValueList read(File dictionaryFile, ColumnType type, int dictionarySize) {
+  public static TermValueList read(File dictionaryFile, GazelleColumnType type, int dictionarySize) throws IOException {
     TermValueList list = null;
+    FileInputStream fIs = null;
+    DataInputStream dIs = null;
     try {
-      FileInputStream fIs = new FileInputStream(dictionaryFile);
-      DataInputStream dIs = new DataInputStream(fIs);
+      fIs = new FileInputStream(dictionaryFile);
+       dIs = new DataInputStream(fIs);
       switch (type) {
         case STRING:
           TermStringList termStringList = new TermStringList();
@@ -45,7 +49,7 @@ public class DictionaryReader {
           }
           break;
         case LONG:
-          TermLongList termLongList = new TermLongList(Primitive2StringInterpreter.LONG);
+          TermLongList termLongList = new TermLongList(GazelleUtils.LONG_STRING_REPSENTATION);
           long[] longArr = new long[dictionarySize];
           for (int i = 0; i < dictionarySize; i++) {
             longArr[i] = dIs.readLong();
@@ -56,7 +60,7 @@ public class DictionaryReader {
           list = termLongList;
           break;
         case FLOAT:
-          TermFloatList termFloatList = new TermFloatList(Primitive2StringInterpreter.FLOAT);
+          TermFloatList termFloatList = new TermFloatList(GazelleUtils.FLOAT_STRING_REPSENTATION);
           float[] floatArr = new float[dictionarySize];
           for (int i = 0; i < dictionarySize; i++) {
             floatArr[i] = dIs.readFloat();
@@ -67,7 +71,7 @@ public class DictionaryReader {
           list = termFloatList;
           break;
         case INT:
-          TermIntList termIntList = new TermIntList(Primitive2StringInterpreter.INT);
+          TermIntList termIntList = new TermIntList(GazelleUtils.INT_STRING_REPSENTATION);
           int[] intArr = new int[dictionarySize];
           for (int i = 0; i < dictionarySize; i++) {
             intArr[i] = dIs.readInt();
@@ -81,26 +85,13 @@ public class DictionaryReader {
           break;
       }
       
-    } catch (IOException e) {
+    } catch (Exception e) {
       logger.error(e);
-    } catch (UnsupportedOperationException e) {
-      logger.error(e);
-    } catch (SecurityException e) {
-      logger.error(e);
-    } catch (NoSuchFieldException e) {
-      logger.error(e);
-    } catch (IllegalArgumentException e) {
-      logger.error(e);
-    } catch (IllegalAccessException e) {
-      logger.error(e);
+      throw new RuntimeIOException(e);
+    } finally {
+      dIs.close();
+      fIs.close();
     }
-    
     return list;
-  }
-  
-  private static class Primitive2StringInterpreter {
-    public static String INT = "0000000000";
-    public static String LONG = "00000000000000000000";
-    public static String FLOAT = "0000000000.00000";
   }
 }

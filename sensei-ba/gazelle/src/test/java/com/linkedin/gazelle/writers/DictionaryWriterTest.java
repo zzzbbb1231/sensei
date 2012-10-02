@@ -26,7 +26,7 @@ import com.linkedin.gazelle.utils.ColumnMedata;
 
 public class DictionaryWriterTest {
 
-  private DictionaryWriter _dictionaryWriter;
+  private DictionaryCreator _dictionaryWriter;
   private File _indexDir;
   private Schema _avroSchema;
   private ColumnMedata[] _columnMetaMedataArr;
@@ -50,7 +50,7 @@ public class DictionaryWriterTest {
 
   @Test
   public void validityCheck() {
-    _dictionaryWriter = new DictionaryWriter(_columnMetaMedataArr[8]);
+    _dictionaryWriter = new DictionaryCreator(_columnMetaMedataArr[8]);
     int count = 1;
     assertNotNull(_dictionaryWriter);
     while (_dataFileReader.hasNext()) {
