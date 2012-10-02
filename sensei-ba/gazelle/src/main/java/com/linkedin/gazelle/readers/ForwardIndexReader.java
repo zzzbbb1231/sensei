@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 
 import org.apache.log4j.Logger;
+import org.mortbay.io.RuntimeIOException;
 
 import com.linkedin.gazelle.utils.GazelleColumnMedata;
 import com.linkedin.gazelle.utils.CompressedIntArray;
@@ -43,8 +44,10 @@ public class ForwardIndexReader {
               .getNumberOfDictionaryValues()), byteBuffer);
     } catch (FileNotFoundException e) {
       logger.error(e);
+      throw new RuntimeIOException(e);
     } catch (IOException e) {
-      e.printStackTrace();
+      logger.error(e);
+      throw new RuntimeIOException(e);
     }
     return compressedIntArray;
   }
