@@ -2,6 +2,7 @@ package com.senseidb.ba;
 import static org.junit.Assert.*;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.senseidb.ba.util.CompressedIntArray;
@@ -25,9 +26,9 @@ public class ByteBufferStorageTest {
     check(byteBufferStorage, new int[] {1,0,1});
     check(new CompressedIntArray(10000, 8), new int[] {255,0,255});
     
-  }
-  //@Test
-  public void ntest2() {
+  }@Ignore
+  @Test 
+  public void test2() {
     CompressedIntArray byteBufferStorage = new CompressedIntArray(2000000, 10);
     byte[] byteBuf = byteBufferStorage.getByteBuf();
     

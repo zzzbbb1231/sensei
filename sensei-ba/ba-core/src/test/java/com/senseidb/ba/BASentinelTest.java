@@ -24,7 +24,7 @@ public class BASentinelTest  extends TestCase {
   protected void setUp() throws Exception {    
     File ConfDir1 = new File(BASentinelTest.class.getClassLoader().getResource("ba-conf").toURI());
     
-    SingleNodeStarter.start(ConfDir1, 15000);
+    SingleNodeStarter.start(ConfDir1, 10001);
   }
   public void test1() throws Exception {
   String req = "{" + 
