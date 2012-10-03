@@ -1,13 +1,13 @@
 package com.linkedin.gazelle.readers;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.List;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
@@ -24,13 +24,16 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.linkedin.gazelle.creators.SegmentCreator;
 import com.linkedin.gazelle.dao.GazelleForwardIndexImpl;
 import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
 import com.linkedin.gazelle.flushers.SegmentFlusher;
+
 import com.linkedin.gazelle.utils.GazelleColumnMetadata;
+
 import com.linkedin.gazelle.utils.CompressedIntArray;
+import com.linkedin.gazelle.utils.GazelleColumnMedata;
 import com.linkedin.gazelle.utils.ReadMode;
-import com.linkedin.gazelle.creators.SegmentCreator;
 
 public class SegmentReaderTest {
 
@@ -57,16 +60,21 @@ public class SegmentReaderTest {
   @Test
   public void testmetadataDataAccess() throws ConfigurationException, IOException {
     GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.DBBuffer);
-    HashMap<String, GazelleColumnMetadata> metadataMap = segment.getColumnMetatdaMap();
+
+    HashMap<String, GazelleColumnMedata> metadataMap = segment.getColumnMetatdaMap();
+    HashMap<String, CompressedIntArray> compressedIntArrayMap = segment.getCompressedIntArrayMap();
+    HashMap<String, TermValueList> termValueListMap = segment.getTermValueListMap();
+
     for (String column : metadataMap.keySet()) {
-      assertEquals(false, StringUtils.isBlank(metadataMap.get(column).getName()));
-      assertEquals(true, (metadataMap.get(column).getBitsPerElement() != 0));
-      assertEquals(true, (metadataMap.get(column).getByteLength() != 0));
-      assertEquals(true, (metadataMap.get(column).getNumberOfDictionaryValues() != 0));
-      assertEquals(true, (metadataMap.get(column).getNumberOfElements() != 0));
-      assertEquals(false, (StringUtils.isBlank(metadataMap.get(column).getColumnType().toString())));
-      assertEquals(true, (StringUtils.isBlank(metadataMap.get(column).getColumnType().toString())));
-      assertEquals(true, (metadataMap.get(column).getNumberOfElements() >= 0));
+      assertFalse(StringUtils.isBlank(metadataMap.get(column).getName()));
+      int numOfBits = CompressedIntArray.getNumOfBits(termValueListMap.get(column).size());
+      assertEquals(numOfBits, (metadataMap.get(column).getBitsPerElement() != 0));
+      assertTrue((metadataMap.get(column).getByteLength() != 0));
+      assertEquals(termValueListMap.size(), metadataMap.get(column).getNumberOfDictionaryValues());
+      assertEquals(compressedIntArrayMap.get(column).getCapacity(), metadataMap.get(column).getNumberOfElements() != 0);
+      assertTrue((StringUtils.isBlank(metadataMap.get(column).getColumnType().toString())));
+      assertEquals(compressedIntArrayMap.get(column).getCapacity(), metadataMap.get(column).getNumberOfElements());
+
     }
   }
 
@@ -79,25 +87,25 @@ public class SegmentReaderTest {
       case FLOAT:
         TermFloatList floatList = (TermFloatList) segment.getDictionary(column);
         for (int i = 0; i < floatList.size(); i++) {
-          assertEquals(true, (floatList.get(i) != null));
+          assertTrue(floatList.get(i) != null);
         }
         break;
       case INT:
         TermIntList intList = (TermIntList) segment.getDictionary(column);
         for (int i = 0; i < intList.size(); i++) {
-          assertEquals(true, (intList.get(i) != null));
+          assertTrue(intList.get(i) != null);
         }
         break;
       case LONG:
         TermLongList longList = (TermLongList) segment.getDictionary(column);
         for (int i = 0; i < longList.size(); i++) {
-          assertEquals(true, (longList.get(i) != null));
+          assertTrue(longList.get(i) != null);
         }
         break;
       case STRING:
         TermStringList stringList = (TermStringList) segment.getDictionary(column);
         for (int i = 0; i < stringList.size(); i++) {
-          assertEquals(true, (stringList.get(i) != null));
+          assertTrue(stringList.get(i) != null);
         }
         break;
       default:
@@ -109,7 +117,7 @@ public class SegmentReaderTest {
   @Test
   public void testgetLength() throws ConfigurationException, IOException {
     GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.DBBuffer);
-    assertEquals(true, (segment.getLength() > 0));
+    assertTrue(segment.getLength() > 0);
   }
 
   @Test
@@ -165,7 +173,7 @@ public class SegmentReaderTest {
       int max = forwardIndex.getLength() - 1;
       for (int i = 0; i < forwardIndex.getLength(); i++) {
         int rand = min + (int) (Math.random() * ((max - min)));
-        assertEquals(true, (forwardIndex.getValueIndex(rand) >= 0));
+        assertTrue(forwardIndex.getValueIndex(rand) >= 0);
       }
     }
     long stop = System.currentTimeMillis();
@@ -190,7 +198,7 @@ public class SegmentReaderTest {
     for (String column : metadataMap.keySet()) {
       GazelleForwardIndexImpl forwardIndex = (GazelleForwardIndexImpl) segment.getForwardIndex(column);
       for (int i = 0; i < forwardIndex.getLength(); i++) {
-        assertEquals(true, (forwardIndex.getValueIndex(i) >= 0));
+        assertTrue(forwardIndex.getValueIndex(i) >= 0);
       }
     }
     long stop = System.currentTimeMillis();
