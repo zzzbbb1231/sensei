@@ -73,6 +73,10 @@ public class GazelleColumnMedata {
     this._name = name;
   }
 
+  public boolean getSorted() {
+    return _sorted;
+  }
+
   public GazelleColumnType getColumnType() {
     return _columnType;
   }

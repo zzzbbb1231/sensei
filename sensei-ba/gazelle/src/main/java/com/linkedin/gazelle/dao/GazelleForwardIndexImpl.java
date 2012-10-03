@@ -11,12 +11,13 @@ public class GazelleForwardIndexImpl implements ForwardIndex {
   private final String _column;
   private TermValueList<?> _dictionary;
   private GazelleColumnMedata _columnMetadata;
-
+  private ColumnMetadata _metadata;
   public GazelleForwardIndexImpl(String column, CompressedIntArray compressedIntArray, TermValueList<?> dictionary, GazelleColumnMedata columnMetadata) {
     _column = column;
     _compressedIntArray = compressedIntArray;
     _dictionary = dictionary;
     _columnMetadata = columnMetadata;
+    _metadata = ColumnMetadata.transformToSelf(_columnMetadata);
   }
 
   @Override
@@ -41,7 +42,6 @@ public class GazelleForwardIndexImpl implements ForwardIndex {
 
   @Override
   public ColumnMetadata getColumnMetadata() {
-    return null;
+    return _metadata;
   }
-
 }

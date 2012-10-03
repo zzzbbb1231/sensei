@@ -22,7 +22,7 @@ public class SegmentReader {
     File file = new File(indexDir, GazelleUtils.METADATA_FILENAME);
     HashMap<String, GazelleColumnMedata> metadataMap = GazelleColumnMedata.readFromFile(new PropertiesConfiguration(file));
     return new GazelleIndexSegmentImpl(metadataMap, getCompressedIntArrayMap(metadataMap, indexDir, mode),
-        getTermValueListMap(metadataMap, indexDir));
+        getTermValueListMap(metadataMap, indexDir), metadataMap.values().iterator().next().getNumberOfElements());
   }
 
   private static HashMap<String, CompressedIntArray> getCompressedIntArrayMap(HashMap<String, GazelleColumnMedata> metadataMap, File indexDir, ReadMode mode) {

@@ -20,6 +20,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
   private HashMap<String, TermValueList> _termValueListMap;
   private HashMap<String, CompressedIntArray> _compressedIntArrayMap;
   private HashMap<String, GazelleForwardIndexImpl> _forwardIndexMap;
+  private int _length;
 
   public GazelleIndexSegmentImpl(CompressedIntArray[] compressedIntArr, TermValueList[] termValueListArr, GazelleColumnMedata[] columnMetadataArr, int length) {
     MetadataCreator _metadataWriter = new MetadataCreator();
@@ -29,6 +30,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
     _compressedIntArrayMap = new HashMap<String, CompressedIntArray>();
     _columnTypeMap = new HashMap<String, ColumnType>();
     _forwardIndexMap = new HashMap<String, GazelleForwardIndexImpl>();
+    _length = length;
     for (int i = 0; i < compressedIntArr.length; i++) {
       compressedIntArr[i].getStorage().rewind();
       _compressedIntArrayMap.put(columnMetadataArr[i].getName(), compressedIntArr[i]);
@@ -43,7 +45,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
     }
   }
 
-  public GazelleIndexSegmentImpl(HashMap<String, GazelleColumnMedata> metadataMap, HashMap<String, CompressedIntArray> compressedIntArrayMap, HashMap<String, TermValueList> termValueListMap) {
+  public GazelleIndexSegmentImpl(HashMap<String, GazelleColumnMedata> metadataMap, HashMap<String, CompressedIntArray> compressedIntArrayMap, HashMap<String, TermValueList> termValueListMap, int length) {
     _columnTypeMap = new HashMap<String, ColumnType>();
     _forwardIndexMap = new HashMap<String, GazelleForwardIndexImpl>();
     for (String column : metadataMap.keySet()) {
@@ -53,6 +55,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
     _columnMetatdaMap = metadataMap;
     _compressedIntArrayMap = compressedIntArrayMap;
     _termValueListMap = termValueListMap;
+    _length = length;
   }
 
   public HashMap<String, GazelleColumnMedata> getColumnMetatdaMap() {
@@ -71,12 +74,12 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
     this._termValueListMap = termValueListMap;
   }
 
-  public HashMap<String, CompressedIntArray> getForwardIndexMap() {
+  public HashMap<String, CompressedIntArray> getCompressedIntArrayMap() {
     return _compressedIntArrayMap;
   }
 
-  public void setForwardIndexMap(HashMap<String, CompressedIntArray> forwardIndexMap) {
-    this._compressedIntArrayMap = forwardIndexMap;
+  public void setCompressedIntArrayMap(HashMap<String, CompressedIntArray> compressedIntArrayMap) {
+    this._compressedIntArrayMap = compressedIntArrayMap;
   }
 
   @Override
@@ -101,7 +104,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 
   @Override
   public int getLength() {
-    return _forwardIndexMap.values().iterator().next().getLength();
+    return _length;
   }
 
 }
