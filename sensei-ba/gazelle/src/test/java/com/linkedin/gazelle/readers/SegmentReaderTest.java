@@ -164,7 +164,7 @@ public class SegmentReaderTest {
       int max = forwardIndex.getLength() - 1;
       for (int i = 0; i < forwardIndex.getLength(); i++) {
         int rand = min + (int) (Math.random() * ((max - min)));
-        assertEquals(true, (forwardIndex.getValueIndex(i) >= 0));
+        assertEquals(true, (forwardIndex.getValueIndex(rand) >= 0));
       }
     }
     long stop = System.currentTimeMillis();
