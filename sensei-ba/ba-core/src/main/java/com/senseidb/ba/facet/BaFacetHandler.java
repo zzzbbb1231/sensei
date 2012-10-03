@@ -110,7 +110,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
           @Override
           public void collect(int docid) {
             int valueIndex = forwardIndex.getValueIndex(docid);
-            _count[valueIndex]++;
+            _count.add(valueIndex, _count.get(valueIndex) + 1);
             
           }
 

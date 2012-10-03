@@ -113,7 +113,7 @@ public class SortedFacetUtils {
                 }
                 
             }
-            _count[currentValueId]++;
+            _count.add(currentValueId, _count.get(currentValueId) + 1);
             return;
             
         }
@@ -121,7 +121,7 @@ public class SortedFacetUtils {
         @Override
         public void collectAll() {
             for (int i = 0; i < maxDocIds.length; i++) {
-              _count[i] = maxDocIds[i] - minDocIds[i] + 1;
+              _count.add(i, maxDocIds[i] - minDocIds[i] + 1);
             }
 
         }

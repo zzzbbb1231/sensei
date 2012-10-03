@@ -35,8 +35,7 @@ public class SegmentReaderTest {
   private static Logger logger = Logger.getLogger(SegmentReaderTest.class);
   private File _indexDir;
   private File _avroFile;
-  private String _jsonFilePath;
-  private ReadMode _mode;
+  private File _jsonFile;
   private GazelleIndexSegmentImpl _segment;
   
   @Before
@@ -44,10 +43,8 @@ public class SegmentReaderTest {
     _indexDir = new File("index");
     FileUtils.deleteDirectory(_indexDir);
     _indexDir.mkdir();
-    String avroFilepath = System.getProperty("user.dir")
-        + "/sensei-ba/gazelle/src/test/resources/data/sample_data.avro";
-    _jsonFilePath = System.getProperty("user.dir") + "/sensei-ba/gazelle/src/test/resources/data/sample_data.json";
-    _avroFile = new File(avroFilepath);
+    _avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
+    _jsonFile = new File(getClass().getClassLoader().getResource("data/sample_data.json").toURI());
     SegmentCreator writer = new SegmentCreator();
     _segment = writer.process(_avroFile);
     SegmentFlusher.flush(_segment, _indexDir.getAbsolutePath());
@@ -115,8 +112,7 @@ public class SegmentReaderTest {
     GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.DBBuffer);
     HashMap<String, GazelleColumnMedata> metadataMap = segment.getColumnMetatdaMap();
     int i =1;
-    File jsonFile = new File(_jsonFilePath);
-    for (String line : FileUtils.readLines(jsonFile)) {
+    for (String line : FileUtils.readLines(_jsonFile)) {
       JSONObject obj = new JSONObject(line);
       for (String column : metadataMap.keySet()) {
         GazelleForwardIndexImpl index = (GazelleForwardIndexImpl) segment.getForwardIndex(column);
@@ -137,8 +133,7 @@ public class SegmentReaderTest {
     GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.MMAPPED);
     HashMap<String, GazelleColumnMedata> metadataMap = segment.getColumnMetatdaMap();
     int i =1;
-    File jsonFile = new File(_jsonFilePath);
-    for (String line : FileUtils.readLines(jsonFile)) {
+    for (String line : FileUtils.readLines(_jsonFile)) {
       JSONObject obj = new JSONObject(line);
       for (String column : metadataMap.keySet()) {
         GazelleForwardIndexImpl index = (GazelleForwardIndexImpl) segment.getForwardIndex(column);

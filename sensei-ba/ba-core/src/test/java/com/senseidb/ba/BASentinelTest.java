@@ -75,7 +75,5 @@ public class BASentinelTest  extends TestCase {
      System.out.println(resp.toString(1));
      assertEquals("numhits is wrong", 13224, resp.getInt("numhits"));
 }
-  public void test2() throws Exception {
-    //Thread.sleep(Long.MAX_VALUE);
-  }
+  
 }

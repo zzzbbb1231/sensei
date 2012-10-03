@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.linkedin.gazelle.TestHelper;
+import com.linkedin.gazelle.creators.DictionaryCreator;
 import com.linkedin.gazelle.utils.GazelleColumnMedata;
 
 public class DictionaryWriterTest {
@@ -33,14 +34,12 @@ public class DictionaryWriterTest {
   DataFileStream<GenericRecord> _dataFileReader;
 
   @Before
-  public void setup() throws IOException {
+  public void setup() throws Exception {
     _indexDir = new File("index");
     _indexDir.delete();
     _indexDir.mkdir();
 
-    String avroFilepath = System.getProperty("user.dir")
-        + "/src/test/resources/data/sample_data.avro";
-    File avroFile = new File(avroFilepath);
+    File avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
     InputStream is = new FileInputStream(avroFile);
     DatumReader<GenericRecord> datumReader = new GenericDatumReader<GenericRecord>();
     _dataFileReader = new DataFileStream<GenericRecord>(is, datumReader);
@@ -50,7 +49,7 @@ public class DictionaryWriterTest {
 
   @Test
   public void validityCheck() {
-    _dictionaryWriter = new DictionaryCreator(_columnMetaMedataArr[8]);
+    _dictionaryWriter = new DictionaryCreator(_columnMetaMedataArr[8].getColumnType());
     int count = 1;
     assertNotNull(_dictionaryWriter);
     while (_dataFileReader.hasNext()) {
