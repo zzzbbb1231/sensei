@@ -1,8 +1,8 @@
-package com.linkedin.gazelle.dao;
+package com.senseidb.ba.gazelle.dao;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.utils.GazelleColumnMetadata;
-import com.linkedin.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.GazelleColumnMetadata;
+import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 import com.senseidb.ba.ColumnMetadata;
 import com.senseidb.ba.ForwardIndex;
 

@@ -1,4 +1,4 @@
-package com.linkedin.gazelle.creators;
+package com.senseidb.ba.gazelle.creators;
 
 import it.unimi.dsi.fastutil.floats.Float2IntOpenHashMap;
 import it.unimi.dsi.fastutil.floats.FloatAVLTreeSet;
@@ -16,11 +16,6 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
-import java.io.DataOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
@@ -32,9 +27,8 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.utils.GazelleColumnMetadata;
-import com.linkedin.gazelle.utils.GazelleColumnType;
-import com.linkedin.gazelle.utils.GazelleUtils;
+import com.senseidb.ba.gazelle.utils.GazelleColumnType;
+import com.senseidb.ba.gazelle.utils.GazelleUtils;
 
 /**
  * @author dpatel

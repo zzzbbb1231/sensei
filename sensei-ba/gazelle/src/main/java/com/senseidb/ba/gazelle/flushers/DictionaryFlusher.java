@@ -1,12 +1,10 @@
-package com.linkedin.gazelle.flushers;
+package com.senseidb.ba.gazelle.flushers;
 
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 
 import com.browseengine.bobo.facets.data.TermFloatList;
@@ -14,7 +12,7 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.utils.GazelleColumnMetadata;
+import com.senseidb.ba.gazelle.utils.GazelleColumnMetadata;
 
 public class DictionaryFlusher {
 

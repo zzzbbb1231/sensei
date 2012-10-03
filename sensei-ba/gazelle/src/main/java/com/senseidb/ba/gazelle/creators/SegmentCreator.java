@@ -1,11 +1,9 @@
-package com.linkedin.gazelle.creators;
+package com.senseidb.ba.gazelle.creators;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
@@ -21,10 +19,10 @@ import org.apache.log4j.Logger;
 import org.mortbay.io.RuntimeIOException;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
-import com.linkedin.gazelle.utils.GazelleColumnMetadata;
-import com.linkedin.gazelle.utils.GazelleColumnType;
-import com.linkedin.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.GazelleColumnMetadata;
+import com.senseidb.ba.gazelle.utils.GazelleColumnType;
 
 public class SegmentCreator {
   private static Logger logger = Logger.getLogger(SegmentCreator.class);

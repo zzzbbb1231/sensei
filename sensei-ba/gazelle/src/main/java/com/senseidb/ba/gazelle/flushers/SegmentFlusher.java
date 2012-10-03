@@ -1,11 +1,11 @@
-package com.linkedin.gazelle.flushers;
+package com.senseidb.ba.gazelle.flushers;
 
 import java.io.IOException;
 import java.util.HashMap;
 
 import org.apache.commons.configuration.ConfigurationException;
 
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
 
 public class SegmentFlusher {
 

@@ -1,4 +1,4 @@
-package com.linkedin.gazelle.readers;
+package com.senseidb.ba.gazelle.readers;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -24,16 +24,15 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.creators.SegmentCreator;
-import com.linkedin.gazelle.dao.GazelleForwardIndexImpl;
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
-import com.linkedin.gazelle.flushers.SegmentFlusher;
+import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.dao.GazelleForwardIndexImpl;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.flushers.SegmentFlusher;
 
-import com.linkedin.gazelle.utils.GazelleColumnMetadata;
-
-import com.linkedin.gazelle.utils.CompressedIntArray;
-import com.linkedin.gazelle.utils.GazelleColumnMedata;
-import com.linkedin.gazelle.utils.ReadMode;
+import com.senseidb.ba.gazelle.readers.SegmentReader;
+import com.senseidb.ba.gazelle.utils.GazelleColumnMetadata;
+import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.ReadMode;
 
 public class SegmentReaderTest {
 
@@ -61,19 +60,11 @@ public class SegmentReaderTest {
   public void testmetadataDataAccess() throws ConfigurationException, IOException {
     GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.DBBuffer);
 
-    HashMap<String, GazelleColumnMedata> metadataMap = segment.getColumnMetatdaMap();
+    HashMap<String, GazelleColumnMetadata> metadataMap = segment.getColumnMetatdaMap();
     HashMap<String, CompressedIntArray> compressedIntArrayMap = segment.getCompressedIntArrayMap();
     HashMap<String, TermValueList> termValueListMap = segment.getTermValueListMap();
 
     for (String column : metadataMap.keySet()) {
-      assertFalse(StringUtils.isBlank(metadataMap.get(column).getName()));
-      int numOfBits = CompressedIntArray.getNumOfBits(termValueListMap.get(column).size());
-      assertEquals(numOfBits, (metadataMap.get(column).getBitsPerElement() != 0));
-      assertTrue((metadataMap.get(column).getByteLength() != 0));
-      assertEquals(termValueListMap.size(), metadataMap.get(column).getNumberOfDictionaryValues());
-      assertEquals(compressedIntArrayMap.get(column).getCapacity(), metadataMap.get(column).getNumberOfElements() != 0);
-      assertTrue((StringUtils.isBlank(metadataMap.get(column).getColumnType().toString())));
-      assertEquals(compressedIntArrayMap.get(column).getCapacity(), metadataMap.get(column).getNumberOfElements());
 
     }
   }

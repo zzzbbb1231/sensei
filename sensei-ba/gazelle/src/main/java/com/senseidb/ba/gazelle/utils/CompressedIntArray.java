@@ -1,4 +1,4 @@
-package com.linkedin.gazelle.utils;
+package com.senseidb.ba.gazelle.utils;
 
 import java.nio.ByteBuffer;
 
