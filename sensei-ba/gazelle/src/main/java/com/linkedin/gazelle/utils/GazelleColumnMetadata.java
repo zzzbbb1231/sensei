@@ -12,7 +12,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
  * @author dpatel
  */
 
-public class GazelleColumnMedata {
+public class GazelleColumnMetadata {
   /*
    * TODO: dpatel will keep adding things as needed.
    */
@@ -25,13 +25,13 @@ public class GazelleColumnMedata {
   private int _bitsPerElement;
   private boolean _sorted;
 
-  public static HashMap<String, GazelleColumnMedata> readFromFile(PropertiesConfiguration config) {
-    HashMap<String, GazelleColumnMedata> columnMetadataMap = new HashMap<String, GazelleColumnMedata>();
+  public static HashMap<String, GazelleColumnMetadata> readFromFile(PropertiesConfiguration config) {
+    HashMap<String, GazelleColumnMetadata> columnMetadataMap = new HashMap<String, GazelleColumnMetadata>();
     Iterator columns = config.getKeys("column");
     while (columns.hasNext()) {
        String key = (String) columns.next();
        String columnName = key.split("\\.")[1];
-       GazelleColumnMedata metadata = new GazelleColumnMedata();
+       GazelleColumnMetadata metadata = new GazelleColumnMetadata();
        metadata.setStartOffset(config.getLong("column." + columnName + ".startOffset"));
        metadata.setByteLength(config.getLong("column." + columnName + ".byteLength"));
        metadata.setNumberOfElements(config.getInt("column." + columnName + ".numberOfElements"));
@@ -47,12 +47,12 @@ public class GazelleColumnMedata {
     return columnMetadataMap;
   }
   
-  public GazelleColumnMedata(String name, GazelleColumnType type) {
+  public GazelleColumnMetadata(String name, GazelleColumnType type) {
     _name = name;
     _columnType = type;
   }
 
-  public GazelleColumnMedata() {
+  public GazelleColumnMetadata() {
     
   }
   public void addToConfig(Configuration configuration) {
@@ -71,6 +71,10 @@ public class GazelleColumnMedata {
 
   public void setName(String name) {
     this._name = name;
+  }
+
+  public boolean getSorted() {
+    return _sorted;
   }
 
   public GazelleColumnType getColumnType() {

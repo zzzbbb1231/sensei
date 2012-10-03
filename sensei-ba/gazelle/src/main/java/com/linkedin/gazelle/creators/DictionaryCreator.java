@@ -32,7 +32,7 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.utils.GazelleColumnMedata;
+import com.linkedin.gazelle.utils.GazelleColumnMetadata;
 import com.linkedin.gazelle.utils.GazelleColumnType;
 import com.linkedin.gazelle.utils.GazelleUtils;
 
@@ -43,8 +43,6 @@ import com.linkedin.gazelle.utils.GazelleUtils;
 public class DictionaryCreator {
 
   private static Logger logger = Logger.getLogger(DictionaryCreator.class);
-
-  private GazelleColumnType _columnType;
   /*
    * Tree Sets
    */
@@ -64,9 +62,8 @@ public class DictionaryCreator {
 
   int _counter;
 
-  public DictionaryCreator(GazelleColumnType type) {
+  public DictionaryCreator() {
     _counter = 1;
-    _columnType = type;
     /*
      * Tree Sets Intialization
      */
@@ -77,8 +74,8 @@ public class DictionaryCreator {
   }
 
 
-  public void addValue(Object original) {
-    switch (_columnType) {
+  public void addValue(Object original, GazelleColumnType type) {
+    switch (type) {
       case LONG:
         addLongValue(original);
         break;
@@ -141,11 +138,11 @@ public class DictionaryCreator {
     return _obj2IntMap.get(value);
   }
 
-  public int getValue(Object value) {
+  public int getValue(Object value, GazelleColumnType type) {
     if (value == null) {
       return 0;
     }
-    switch (_columnType) {
+    switch (type) {
       case LONG:
         return getLongIndex(((Long) value).longValue());
       case INT:
@@ -159,8 +156,8 @@ public class DictionaryCreator {
     }
   }
 
-  public TermValueList getTermValueList() {
-    switch (_columnType) {
+  public TermValueList getTermValueList(GazelleColumnType type) {
+    switch (type) {
       case LONG:
         return getTermLongList();
       case INT:

@@ -1,8 +1,8 @@
-package com.senseidb.ba.index1;
+package com.senseidb.ba;
 
 import org.apache.commons.configuration.Configuration;
 
-import com.senseidb.ba.ColumnType;
+import com.linkedin.gazelle.utils.GazelleColumnMetadata;
 
 public class ColumnMetadata {
   private String column;
@@ -14,7 +14,22 @@ public class ColumnMetadata {
   private ColumnType columnType;
   private boolean sorted;
 
-  
+  /*
+   * Won't be needed once Integration is done
+   * */
+
+  public static ColumnMetadata transformToSelf(GazelleColumnMetadata metadata) {
+    ColumnMetadata meta = new ColumnMetadata();
+    meta.setBitsPerElement(metadata.getBitsPerElement());
+    meta.setByteLength(metadata.getByteLength());
+    meta.setColumn(metadata.getName());
+    meta.setColumnType(ColumnType.valueOf(metadata.getColumnType().toString()));
+    meta.setNumberOfDictionaryValues(metadata.getNumberOfDictionaryValues());
+    meta.setNumberOfElements(metadata.getNumberOfElements());
+    meta.setSorted(metadata.getSorted());
+    meta.setStartOffset(metadata.getStartOffset());
+    return meta;
+  }
 
   public static ColumnMetadata readFromConfiguration(String column, Configuration configuration) {
     ColumnMetadata ret = new ColumnMetadata();

@@ -22,7 +22,7 @@ import org.mortbay.io.RuntimeIOException;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
-import com.linkedin.gazelle.utils.GazelleColumnMedata;
+import com.linkedin.gazelle.utils.GazelleColumnMetadata;
 import com.linkedin.gazelle.utils.GazelleColumnType;
 import com.linkedin.gazelle.utils.CompressedIntArray;
 
@@ -34,7 +34,7 @@ public class SegmentCreator {
   private DatumReader<GenericRecord> _datumReader;
   private DataFileStream<GenericRecord> _dataFileReader;
   private Schema _schema;
-  private GazelleColumnMedata[] _columnMetadataArr;
+  private GazelleColumnMetadata[] _columnMetadataArr;
   private DictionaryCreator[] _dictionaryWriterArr;
   private TermValueList[] _termValueLists;
   private CompressedIntArray[] _compressedIntArr;
@@ -50,7 +50,7 @@ public class SegmentCreator {
         throw new IllegalStateException("Cannot read the Schema File");
       }
       int i = 0;
-      _columnMetadataArr = new GazelleColumnMedata[_schema.getFields().size()];
+      _columnMetadataArr = new GazelleColumnMetadata[_schema.getFields().size()];
       _dictionaryWriterArr = new DictionaryCreator[_schema.getFields().size()];
       for (Field field : _schema.getFields()) {
         Type type = field.schema().getType();
@@ -61,8 +61,8 @@ public class SegmentCreator {
               return ((Schema) object).getType() != Type.NULL;
             }
           })).getType();
-          _columnMetadataArr[i] = new GazelleColumnMedata(field.name(), GazelleColumnType.getType(type.toString()));
-          _dictionaryWriterArr[i] = new DictionaryCreator(GazelleColumnType.getType(type.toString()));
+          _columnMetadataArr[i] = new GazelleColumnMetadata(field.name(), GazelleColumnType.getType(type.toString()));
+          _dictionaryWriterArr[i] = new DictionaryCreator();
           i++;
         }
       }
@@ -89,7 +89,7 @@ public class SegmentCreator {
             if (columnEntry instanceof Utf8) {
               columnEntry = ((Utf8) columnEntry).toString();
             }
-            _dictionaryWriterArr[i].addValue(columnEntry);
+            _dictionaryWriterArr[i].addValue(columnEntry, _columnMetadataArr[i].getColumnType());
           }
           _numOfElements++;
         } else {
@@ -98,7 +98,7 @@ public class SegmentCreator {
       }
 
       for (int i = 0; i < _columnMetadataArr.length; i++) {
-        _termValueLists[i] = _dictionaryWriterArr[i].getTermValueList();
+        _termValueLists[i] = _dictionaryWriterArr[i].getTermValueList(_columnMetadataArr[i].getColumnType());
         _compressedIntArr[i] =
             new CompressedIntArray(_numOfElements, CompressedIntArray.getNumOfBits(_termValueLists[i].size()),
                 getByteBuffer(_numOfElements, _termValueLists[i].size()));
@@ -115,7 +115,7 @@ public class SegmentCreator {
           if (value instanceof Utf8) {
             value = ((Utf8) value).toString();
           }
-          _compressedIntArr[i].addInt(incrementor, _dictionaryWriterArr[i].getValue(value));
+          _compressedIntArr[i].addInt(incrementor, _dictionaryWriterArr[i].getValue(value, _columnMetadataArr[i].getColumnType()));
         }
         incrementor++;
       }

@@ -14,11 +14,11 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.utils.GazelleColumnMedata;
+import com.linkedin.gazelle.utils.GazelleColumnMetadata;
 
 public class DictionaryFlusher {
 
-  public static void flush(HashMap<String, GazelleColumnMedata> metadataMap, HashMap<String, TermValueList> termValueListMap, String baseDir) throws IOException {
+  public static void flush(HashMap<String, GazelleColumnMetadata> metadataMap, HashMap<String, TermValueList> termValueListMap, String baseDir) throws IOException {
     for (String column : metadataMap.keySet()) {
       String dictFileName = metadataMap.get(column).getName() + ".dict";
       OutputStream out = new FileOutputStream(new File(baseDir, dictFileName));
