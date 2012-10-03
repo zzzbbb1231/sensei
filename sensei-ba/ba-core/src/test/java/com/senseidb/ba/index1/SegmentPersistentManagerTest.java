@@ -1,28 +1,21 @@
 package com.senseidb.ba.index1;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.List;
 
 import junit.framework.TestCase;
 
 import org.apache.avro.Schema;
-import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileStream;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.JsonEncoder;
-import org.apache.avro.tool.DataFileReadTool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.JsonGenerator;
@@ -33,11 +26,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.ForwardIndex;
-import com.senseidb.ba.IndexSegmentImpl;
-import com.senseidb.ba.index1.InMemoryAvroMapper;
-import com.senseidb.ba.index1.SegmentPersistentManager;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.util.SingleNodeStarter;
 
 public class SegmentPersistentManagerTest extends TestCase{

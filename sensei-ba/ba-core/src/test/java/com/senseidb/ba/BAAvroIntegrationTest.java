@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.index1.InMemoryAvroMapper;
 import com.senseidb.ba.index1.SegmentPersistentManager;
 import com.senseidb.ba.util.TestUtil;

@@ -1,4 +1,4 @@
-package com.linkedin.gazelle.dao;
+package com.senseidb.ba.gazelle.dao;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -6,10 +6,10 @@ import java.util.Map;
 import org.apache.lucene.search.DocIdSet;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.creators.MetadataCreator;
-import com.linkedin.gazelle.utils.GazelleColumnMetadata;
-import com.linkedin.gazelle.utils.GazelleColumnType;
-import com.linkedin.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.creators.MetadataCreator;
+import com.senseidb.ba.gazelle.utils.GazelleColumnMetadata;
+import com.senseidb.ba.gazelle.utils.GazelleColumnType;
+import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 import com.senseidb.ba.ColumnType;
 import com.senseidb.ba.ForwardIndex;
 import com.senseidb.ba.IndexSegment;

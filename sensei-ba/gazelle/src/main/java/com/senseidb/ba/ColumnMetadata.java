@@ -2,7 +2,7 @@ package com.senseidb.ba;
 
 import org.apache.commons.configuration.Configuration;
 
-import com.linkedin.gazelle.utils.GazelleColumnMetadata;
+import com.senseidb.ba.gazelle.utils.GazelleColumnMetadata;
 
 public class ColumnMetadata {
   private String column;

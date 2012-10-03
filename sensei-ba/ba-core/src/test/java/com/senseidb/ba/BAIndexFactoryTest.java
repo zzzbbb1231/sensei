@@ -5,15 +5,8 @@ import java.io.File;
 import junit.framework.TestCase;
 
 import org.I0Itec.zkclient.ZkClient;
-import org.apache.commons.collections.Predicate;
-import org.apache.commons.io.FileUtils;
-import org.apache.tools.ant.taskdefs.WaitFor;
-import org.junit.After;
-import org.junit.Before;
 
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
-import com.senseidb.ba.index1.InMemoryAvroMapper;
-import com.senseidb.ba.index1.SegmentPersistentManager;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.management.BaIndexFactory;
 import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;

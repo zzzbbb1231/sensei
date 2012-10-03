@@ -1,4 +1,4 @@
-package com.linkedin.gazelle.readers;
+package com.senseidb.ba.gazelle.readers;
 
 import java.io.DataInputStream;
 import java.io.File;
@@ -14,8 +14,8 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.utils.GazelleColumnType;
-import com.linkedin.gazelle.utils.GazelleUtils;
+import com.senseidb.ba.gazelle.utils.GazelleColumnType;
+import com.senseidb.ba.gazelle.utils.GazelleUtils;
 
 public class DictionaryReader {
 

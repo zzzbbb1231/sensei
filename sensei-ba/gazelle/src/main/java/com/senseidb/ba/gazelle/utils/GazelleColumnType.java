@@ -1,6 +1,5 @@
-package com.linkedin.gazelle.utils;
+package com.senseidb.ba.gazelle.utils;
 
-import org.apache.avro.util.Utf8;
 
 /**
  * @author dpatel

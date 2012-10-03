@@ -2,16 +2,16 @@ package com.senseidb.ba;
 
 import java.io.File;
 
+import junit.framework.TestCase;
+
 import org.junit.After;
 import org.junit.Before;
 
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.index1.InMemoryAvroMapper;
 import com.senseidb.ba.index1.SegmentPersistentManager;
 import com.senseidb.ba.util.TarGzCompressionUtils;
 import com.senseidb.util.SingleNodeStarter;
-
-import junit.framework.TestCase;
 
 public class CompressionTest extends TestCase {
   private File avroFile;

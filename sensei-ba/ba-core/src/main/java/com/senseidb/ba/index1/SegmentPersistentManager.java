@@ -1,28 +1,15 @@
 package com.senseidb.ba.index1;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel.MapMode;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
-import com.linkedin.gazelle.flushers.SegmentFlusher;
-import com.linkedin.gazelle.readers.SegmentReader;
-import com.linkedin.gazelle.utils.ReadMode;
-import com.senseidb.ba.ForwardIndex;
-import com.senseidb.ba.IndexSegmentImpl;
-import com.senseidb.ba.util.CompressedIntArray;
-import com.senseidb.indexing.activity.CompositeActivityStorage;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.flushers.SegmentFlusher;
+import com.senseidb.ba.gazelle.readers.SegmentReader;
+import com.senseidb.ba.gazelle.utils.ReadMode;
 
 public class SegmentPersistentManager {
     private static Logger logger = Logger.getLogger(SegmentPersistentManager.class);

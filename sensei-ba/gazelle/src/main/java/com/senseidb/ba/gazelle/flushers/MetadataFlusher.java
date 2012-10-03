@@ -1,4 +1,4 @@
-package com.linkedin.gazelle.flushers;
+package com.senseidb.ba.gazelle.flushers;
 
 import java.io.File;
 import java.util.HashMap;
@@ -6,8 +6,8 @@ import java.util.HashMap;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
-import com.linkedin.gazelle.utils.GazelleColumnMetadata;
-import com.linkedin.gazelle.utils.GazelleUtils;
+import com.senseidb.ba.gazelle.utils.GazelleColumnMetadata;
+import com.senseidb.ba.gazelle.utils.GazelleUtils;
 
 public class MetadataFlusher {
 

@@ -1,17 +1,9 @@
 package com.senseidb.ba.index1;
 
 import java.io.File;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 
-import org.apache.commons.configuration.FileConfiguration;
-import org.apache.commons.configuration.PropertiesConfiguration;
-
-import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.creators.SegmentCreator;
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
-import com.senseidb.ba.ColumnType;
-import com.senseidb.ba.util.CompressedIntArray;
+import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
 
 public class InMemoryAvroMapper  {
 	private long startOffset = 0;

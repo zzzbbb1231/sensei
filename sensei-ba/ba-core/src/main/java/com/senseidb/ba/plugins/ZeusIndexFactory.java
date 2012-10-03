@@ -25,10 +25,10 @@ import proj.zoie.api.ZoieIndexReader;
 import proj.zoie.mbean.ZoieAdminMBean;
 
 import com.browseengine.bobo.api.BoboIndexReader;
-import com.linkedin.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.IndexSegment;
 import com.senseidb.ba.IndexSegmentCreator;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
+import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.index1.InMemoryAvroMapper;
 import com.senseidb.ba.index1.SegmentPersistentManager;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;

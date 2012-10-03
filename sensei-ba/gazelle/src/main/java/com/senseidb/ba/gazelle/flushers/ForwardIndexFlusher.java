@@ -1,14 +1,12 @@
-package com.linkedin.gazelle.flushers;
+package com.senseidb.ba.gazelle.flushers;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 
-import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.utils.CompressedIntArray;
-import com.linkedin.gazelle.utils.GazelleUtils;
+import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.GazelleUtils;
 
 public class ForwardIndexFlusher {
 

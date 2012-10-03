@@ -1,4 +1,4 @@
-package com.linkedin.gazelle.readers;
+package com.senseidb.ba.gazelle.readers;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,11 +9,11 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
-import com.linkedin.gazelle.utils.GazelleColumnMetadata;
-import com.linkedin.gazelle.utils.CompressedIntArray;
-import com.linkedin.gazelle.utils.GazelleUtils;
-import com.linkedin.gazelle.utils.ReadMode;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.utils.GazelleColumnMetadata;
+import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.GazelleUtils;
+import com.senseidb.ba.gazelle.utils.ReadMode;
 
 public class SegmentReader {
   private static Logger logger = Logger.getLogger(SegmentReader.class);

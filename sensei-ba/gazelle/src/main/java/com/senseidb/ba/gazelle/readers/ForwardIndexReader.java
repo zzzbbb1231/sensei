@@ -1,4 +1,4 @@
-package com.linkedin.gazelle.readers;
+package com.senseidb.ba.gazelle.readers;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,9 +10,9 @@ import java.nio.channels.FileChannel.MapMode;
 import org.apache.log4j.Logger;
 import org.mortbay.io.RuntimeIOException;
 
-import com.linkedin.gazelle.utils.GazelleColumnMetadata;
-import com.linkedin.gazelle.utils.CompressedIntArray;
-import com.linkedin.gazelle.utils.ReadMode;
+import com.senseidb.ba.gazelle.utils.GazelleColumnMetadata;
+import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.ReadMode;
 
 public class ForwardIndexReader {
 

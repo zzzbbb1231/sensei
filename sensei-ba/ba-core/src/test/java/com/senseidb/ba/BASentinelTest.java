@@ -1,14 +1,13 @@
 package com.senseidb.ba;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 
 import junit.framework.TestCase;
 
 import org.json.JSONObject;
 
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.util.TestUtil;

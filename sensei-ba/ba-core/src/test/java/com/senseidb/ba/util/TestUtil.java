@@ -11,12 +11,10 @@ import java.net.URLConnection;
 
 import org.json.JSONObject;
 
-import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.BASentinelTest;
-import com.senseidb.ba.IndexSegmentImpl;
+import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.index1.InMemoryAvroMapper;
 import com.senseidb.ba.index1.SegmentPersistentManager;
-import com.senseidb.ba.util.TarGzCompressionUtils;
 
 public class TestUtil {
 

@@ -1,16 +1,11 @@
-package com.linkedin.gazelle.creators;
+package com.senseidb.ba.gazelle.creators;
 
-import java.io.File;
-import java.util.HashMap;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.linkedin.gazelle.utils.GazelleColumnMetadata;
-import com.linkedin.gazelle.utils.GazelleColumnType;
-import com.linkedin.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.GazelleColumnMetadata;
+import com.senseidb.ba.gazelle.utils.GazelleColumnType;
 
 /**
  * @author dpatel

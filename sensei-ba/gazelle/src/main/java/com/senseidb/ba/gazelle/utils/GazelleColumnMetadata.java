@@ -1,6 +1,4 @@
-package com.linkedin.gazelle.utils;
-
-import it.unimi.dsi.fastutil.Hash;
+package com.senseidb.ba.gazelle.utils;
 
 import java.util.HashMap;
 import java.util.Iterator;
