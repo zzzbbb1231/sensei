@@ -33,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.ForwardIndex;
 import com.senseidb.ba.IndexSegmentImpl;
 import com.senseidb.ba.index1.InMemoryAvroMapper;
@@ -67,11 +68,11 @@ public class SegmentPersistentManagerTest extends TestCase{
         /*dumpToJson(avroFileStream, new PrintStream( new FileOutputStream(new File("json.txt"))));
         avroFileStream = new FileInputStream(avroFile);*/
         InMemoryAvroMapper avroMapper = new InMemoryAvroMapper(avroFile);
-        IndexSegmentImpl indexSegmentImpl = avroMapper.build();
+        GazelleIndexSegmentImpl indexSegmentImpl = avroMapper.build();
        
         SegmentPersistentManager segmentPersistentManager = new SegmentPersistentManager();
         segmentPersistentManager.persist(indexDir, indexSegmentImpl);
-        IndexSegmentImpl persistedIndexSegment = segmentPersistentManager.read(indexDir, false);
+        GazelleIndexSegmentImpl persistedIndexSegment = segmentPersistentManager.read(indexDir, false);
         System.out.println(FileUtils.readFileToString(segmentPersistentManager.getPropertiesMetadata(indexDir).getFile()));
         
         IOUtils.closeQuietly(avroFileStream);
@@ -79,7 +80,7 @@ public class SegmentPersistentManagerTest extends TestCase{
         compareWithJsonFile(persistedIndexSegment);
     }
 
-private void compareWithJsonFile(IndexSegmentImpl indexSegmentImpl) throws URISyntaxException, IOException, JSONException {
+private void compareWithJsonFile(GazelleIndexSegmentImpl indexSegmentImpl) throws URISyntaxException, IOException, JSONException {
     File jsonFile = new File(getClass().getClassLoader().getResource("data/sample_data.json").toURI());
     int i = 1;
     for (String line : FileUtils.readLines(jsonFile)) {

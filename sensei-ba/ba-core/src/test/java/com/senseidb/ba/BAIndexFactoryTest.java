@@ -11,6 +11,7 @@ import org.apache.tools.ant.taskdefs.WaitFor;
 import org.junit.After;
 import org.junit.Before;
 
+import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.index1.InMemoryAvroMapper;
 import com.senseidb.ba.index1.SegmentPersistentManager;
 import com.senseidb.ba.management.BaIndexFactory;
@@ -25,7 +26,7 @@ public class BAIndexFactoryTest extends TestCase {
   private ZkClient zkClient;
   private BaIndexFactory baIndexFactory;
   private File indexDir;
-  private IndexSegmentImpl indexSegment;
+  private GazelleIndexSegmentImpl indexSegment;
   private ZkManager zkManager;
   
   public void setUp() throws Exception {

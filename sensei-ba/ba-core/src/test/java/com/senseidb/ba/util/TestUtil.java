@@ -11,6 +11,7 @@ import java.net.URLConnection;
 
 import org.json.JSONObject;
 
+import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.BASentinelTest;
 import com.senseidb.ba.IndexSegmentImpl;
 import com.senseidb.ba.index1.InMemoryAvroMapper;
@@ -19,13 +20,13 @@ import com.senseidb.ba.util.TarGzCompressionUtils;
 
 public class TestUtil {
 
-  public static IndexSegmentImpl createIndexSegment() throws URISyntaxException, Exception {
+  public static GazelleIndexSegmentImpl createIndexSegment() throws URISyntaxException, Exception {
     File avroFile = new File(BASentinelTest.class.getClassLoader().getResource("data/sample_data.avro").toURI());
-     IndexSegmentImpl indexSegmentImpl = new InMemoryAvroMapper(avroFile).build();
+    GazelleIndexSegmentImpl indexSegmentImpl = new InMemoryAvroMapper(avroFile).build();
      return indexSegmentImpl;
   }
 
-  public static File createCompressedSegment(String segmentId, IndexSegmentImpl indexSegmentImpl, File tempIndexDir) throws Exception {
+  public static File createCompressedSegment(String segmentId, GazelleIndexSegmentImpl indexSegmentImpl, File tempIndexDir) throws Exception {
     File segmentDir = new File(tempIndexDir, segmentId);
   
     

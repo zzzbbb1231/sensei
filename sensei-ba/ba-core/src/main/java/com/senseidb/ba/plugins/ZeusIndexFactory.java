@@ -25,6 +25,7 @@ import proj.zoie.api.ZoieIndexReader;
 import proj.zoie.mbean.ZoieAdminMBean;
 
 import com.browseengine.bobo.api.BoboIndexReader;
+import com.linkedin.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.IndexSegment;
 import com.senseidb.ba.IndexSegmentCreator;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
@@ -117,7 +118,7 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
           
           @Override
           public boolean accept(File dir, String name) {
-            return name.contains(SegmentPersistentManager.INDEX_FILE_NAME);
+            return name.contains(GazelleUtils.INDEX_FILENAME);
           }
         });
         if (persistentIndexes.length > 0) {

@@ -8,43 +8,21 @@ import org.apache.commons.configuration.FileConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.linkedin.gazelle.creators.SegmentCreator;
+import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.ColumnType;
 import com.senseidb.ba.util.CompressedIntArray;
 
-public class InMemoryAvroMapper extends Avro2ForwardIndexMapper {
+public class InMemoryAvroMapper  {
 	private long startOffset = 0;
+  private final File avroFile;
 	public InMemoryAvroMapper(File avroFile) {
-		super(avroFile);
+    this.avroFile = avroFile;
+		
 		
 	}
+	public GazelleIndexSegmentImpl build() throws Exception {
+    return new SegmentCreator().process(avroFile);
+ }
 
-	@Override
-	public synchronized ColumnMetadata getColumnMetadata(TermValueList dictionary,
-			int count, String columnName, ColumnType columnType, boolean isSorted) {
-	    ColumnMetadata columnMetadata = new ColumnMetadata();
-	    if (!isSorted) {
-    	    int numOfBits = CompressedIntArray.getNumOfBits(dictionary.size());
-    		int bufferSize = CompressedIntArray.getRequiredBufferSize(count, numOfBits); 
-    		columnMetadata.setBitsPerElement(numOfBits);
-    		columnMetadata.setByteLength(bufferSize);
-    		columnMetadata.setStartOffset(startOffset);
-    		startOffset += bufferSize;
-		} else {
-		    columnMetadata.setBitsPerElement(-1);
-            columnMetadata.setByteLength(-1);
-            columnMetadata.setStartOffset(-1);
-		}
-		columnMetadata.setColumn(columnName);
-		columnMetadata.setNumberOfDictionaryValues(dictionary.size());
-		columnMetadata.setNumberOfElements(count);
-		columnMetadata.setSorted(isSorted);
-		columnMetadata.setColumnType(columnType);
-		return columnMetadata;
-	}
-
-	@Override
-	public ByteBuffer getByteBuffer(int numOfElements, int dictionarySize) {
-		return ByteBuffer.allocate(CompressedIntArray.getRequiredBufferSize(numOfElements, CompressedIntArray.getNumOfBits(dictionarySize)));
-	}
-  
 }

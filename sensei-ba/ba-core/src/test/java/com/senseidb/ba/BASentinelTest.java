@@ -8,6 +8,7 @@ import junit.framework.TestCase;
 
 import org.json.JSONObject;
 
+import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.util.TestUtil;
@@ -18,7 +19,7 @@ public class BASentinelTest  extends TestCase {
   private ZkManager zkManager;
   private File indexDir;
   private File compressedSegment;
-  private IndexSegmentImpl indexSegmentImpl;
+  private GazelleIndexSegmentImpl indexSegmentImpl;
   @Override
   protected void tearDown() throws Exception {
     SingleNodeStarter.shutdown(); 

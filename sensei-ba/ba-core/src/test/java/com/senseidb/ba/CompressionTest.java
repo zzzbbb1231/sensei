@@ -5,6 +5,7 @@ import java.io.File;
 import org.junit.After;
 import org.junit.Before;
 
+import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.index1.InMemoryAvroMapper;
 import com.senseidb.ba.index1.SegmentPersistentManager;
 import com.senseidb.ba.util.TarGzCompressionUtils;
@@ -25,7 +26,7 @@ public class CompressionTest extends TestCase {
       segmentDir = new File(indexDir, "segment1");
       indexDir.mkdir();
       avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
-      IndexSegmentImpl indexSegmentImpl = new InMemoryAvroMapper(avroFile).build();
+      GazelleIndexSegmentImpl indexSegmentImpl = new InMemoryAvroMapper(avroFile).build();
       SegmentPersistentManager.persist(segmentDir, indexSegmentImpl);
 
   }
@@ -40,7 +41,7 @@ public class CompressionTest extends TestCase {
     SingleNodeStarter.rmrf(segmentDir);
     TarGzCompressionUtils.unTar(compressedFile, indexDir);
     
-    IndexSegmentImpl read = SegmentPersistentManager.read(segmentDir, false);
+    GazelleIndexSegmentImpl read = SegmentPersistentManager.read(segmentDir, false);
     assertNotNull(read);
   }
 }

@@ -21,7 +21,11 @@ public class DictionaryFlusher {
   public static void flush(HashMap<String, GazelleColumnMetadata> metadataMap, HashMap<String, TermValueList> termValueListMap, String baseDir) throws IOException {
     for (String column : metadataMap.keySet()) {
       String dictFileName = metadataMap.get(column).getName() + ".dict";
-      OutputStream out = new FileOutputStream(new File(baseDir, dictFileName));
+      File baseDirFile = new File(baseDir);
+      if (!baseDirFile.exists()) {
+        baseDirFile.mkdirs();
+      }
+      OutputStream out = new FileOutputStream(new File(baseDirFile, dictFileName));
       DataOutputStream ds = new DataOutputStream(out);
       try {
         switch (metadataMap.get(column).getColumnType()) {

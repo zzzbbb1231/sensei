@@ -15,6 +15,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
+import com.linkedin.gazelle.flushers.SegmentFlusher;
+import com.linkedin.gazelle.readers.SegmentReader;
+import com.linkedin.gazelle.utils.ReadMode;
 import com.senseidb.ba.ForwardIndex;
 import com.senseidb.ba.IndexSegmentImpl;
 import com.senseidb.ba.util.CompressedIntArray;
@@ -25,8 +29,10 @@ public class SegmentPersistentManager {
     
     public static final String METADATA_PROPERTIES = "metadata.properties";
 	public static final String INDEX_FILE_NAME = "index.blob";
-	public static void persist(File directory, IndexSegmentImpl indexSegmentImpl) throws Exception {
-		directory.mkdirs();
+	public static void persist(File directory, GazelleIndexSegmentImpl indexSegmentImpl) throws Exception {
+		SegmentFlusher.flush(indexSegmentImpl, directory.getAbsolutePath());
+	  
+	  /*directory.mkdirs();
 		File forwardIndexStorage = new File(directory, INDEX_FILE_NAME);
 		RandomAccessFile forwardIndexFile = new RandomAccessFile(forwardIndexStorage, "rw");
 		PropertiesConfiguration propertiesConfiguration = getPropertiesMetadata(directory);
@@ -50,10 +56,12 @@ public class SegmentPersistentManager {
 		propertiesConfiguration.save();
 		forwardIndexFile.getFD().sync();
 		forwardIndexFile.getChannel().close();
-		forwardIndexFile.close();
+		forwardIndexFile.close();*/
 	}
-	public static IndexSegmentImpl read(File directory, boolean memoryMappedMode) throws Exception {
-		RandomAccessFile forwardIndexFile = null;
+	public static GazelleIndexSegmentImpl read(File directory, boolean memoryMappedMode) throws Exception {
+		return SegmentReader.read(directory, ReadMode.DBBuffer);
+	  
+	  /*RandomAccessFile forwardIndexFile = null;
 		try {
     		IndexMetadata indexMetadata = IndexMetadata.readFromConfiguration(getPropertiesMetadata(directory));
     		IndexSegmentImpl indexSegmentImpl = new IndexSegmentImpl();
@@ -98,7 +106,7 @@ public class SegmentPersistentManager {
     		if (!memoryMappedMode && forwardIndexFile != null) {
     			forwardIndexFile.close();
     		}
-		}
+		}*/
 		
 	}
     public static PropertiesConfiguration getPropertiesMetadata(File directory) throws ConfigurationException {

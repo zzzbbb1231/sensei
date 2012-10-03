@@ -1,12 +1,7 @@
 package com.senseidb.ba;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.URL;
-import java.net.URLConnection;
 
 import junit.framework.TestCase;
 
@@ -15,6 +10,7 @@ import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 
+import com.linkedin.gazelle.dao.GazelleIndexSegmentImpl;
 import com.senseidb.ba.index1.InMemoryAvroMapper;
 import com.senseidb.ba.index1.SegmentPersistentManager;
 import com.senseidb.ba.util.TestUtil;
@@ -33,7 +29,7 @@ public class BAAvroIntegrationTest extends TestCase {
     indexDir = new File(indexDir, "segment1");
     indexDir.mkdir();
     File avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
-    IndexSegmentImpl indexSegmentImpl = new InMemoryAvroMapper(avroFile).build();
+    GazelleIndexSegmentImpl indexSegmentImpl = new InMemoryAvroMapper(avroFile).build();
     SegmentPersistentManager segmentPersistentManager = new SegmentPersistentManager();
     segmentPersistentManager.persist(indexDir, indexSegmentImpl);
     FileUtils.copyFileToDirectory(avroFile, new File("avroIndex"));

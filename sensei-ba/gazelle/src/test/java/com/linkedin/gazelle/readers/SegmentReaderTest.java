@@ -32,7 +32,6 @@ import com.linkedin.gazelle.flushers.SegmentFlusher;
 import com.linkedin.gazelle.utils.GazelleColumnMetadata;
 
 import com.linkedin.gazelle.utils.CompressedIntArray;
-import com.linkedin.gazelle.utils.GazelleColumnMedata;
 import com.linkedin.gazelle.utils.ReadMode;
 
 public class SegmentReaderTest {
@@ -61,7 +60,7 @@ public class SegmentReaderTest {
   public void testmetadataDataAccess() throws ConfigurationException, IOException {
     GazelleIndexSegmentImpl segment = SegmentReader.read(_indexDir, ReadMode.DBBuffer);
 
-    HashMap<String, GazelleColumnMedata> metadataMap = segment.getColumnMetatdaMap();
+    HashMap<String, GazelleColumnMetadata> metadataMap = segment.getColumnMetatdaMap();
     HashMap<String, CompressedIntArray> compressedIntArrayMap = segment.getCompressedIntArrayMap();
     HashMap<String, TermValueList> termValueListMap = segment.getTermValueListMap();
 
