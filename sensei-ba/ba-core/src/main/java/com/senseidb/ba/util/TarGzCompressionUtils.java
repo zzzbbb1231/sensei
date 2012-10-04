@@ -21,8 +21,6 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import com.senseidb.ba.index1.SegmentPersistentManager;
-
 /**
  * Taken from http://www.thoughtspark.org/node/53
  * @author Jeremy Whitlock

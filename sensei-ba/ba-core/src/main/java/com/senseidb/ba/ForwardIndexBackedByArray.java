@@ -1,19 +1,5 @@
 package com.senseidb.ba;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import com.browseengine.bobo.facets.data.TermIntList;
-import com.browseengine.bobo.facets.data.TermLongList;
-import com.browseengine.bobo.facets.data.TermStringList;
-import com.browseengine.bobo.facets.data.TermValueList;
-import com.senseidb.ba.index1.ColumnMetadata;
-import com.senseidb.indexing.DefaultSenseiInterpreter;
-import com.senseidb.util.SenseiDefaults;
-
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
@@ -27,13 +13,26 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import com.browseengine.bobo.facets.data.TermIntList;
+import com.browseengine.bobo.facets.data.TermLongList;
+import com.browseengine.bobo.facets.data.TermStringList;
+import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.indexing.DefaultSenseiInterpreter;
+
 public class ForwardIndexBackedByArray implements ForwardIndex {
   private final String column;
   private TermValueList<?> dictionary;
   private int[] forwardIndex;
   private int[] freqs;
-  public ForwardIndexBackedByArray(String column) {
+  private final ColumnType columnType;
+  public ForwardIndexBackedByArray(String column, ColumnType columnType) {
     this.column = column;
+    this.columnType = columnType;
   }
   public void initByLongValues(List<Long> values) {
     LongAVLTreeSet longAVLTreeSet = new LongAVLTreeSet();
@@ -142,10 +141,11 @@ public class ForwardIndexBackedByArray implements ForwardIndex {
   public TermValueList<?> getDictionary() {
     return dictionary;
   }
+
 @Override
-public ColumnMetadata getColumnMetadata() {
-    // TODO Auto-generated method stub
-    return null;
+public ColumnType getColumnType() {
+  // TODO Auto-generated method stub
+  return null;
 }
   
 }

@@ -32,7 +32,7 @@ public class IndexSegmentCreator {
       } 
       IndexSegmentImpl offlineSegmentImpl = new IndexSegmentImpl(); 
       for (String column : columnTypes.keySet()) {
-        ForwardIndexBackedByArray forwardIndexBackedByArray = new ForwardIndexBackedByArray(column);
+        ForwardIndexBackedByArray forwardIndexBackedByArray = new ForwardIndexBackedByArray(column, columnTypes.get(column));
         ColumnType type = columnTypes.get(column);
         if (type == ColumnType.INT) {
           forwardIndexBackedByArray.initByIntValues(columnValues.get(column));

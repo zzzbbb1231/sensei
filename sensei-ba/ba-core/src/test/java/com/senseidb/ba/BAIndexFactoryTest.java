@@ -6,7 +6,7 @@ import junit.framework.TestCase;
 
 import org.I0Itec.zkclient.ZkClient;
 
-import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.management.BaIndexFactory;
 import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;

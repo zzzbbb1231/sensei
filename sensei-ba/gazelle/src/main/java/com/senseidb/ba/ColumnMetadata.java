@@ -2,119 +2,109 @@ package com.senseidb.ba;
 
 import org.apache.commons.configuration.Configuration;
 
-import com.senseidb.ba.gazelle.utils.GazelleColumnMetadata;
+/**
+ * @author dpatel
+ */
 
 public class ColumnMetadata {
-  private String column;
-  private long startOffset;
-  private long byteLength;
-  private int numberOfElements;
-  private int numberOfDictionaryValues;
-  private int bitsPerElement;
-  private ColumnType columnType;
-  private boolean sorted;
-
   /*
-   * Won't be needed once Integration is done
-   * */
+   * TODO: dpatel will keep adding things as needed.
+   */
+  private String _name;
+  private ColumnType _columnType;
+  private long _startOffset;
+  private long _byteLength;
+  private int _numberOfElements;
+  private int _numberOfDictionaryValues;
+  private int _bitsPerElement;
+  private boolean _sorted;
 
-  public static ColumnMetadata transformToSelf(GazelleColumnMetadata metadata) {
-    ColumnMetadata meta = new ColumnMetadata();
-    meta.setBitsPerElement(metadata.getBitsPerElement());
-    meta.setByteLength(metadata.getByteLength());
-    meta.setColumn(metadata.getName());
-    meta.setColumnType(ColumnType.valueOf(metadata.getColumnType().toString()));
-    meta.setNumberOfDictionaryValues(metadata.getNumberOfDictionaryValues());
-    meta.setNumberOfElements(metadata.getNumberOfElements());
-    meta.setSorted(metadata.getSorted());
-    meta.setStartOffset(metadata.getStartOffset());
-    return meta;
+ 
+  
+  public ColumnMetadata(String name, ColumnType type) {
+    _name = name;
+    _columnType = type;
   }
 
-  public static ColumnMetadata readFromConfiguration(String column, Configuration configuration) {
-    ColumnMetadata ret = new ColumnMetadata();
-    ret.column = column;
-    ret.startOffset = configuration.getLong("column." + column + ".startOffset");
-    ret.byteLength = configuration.getLong("column." + column + ".byteLength");
-    ret.numberOfElements = configuration.getInt("column." + column + ".numberOfElements");
-    ret.numberOfDictionaryValues = configuration.getInt("column." + column + ".numberOfDictionaryValues");
-    ret.bitsPerElement = configuration.getInt("column." + column + ".bitsPerElement");
-    ret.columnType = ColumnType.valueOfStr(configuration.getString("column." + column + ".columnType"));
-    ret.sorted = configuration.getBoolean("column." + column + ".sorted", false);
-    return ret;
+  public ColumnMetadata() {
+    
+  }
+  public void addToConfig(Configuration configuration) {
+    configuration.setProperty("column." + _name + ".startOffset", _startOffset);
+    configuration.setProperty("column." + _name + ".numberOfElements", _numberOfElements);
+    configuration.setProperty("column." + _name + ".byteLength",_byteLength);
+    configuration.setProperty("column." + _name + ".numberOfDictionaryValues", _numberOfDictionaryValues);
+    configuration.setProperty("column." + _name + ".bitsPerElement", _bitsPerElement);
+    configuration.setProperty("column." + _name + ".sorted", _sorted);
+    configuration.setProperty("column." + _name + ".columnType", _columnType.toString());
   }
 
-  public void save(Configuration configuration) {
-    configuration.setProperty("column." + column + ".startOffset", startOffset);
-    configuration.setProperty("column." + column + ".numberOfElements", numberOfElements);
-    configuration.setProperty("column." + column + ".byteLength", byteLength);
-    configuration.setProperty("column." + column + ".numberOfDictionaryValues", numberOfDictionaryValues);
-    configuration.setProperty("column." + column + ".bitsPerElement", bitsPerElement);
-    configuration.setProperty("column." + column + ".sorted", sorted);
-    configuration.setProperty("column." + column + ".columnType", columnType.toString());
+  public String getName() {
+    return _name;
   }
 
-  public String getColumn() {
-    return column;
+  public void setName(String name) {
+    this._name = name;
   }
 
-  public void setColumn(String column) {
-    this.column = column;
-  }
-
-  public long getStartOffset() {
-    return startOffset;
-  }
-
-  public void setStartOffset(long startOffset) {
-    this.startOffset = startOffset;
-  }
-
-  public long getByteLength() {
-    return byteLength;
-  }
-
-  public void setByteLength(long byteLength) {
-    this.byteLength = byteLength;
-  }
-
-  public int getNumberOfElements() {
-    return numberOfElements;
-  }
-
-  public void setNumberOfElements(int numberOfElements) {
-    this.numberOfElements = numberOfElements;
-  }
-
-  public int getNumberOfDictionaryValues() {
-    return numberOfDictionaryValues;
-  }
-
-  public void setNumberOfDictionaryValues(int numberOfDictionaryValues) {
-    this.numberOfDictionaryValues = numberOfDictionaryValues;
-  }
-
-  public int getBitsPerElement() {
-    return bitsPerElement;
-  }
-
-  public void setBitsPerElement(int bitsPerElement) {
-    this.bitsPerElement = bitsPerElement;
-  }
-
-  public boolean isSorted() {
-    return sorted;
-  }
-
-  public void setSorted(boolean sorted) {
-    this.sorted = sorted;
+  public boolean getSorted() {
+    return _sorted;
   }
 
   public ColumnType getColumnType() {
-    return columnType;
+    return _columnType;
   }
 
-  public void setColumnType(ColumnType columnType) {
-    this.columnType = columnType;
+  public void setColumnType(ColumnType originalType) {
+    this._columnType = originalType;
   }
+
+  public long getStartOffset() {
+    return _startOffset;
+  }
+
+  public void setStartOffset(long startOffset) {
+    this._startOffset = startOffset;
+  }
+
+  public long getByteLength() {
+    return _byteLength;
+  }
+
+  public void setByteLength(long byteLength) {
+    this._byteLength = byteLength;
+  }
+
+  public int getNumberOfElements() {
+    return _numberOfElements;
+  }
+
+  public void setNumberOfElements(int numberOfElements) {
+    this._numberOfElements = numberOfElements;
+  }
+
+  public int getNumberOfDictionaryValues() {
+    return _numberOfDictionaryValues;
+  }
+
+  public void setNumberOfDictionaryValues(int numberOfDictionaryValues) {
+    this._numberOfDictionaryValues = numberOfDictionaryValues;
+  }
+
+  public int getBitsPerElement() {
+    return _bitsPerElement;
+  }
+
+  public void setBitsPerElement(int bitsPerElement) {
+    this._bitsPerElement = bitsPerElement;
+  }
+
+  public boolean isSorted() {
+    return _sorted;
+  }
+
+  public void setSorted(boolean sorted) {
+    this._sorted = sorted;
+  }
+
 }

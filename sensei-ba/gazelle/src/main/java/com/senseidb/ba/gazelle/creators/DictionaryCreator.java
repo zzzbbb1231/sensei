@@ -16,215 +16,266 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.apache.avro.util.Utf8;
 
 import com.browseengine.bobo.facets.data.TermFloatList;
 import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.senseidb.ba.gazelle.utils.GazelleColumnType;
-import com.senseidb.ba.gazelle.utils.GazelleUtils;
+import com.senseidb.ba.ColumnType;
 
 /**
  * @author dpatel
  */
 
 public class DictionaryCreator {
-
-  private static Logger logger = Logger.getLogger(DictionaryCreator.class);
-  /*
-   * Tree Sets
-   */
-
-  private IntAVLTreeSet _intAVLTreeSet;
-  private FloatAVLTreeSet _floatAVLTreeSet;
-  private LongAVLTreeSet _longAVLTreeSet;
-  private TreeSet<String> _stringSet;
-  private Int2IntOpenHashMap _int2IntMap;
-  private Float2IntOpenHashMap _float2IntMap;
-  private Long2IntMap _long2IntMap;
-  private Object2IntMap<String> _obj2IntMap;
-  private TermIntList _termIntList;
-  private TermLongList _termLongList;
-  private TermFloatList _termFloatList;
-  private TermStringList _termStringList;
-
-  int _counter;
-
-  public DictionaryCreator() {
-    _counter = 1;
-    /*
-     * Tree Sets Intialization
-     */
-    _intAVLTreeSet = new IntAVLTreeSet();
-    _longAVLTreeSet = new LongAVLTreeSet();
-    _stringSet = new TreeSet<String>();
-    _floatAVLTreeSet = new FloatAVLTreeSet();
+  public static final Map<ColumnType,String> DEFAULT_FORMAT_STRING_MAP = new HashMap<ColumnType,String>();
+  static {
+      DEFAULT_FORMAT_STRING_MAP.put(ColumnType.INT, "0000000000");
+      DEFAULT_FORMAT_STRING_MAP.put(ColumnType.LONG, "00000000000000000000");
+      DEFAULT_FORMAT_STRING_MAP.put(ColumnType.FLOAT, "0000000000.0000");
   }
+  private IntAVLTreeSet intAVLTreeSet;
+private Int2IntOpenHashMap int2IntMap;
+private FloatAVLTreeSet floatAVLTreeSet;
+private Float2IntOpenHashMap float2IntMap;
+private LongAVLTreeSet longAVLTreeSet;
+private Long2IntMap long2IntMap;
+private TreeSet<String> stringSet;
+private int count;
+private Object2IntMap<String> obj2IntMap;
 
-
-  public void addValue(Object original, GazelleColumnType type) {
-    switch (type) {
-      case LONG:
-        addLongValue(original);
-        break;
-      case INT:
-        addIntValue(original);
-        break;
-      case FLOAT:
-        addFloatValue(original);
-        break;
-      case STRING:
-        addStringValue(original);
-        break;
-      default:
-        throw new UnsupportedOperationException(original.toString());
+private Object previousValue =  null;
+private boolean isSorted = true;
+private boolean containsNulls = false;
+public DictionaryCreator() {
+  intAVLTreeSet = new IntAVLTreeSet();
+  longAVLTreeSet = new LongAVLTreeSet();
+  stringSet = new TreeSet<String>();
+  floatAVLTreeSet = new FloatAVLTreeSet();
+}
+public boolean contains(Object value, ColumnType columnType) {
+  if (columnType == ColumnType.FLOAT) {
+    return floatAVLTreeSet.contains(((Number) value).floatValue());
+  }
+  if (columnType == ColumnType.INT) {
+    return intAVLTreeSet.contains(((Number) value).intValue());
+  }
+  if (columnType == ColumnType.LONG) {
+    return longAVLTreeSet.contains(((Number) value).longValue());
+  }
+  if (columnType == ColumnType.STRING) {
+    return stringSet.contains(value.toString());
+  }
+  throw new UnsupportedOperationException(columnType.toString());
+}
+public void addValue(Object original, ColumnType type) {
+  
+  if (original == null) {
+    if (isSorted && previousValue != null && containsNulls) {
+      isSorted = false;
     }
+    containsNulls = true;
+    return;
+  }
+  if (isSorted) {
+    if (!original.equals(previousValue) && contains(original, type)) {
+      isSorted = false;
+      
+    } 
+    previousValue = original;
+    
+}
+  switch (type) {
+    case LONG:
+      addLongValue((Long)original);
+      break;
+    case INT:
+      addIntValue((Integer)original);
+      break;
+    case FLOAT:
+      addFloatValue((Float)original);
+      break;
+    case STRING:
+      addStringValue((String)original);
+      break;
+    default:
+      throw new UnsupportedOperationException(original.toString());
+  }
+}
+public void addIntValue(int value) {
+  count++;
+  intAVLTreeSet.add(value);
+}
+
+public void addLongValue(long value) {
+  count++;
+  longAVLTreeSet.add(value);
+}
+public void addFloatValue(float value) {
+  count++;
+  floatAVLTreeSet.add(value);
+}
+public void addStringValue(String value) {
+  count++;
+  stringSet.add(value);
+}
+
+public int getIntIndex(int value) {
+  return int2IntMap.get(value);
+}
+
+public int getLongIndex(long value) {
+  return long2IntMap.get(value);
+}
+public int getFloatIndex(float value) {
+  return float2IntMap.get(value);
+}
+public int getStringIndex(String value) {
+  return obj2IntMap.get(value);
+}
+public int getIndex(Object value, ColumnType columnType) {
+  if (value == null) {
+    count++;
+    return 0;
+  }
+  if (columnType ==  ColumnType.INT) {
+    return getIntIndex((Integer) value);
+  } else if (columnType ==  ColumnType.LONG) {
+    return getLongIndex((Long) value);
+  } else if (columnType ==  ColumnType.STRING) {
+    return getStringIndex(value.toString());
+  } else if (columnType ==  ColumnType.FLOAT) {
+    return getFloatIndex((Float) value);
+  } else {
+    throw new UnsupportedOperationException("" + value);
+  }
+}
+public int getIndex(Object value) {
+  if (value == null) {
+    count++;
+    return 0;
+  }
+  if (value instanceof Integer) {
+    return getIntIndex((Integer) value);
+  } else if (value instanceof Long) {
+    return getLongIndex((Long) value);
+  } else if (value instanceof String || value instanceof Utf8) {
+    return getStringIndex(value.toString());
+  } else if (value instanceof Float) {
+    return getFloatIndex((Float) value);
+  } else if (value instanceof Double) {
+    return getFloatIndex(((Double) value).floatValue());
+  } else {
+    throw new UnsupportedOperationException("" + value);
+  }
+}
+
+public TermIntList produceIntDictionary() {
+  TermIntList termIntList = new TermIntList(intAVLTreeSet.size(),
+          DEFAULT_FORMAT_STRING_MAP.get(ColumnType.INT));
+  IntBidirectionalIterator iterator = intAVLTreeSet.iterator();
+  termIntList.add(null);
+  while (iterator.hasNext()) {
+    ((IntList) termIntList.getInnerList()).add(iterator.nextInt());
+  }
+  termIntList.seal();
+  int[] elements = termIntList.getElements();
+  //in case of negative values
+  Arrays.sort(elements, 1, elements.length);
+  int2IntMap = new Int2IntOpenHashMap(intAVLTreeSet.size());
+  for (int i = 1; i < elements.length; i++) {
+    int2IntMap.put(elements[i], i);
+  }
+  return termIntList;
+}
+public TermFloatList produceFloatDictionary() {
+  TermFloatList termFloatList = new TermFloatList(floatAVLTreeSet.size(),
+          DEFAULT_FORMAT_STRING_MAP.get(ColumnType.FLOAT));
+  FloatBidirectionalIterator iterator = floatAVLTreeSet.iterator();
+  termFloatList.add(null);
+  while (iterator.hasNext()) {
+    ((FloatList) termFloatList.getInnerList()).add(iterator.nextFloat());
+  }
+  termFloatList.seal();
+  try {
+  //in case of negative values
+  Field floatField = TermFloatList.class.getDeclaredField("_elements");
+  floatField.setAccessible(true);
+  float[] elements = (float[]) floatField.get(termFloatList);
+  Arrays.sort(elements, 1, elements.length);
+  } catch (Exception ex) {
+    throw new RuntimeException(ex);
+  }
+  float2IntMap = new Float2IntOpenHashMap(floatAVLTreeSet.size());
+  for (int i = 1; i < termFloatList.size(); i++) {
+    float2IntMap.put(termFloatList.getPrimitiveValue(i), i);
+  }
+  return termFloatList;
+}
+public Int2IntOpenHashMap getIndexIntMap() {
+  return int2IntMap;
+}
+public TermValueList<?> produceDictionary() {
+  if (intAVLTreeSet != null && intAVLTreeSet.size() > 0) {
+    return produceIntDictionary();
+  }
+  if (longAVLTreeSet != null && longAVLTreeSet.size() > 0) {
+    return produceLongDictionary();
+  }
+  if (stringSet != null && stringSet.size() > 0) {
+    return produceStringDictionary();
+  }
+  throw new UnsupportedOperationException();
+}
+public TermLongList produceLongDictionary() {
+  TermLongList termlongList = new TermLongList(longAVLTreeSet.size(),
+      DEFAULT_FORMAT_STRING_MAP.get(ColumnType.LONG));
+  LongBidirectionalIterator iterator = longAVLTreeSet.iterator();
+  termlongList.add(null);
+  while (iterator.hasNext()) {
+    ((LongList) termlongList.getInnerList()).add(iterator.nextLong());
+  }
+  termlongList.seal();
+  long[] elements = termlongList.getElements();
+  //in case of negative values
+  Arrays.sort(elements, 1, elements.length);
+  long2IntMap = new Long2IntOpenHashMap(elements.length);
+  for (int i = 1; i < elements.length; i++) {
+    long2IntMap.put(elements[i], i);
+  }
+  return termlongList;
+}
+
+public TermStringList produceStringDictionary() {
+  TermStringList termStringList = new TermStringList(stringSet.size());
+  Iterator<String> iterator = stringSet.iterator();
+  termStringList.add(null);
+  while (iterator.hasNext()) {
+    ((List<String>) termStringList.getInnerList()).add(iterator.next());
+  }
+  termStringList.seal();
+  obj2IntMap = new Object2IntOpenHashMap<String>(termStringList.size());
+  for (int i = 1; i < termStringList.size(); i++) {
+    obj2IntMap.put(termStringList.get(i), i);
+  }
+  return termStringList;
+}
+  
+public boolean isSorted() {
+      return isSorted;
   }
 
   public int getCount() {
-    return _counter;
-  }
-
-  private void addIntValue(Object o) {
-    if (_intAVLTreeSet.add(((Integer) o).intValue())) {
-      _counter++;
-    }
-    
-  }
-
-  private void addStringValue(Object o) {
-    if (_stringSet.add((String) o)) {
-      _counter++;
-    }
-  }
-
-  private void addLongValue(Object o) {
-    if (_longAVLTreeSet.add(((Long) o).longValue())) {
-      _counter++;
-    }
-  }
-
-  private void addFloatValue(Object o) {
-    if (_floatAVLTreeSet.add(((Float) o).floatValue())) {
-      _counter++;
-    }
-  }
-
-  private int getIntIndex(int value) {
-    return _int2IntMap.get(value);
-  }
-
-  private int getLongIndex(long value) {
-    return _long2IntMap.get(value);
-  }
-
-  private int getFloatIndex(float value) {
-    return _float2IntMap.get(value);
-  }
-
-  private int getStringIndex(String value) {
-    return _obj2IntMap.get(value);
-  }
-
-  public int getValue(Object value, GazelleColumnType type) {
-    if (value == null) {
-      return 0;
-    }
-    switch (type) {
-      case LONG:
-        return getLongIndex(((Long) value).longValue());
-      case INT:
-        return getIntIndex(((Integer) value).intValue());
-      case FLOAT:
-        return getFloatIndex(((Float) value).floatValue());
-      case STRING:
-        return getStringIndex((String) value);
-      default:
-        throw new IllegalStateException();
-    }
-  }
-
-  public TermValueList getTermValueList(GazelleColumnType type) {
-    switch (type) {
-      case LONG:
-        return getTermLongList();
-      case INT:
-        return getTermIntList();
-      case FLOAT:
-        return getTermFloatList();
-      case STRING:
-        return getTermStringList();
-      default:
-        throw new IllegalStateException();
-    }
-  }
-
-  private TermValueList getTermIntList() {
-    _termIntList = new TermIntList(_intAVLTreeSet.size(), GazelleUtils.INT_STRING_REPSENTATION);
-    IntBidirectionalIterator iterator = _intAVLTreeSet.iterator();
-    _termIntList.add(null);
-    while (iterator.hasNext()) {
-      ((IntList) _termIntList.getInnerList()).add(iterator.nextInt());
-    }
-    _termIntList.seal();
-    int[] elements = _termIntList.getElements();
-    _int2IntMap = new Int2IntOpenHashMap(_intAVLTreeSet.size());
-    for (int i = 1; i < elements.length; i++) {
-      _int2IntMap.put(elements[i], i);
-    }
-    return _termIntList;
-  }
-
-  private TermValueList getTermLongList() {
-    _termLongList = new TermLongList(_longAVLTreeSet.size(), GazelleUtils.LONG_STRING_REPSENTATION);
-    LongBidirectionalIterator iterator = _longAVLTreeSet.iterator();
-    _termLongList.add(null);
-    while (iterator.hasNext()) {
-      ((LongList) _termLongList.getInnerList()).add(iterator.nextLong());
-    }
-    _termLongList.seal();
-    long[] elements = _termLongList.getElements();
-    _long2IntMap = new Long2IntOpenHashMap(elements.length);
-    for (int i = 1; i < elements.length; i++) {
-      _long2IntMap.put(elements[i], i);
-    }
-    return _termLongList;
-  }
-
-  private TermValueList getTermFloatList() {
-    _termFloatList = new TermFloatList(_floatAVLTreeSet.size(), GazelleUtils.FLOAT_STRING_REPSENTATION);
-    FloatBidirectionalIterator iterator = _floatAVLTreeSet.iterator();
-    _termFloatList.add(null);
-    while (iterator.hasNext()) {
-      ((FloatList) _termFloatList.getInnerList()).add(iterator.nextFloat());
-    }
-    _termFloatList.seal();
-    _float2IntMap = new Float2IntOpenHashMap(_floatAVLTreeSet.size());
-    for (int i = 1; i < _termFloatList.size(); i++) {
-      _float2IntMap.put(_termFloatList.getPrimitiveValue(i), i);
-    }
-    return _termFloatList;
-  }
-
-  @SuppressWarnings("unchecked")
-  private TermValueList getTermStringList() {
-    _termStringList = new TermStringList(_stringSet.size());
-    Iterator<String> iterator = _stringSet.iterator();
-    _termStringList.add(null);
-    while (iterator.hasNext()) {
-      ((List<String>) _termStringList.getInnerList()).add(iterator.next());
-    }
-    _termStringList.seal();
-    _obj2IntMap = new Object2IntOpenHashMap<String>(_termStringList.size());
-    for (int i = 1; i < _termStringList.size(); i++) {
-      _obj2IntMap.put(_termStringList.get(i), i);
-    }
-    return _termStringList;
-  }
+  return count;
+}
 }

@@ -20,8 +20,9 @@ import proj.zoie.api.indexing.IndexReaderDecorator;
 
 import com.browseengine.bobo.api.BoboIndexReader;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
-import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
-import com.senseidb.ba.index1.SegmentPersistentManager;
+import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
+import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.ba.util.TarGzCompressionUtils;
 
 public class SegmentTracker {
@@ -55,7 +56,7 @@ public class SegmentTracker {
             FileUtils.deleteDirectory(file);
             continue;
           }
-          GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, false);
+          GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DBBuffer);
           if (indexSegment == null) {
             logger.warn("The directory " + file.getAbsolutePath() + " doesn't contain the fully loaded segment");
             FileUtils.deleteDirectory(file);
@@ -100,7 +101,7 @@ public class SegmentTracker {
           throw new IllegalStateException("The index directory hasn't been created");
         }
         new File(file, "finishedLoading").createNewFile();
-        GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, false);
+        GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DBBuffer);
         logger.info("Loaded the new segment " + segmentId + " with " + indexSegment.getLength() + " elements");
         if (indexSegment == null) {
           FileUtils.deleteDirectory(file);

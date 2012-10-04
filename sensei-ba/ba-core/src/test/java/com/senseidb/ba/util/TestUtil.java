@@ -9,18 +9,19 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 
+
 import org.json.JSONObject;
 
 import com.senseidb.ba.BASentinelTest;
-import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
-import com.senseidb.ba.index1.InMemoryAvroMapper;
-import com.senseidb.ba.index1.SegmentPersistentManager;
+import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 
 public class TestUtil {
 
   public static GazelleIndexSegmentImpl createIndexSegment() throws URISyntaxException, Exception {
     File avroFile = new File(BASentinelTest.class.getClassLoader().getResource("data/sample_data.avro").toURI());
-    GazelleIndexSegmentImpl indexSegmentImpl = new InMemoryAvroMapper(avroFile).build();
+    GazelleIndexSegmentImpl indexSegmentImpl =  SegmentCreator.readFromAvroFile(avroFile);
      return indexSegmentImpl;
   }
 
@@ -28,7 +29,7 @@ public class TestUtil {
     File segmentDir = new File(tempIndexDir, segmentId);
   
     
-    SegmentPersistentManager.persist(segmentDir, indexSegmentImpl);
+    SegmentPersistentManager.flush(indexSegmentImpl, segmentDir);
     File compressedFile = new File(tempIndexDir, segmentId + ".tar.gz");
     TarGzCompressionUtils.createTarGzOfDirectory(segmentDir.getAbsolutePath() + "/", compressedFile.getAbsolutePath());
     return compressedFile;

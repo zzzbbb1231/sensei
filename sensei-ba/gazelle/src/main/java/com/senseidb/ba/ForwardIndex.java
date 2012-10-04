@@ -20,5 +20,5 @@ public interface ForwardIndex {
    */
   int getFrequency(int valueId);
   TermValueList<?> getDictionary();
-  ColumnMetadata getColumnMetadata();
+  ColumnType getColumnType();
 }

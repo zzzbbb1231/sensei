@@ -28,9 +28,10 @@ import com.browseengine.bobo.api.BoboIndexReader;
 import com.senseidb.ba.IndexSegment;
 import com.senseidb.ba.IndexSegmentCreator;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
+import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
-import com.senseidb.ba.index1.InMemoryAvroMapper;
-import com.senseidb.ba.index1.SegmentPersistentManager;
+import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
 public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
@@ -107,7 +108,7 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
     for (File directory : idxDir.listFiles()) {
       if (directory.getName().endsWith(".avro")) {
           InputStream inputStream = new FileInputStream(directory) ;
-          offlineSegments.add(new SegmentToZoieReaderAdapter(new InMemoryAvroMapper(directory).build(), directory.getName(), decorator));
+          offlineSegments.add(new SegmentToZoieReaderAdapter(SegmentCreator.readFromAvroFile(directory), directory.getName(), decorator));
           IOUtils.closeQuietly(inputStream);
       }
        if (!directory.isDirectory()) {
@@ -122,7 +123,7 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
           }
         });
         if (persistentIndexes.length > 0) {
-          offlineSegments.add(new SegmentToZoieReaderAdapter( new SegmentPersistentManager().read(directory, false), directory.getName(), decorator));
+          offlineSegments.add(new SegmentToZoieReaderAdapter(  SegmentPersistentManager.read(directory, ReadMode.DBBuffer), directory.getName(), decorator));
         }
     }
     } catch (Exception ex) {

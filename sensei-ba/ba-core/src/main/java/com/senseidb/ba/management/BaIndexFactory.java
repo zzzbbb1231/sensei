@@ -1,15 +1,8 @@
 package com.senseidb.ba.management;
 
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,9 +10,6 @@ import java.util.concurrent.Executors;
 import javax.management.StandardMBean;
 
 import org.I0Itec.zkclient.ZkClient;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.LineIterator;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.lucene.analysis.Analyzer;
 
@@ -29,11 +19,6 @@ import proj.zoie.api.ZoieIndexReader;
 import proj.zoie.mbean.ZoieAdminMBean;
 
 import com.browseengine.bobo.api.BoboIndexReader;
-import com.senseidb.ba.IndexSegment;
-import com.senseidb.ba.IndexSegmentCreator;
-import com.senseidb.ba.SegmentToZoieReaderAdapter;
-import com.senseidb.ba.index1.InMemoryAvroMapper;
-import com.senseidb.ba.index1.SegmentPersistentManager;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
 public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {

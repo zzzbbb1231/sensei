@@ -25,9 +25,16 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import scala.actors.threadpool.Arrays;
+
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ForwardIndex;
-import com.senseidb.ba.gazelle.dao.GazelleIndexSegmentImpl;
+import com.senseidb.ba.SortedForwardIndex;
+import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
+import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
+import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.util.SingleNodeStarter;
 
 public class SegmentPersistentManagerTest extends TestCase{
@@ -57,22 +64,33 @@ public class SegmentPersistentManagerTest extends TestCase{
         FileInputStream avroFileStream = new FileInputStream(avroFile);
         /*dumpToJson(avroFileStream, new PrintStream( new FileOutputStream(new File("json.txt"))));
         avroFileStream = new FileInputStream(avroFile);*/
-        InMemoryAvroMapper avroMapper = new InMemoryAvroMapper(avroFile);
-        GazelleIndexSegmentImpl indexSegmentImpl = avroMapper.build();
+        GazelleIndexSegmentImpl indexSegmentImpl = SegmentCreator.readFromAvroFile(avroFile);
        
-        SegmentPersistentManager segmentPersistentManager = new SegmentPersistentManager();
-        segmentPersistentManager.persist(indexDir, indexSegmentImpl);
-        GazelleIndexSegmentImpl persistedIndexSegment = segmentPersistentManager.read(indexDir, false);
-        System.out.println(FileUtils.readFileToString(segmentPersistentManager.getPropertiesMetadata(indexDir).getFile()));
+        SegmentPersistentManager.flush(indexSegmentImpl, indexDir);
+        GazelleIndexSegmentImpl persistedIndexSegment = SegmentPersistentManager.read(indexDir, ReadMode.DBBuffer);
         
         IOUtils.closeQuietly(avroFileStream);
         compareWithJsonFile(indexSegmentImpl);
         compareWithJsonFile(persistedIndexSegment);
     }
-
+@Test
+public void test2CheckForwardIndexes() throws Exception {
+    FileInputStream avroFileStream = new FileInputStream(avroFile);
+    /*dumpToJson(avroFileStream, new PrintStream( new FileOutputStream(new File("json.txt"))));
+    avroFileStream = new FileInputStream(avroFile);*/
+    GazelleIndexSegmentImpl indexSegmentImpl = SegmentCreator.readFromAvroFile(avroFile);
+   
+    SegmentPersistentManager.flush(indexSegmentImpl, indexDir);
+    GazelleIndexSegmentImpl persistedIndexSegment = SegmentPersistentManager.read(indexDir, ReadMode.DBBuffer);
+    ForwardIndex forwardIndex = persistedIndexSegment.getForwardIndex("shrd_advertiserId");
+    assertTrue(forwardIndex instanceof SortedForwardIndexImpl);
+    assertEquals(Arrays.toString(new int[] {-1, 0 , 1, 3, 6}),Arrays.toString( ((SortedForwardIndex) forwardIndex).getMinDocIds()));
+    assertEquals(Arrays.toString(new int[] {-1, 0 ,2, 5, 9999}), Arrays.toString(((SortedForwardIndex) forwardIndex).getMaxDocIds()));
+    
+}
 private void compareWithJsonFile(GazelleIndexSegmentImpl indexSegmentImpl) throws URISyntaxException, IOException, JSONException {
     File jsonFile = new File(getClass().getClassLoader().getResource("data/sample_data.json").toURI());
-    int i = 1;
+    int i = 0;
     for (String line : FileUtils.readLines(jsonFile)) {
         JSONObject json = new JSONObject(line);
        
