@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 
 import junit.framework.TestCase;
 
@@ -24,8 +25,6 @@ import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import scala.actors.threadpool.Arrays;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ForwardIndex;

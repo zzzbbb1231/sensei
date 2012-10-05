@@ -27,6 +27,7 @@ public  class ZookeeperTracker implements IZkChildListener {
     if (!zkClient.exists(partitionPath)) {
       zkClient.createPersistent(partitionPath, true);
     }
+    handleChildChange(partitionPath, zkClient.getChildren(partitionPath));
     zkClient.subscribeChildChanges(partitionPath, this);
   }
   public void stop() {
@@ -34,7 +35,7 @@ public  class ZookeeperTracker implements IZkChildListener {
 
   }
   @Override
-  public  void handleChildChange(String parentPath, List<String> currentChilds) throws Exception {
+  public  void handleChildChange(String parentPath, List<String> currentChilds)  {
     if (currentChilds == null) {
       //deleted
       currentChilds = Collections.EMPTY_LIST;
