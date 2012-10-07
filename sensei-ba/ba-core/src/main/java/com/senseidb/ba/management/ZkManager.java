@@ -1,5 +1,8 @@
 package com.senseidb.ba.management;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 
@@ -25,8 +28,17 @@ public class ZkManager {
       String partitionPath = ZookeeperTracker.ZK_BASE_PATH + "/" + partition;
       if (zkClient.exists(partitionPath)) {
         zkClient.deleteRecursive(partitionPath);
+      } 
+    }
+    public List<String> getChildren() {
+      List<String> ret = new ArrayList<String>();
+      List<String> children = zkClient.getChildren(ZookeeperTracker.ZK_BASE_PATH);
+      for (String partition : children) {
+        for (String segment : zkClient.getChildren(ZookeeperTracker.ZK_BASE_PATH + "/" + partition)) {
+          ret.add(partition + "/" + segment);
+        }
       }
-    
+      return ret;
     }
     public void removeSegment(int partition, String segmentId) {
       String segmentPath =ZookeeperTracker.ZK_BASE_PATH + "/" + partition  + "/" + segmentId;

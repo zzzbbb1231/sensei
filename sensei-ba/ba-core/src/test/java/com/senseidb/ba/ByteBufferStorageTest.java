@@ -1,5 +1,7 @@
 package com.senseidb.ba;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -7,7 +9,7 @@ import org.junit.Test;
 
 import com.senseidb.ba.util.CompressedIntArray;
 
-import scala.actors.threadpool.Arrays;
+
 
 
 public class ByteBufferStorageTest {

@@ -12,7 +12,6 @@ import org.apache.hadoop.fs.FileSystem;
 import proj.zoie.api.Zoie;
 import proj.zoie.api.indexing.ZoieIndexableInterpreter;
 import proj.zoie.impl.indexing.ZoieConfig;
-import scala.actors.threadpool.Executors;
 
 import com.senseidb.ba.plugins.ZeusIndexReaderDecorator;
 import com.senseidb.conf.ZoieFactoryFactory;
