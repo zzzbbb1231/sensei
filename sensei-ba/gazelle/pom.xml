@@ -83,6 +83,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+  
   <dependencies>
     <dependency>
 			<groupId>com.browseengine.bobo</groupId>
@@ -131,7 +132,6 @@
         <artifactId>hadoop-core</artifactId>
         <version>0.20.204.0</version>
       </dependency> 
-	    </dependency>	
 	    <dependency>
 			<groupId>it.unimi.dsi</groupId>
 			<artifactId>fastutil</artifactId>
