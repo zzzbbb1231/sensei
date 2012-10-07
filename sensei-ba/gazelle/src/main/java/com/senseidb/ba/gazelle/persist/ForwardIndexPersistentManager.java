@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 import org.mortbay.io.RuntimeIOException;
 
@@ -56,6 +57,11 @@ public class ForwardIndexPersistentManager {
     }
     return compressedIntArray;
   }
+  
+  public static void flushOnHadoop(Collection<GazelleForwardIndexImpl> forwardIndexes, String basePath, FileSystem fs) {
+    
+  }
+
   public static void flush(Collection<GazelleForwardIndexImpl> forwardIndexes, File baseDir) throws IOException {
     File file = new File(baseDir, GazelleUtils.INDEX_FILENAME);
     RandomAccessFile fIdxFile = new RandomAccessFile(file, "rw");
