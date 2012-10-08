@@ -28,6 +28,7 @@ public class BaIndexFactoryManager implements SenseiPlugin, ZoieFactoryFactory {
   private FileSystem fileSystem;
   private ExecutorService executorService;
   private volatile boolean stopped;
+  private String clusterName;
   
   @SuppressWarnings( { "unchecked", "rawtypes" })
   @Override
@@ -36,7 +37,7 @@ public class BaIndexFactoryManager implements SenseiPlugin, ZoieFactoryFactory {
     return new SenseiZoieFactory( idxDir, null, interpreter, decorator, config) {
       @Override
       public Zoie getZoieInstance(int nodeId, int partitionId) {
-        return new BaIndexFactory(SenseiZoieFactory.getPath(idxDir, nodeId, partitionId), new ZeusIndexReaderDecorator(), zkClient, fileSystem, partitionId, executorService);
+        return new BaIndexFactory(SenseiZoieFactory.getPath(idxDir, nodeId, partitionId), clusterName, new ZeusIndexReaderDecorator(), zkClient, fileSystem, partitionId, executorService);
       }
       @Override
       public File getPath(int nodeId, int partitionId) {
@@ -51,6 +52,7 @@ public class BaIndexFactoryManager implements SenseiPlugin, ZoieFactoryFactory {
     zookeeperUrl = pluginRegistry.getConfiguration().getString("sensei.cluster.url");
     zkClient = new ZkClient(zookeeperUrl);
     hdfsUrl = pluginRegistry.getConfiguration().getString("sensei.ba.hdfs.url");
+    clusterName = pluginRegistry.getConfiguration().getString("sensei.cluster.name");
     int numberOfLoadingThreads = -1;
     if (config.containsKey("numLoadingThreads")) {
       numberOfLoadingThreads = Integer.parseInt(config.get("numLoadingThreads"));

@@ -33,7 +33,7 @@ public class BASentinelTest  extends TestCase {
     SingleNodeStarter.rmrf(indexDir);
     File ConfDir1 = new File(BASentinelTest.class.getClassLoader().getResource("ba-conf").toURI());
     
-    zkManager = new ZkManager("localhost:2181");
+    zkManager = new ZkManager("localhost:2181", "testCluster2");
     zkManager.removePartition(0);
     zkManager.removePartition(1);
     SingleNodeStarter.start(ConfDir1, 0);
@@ -77,7 +77,7 @@ public class BASentinelTest  extends TestCase {
       
      JSONObject resp = null;
      for (int i = 0; i < 2; i ++) {
-       resp = TestUtil.search(new URL("http://localhost:8076/sensei"), new JSONObject(req).toString());
+       resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
      }
      System.out.println(resp.toString(1));
      assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));
@@ -105,7 +105,7 @@ public void test2FilterBySortedColumn() throws Exception {
       
      JSONObject resp = null;
      for (int i = 0; i < 2; i ++) {
-       resp = TestUtil.search(new URL("http://localhost:8076/sensei"), new JSONObject(req).toString());
+       resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
      }
      System.out.println(resp.toString(1));
      assertEquals("numhits is wrong", 4, resp.getInt("numhits"));
@@ -140,7 +140,7 @@ public void test3FilterAndFacetBySortedColumn() throws Exception {
     
    JSONObject resp = null;
    for (int i = 0; i < 2; i ++) {
-     resp = TestUtil.search(new URL("http://localhost:8076/sensei"), new JSONObject(req).toString());
+     resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
    }
    System.out.println(resp.toString(1));
    assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));

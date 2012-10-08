@@ -17,11 +17,11 @@ public  class ZookeeperTracker implements IZkChildListener {
   private String partitionPath;
   
   private final SegmentTracker segmentTracker;
-  public ZookeeperTracker(ZkClient zkClient, int partitionId, SegmentTracker segmentTracker) {
+  public ZookeeperTracker(ZkClient zkClient, String clusterName, int partitionId, SegmentTracker segmentTracker) {
     this.zkClient = zkClient;
     this.segmentTracker = segmentTracker;
     zkClient.setZkSerializer(new BytesPushThroughSerializer());
-    partitionPath = ZK_BASE_PATH + "/" + partitionId;
+    partitionPath = ZK_BASE_PATH + "/" + clusterName + "/" + partitionId;
   }
   public void start() {
     if (!zkClient.exists(partitionPath)) {
