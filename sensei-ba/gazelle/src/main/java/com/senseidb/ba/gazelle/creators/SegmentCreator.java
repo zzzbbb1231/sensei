@@ -19,6 +19,7 @@ import org.apache.avro.util.Utf8;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ColumnMetadata;
@@ -29,7 +30,7 @@ import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 
 public class SegmentCreator {
- 
+  private static Logger logger = Logger.getLogger(SegmentCreator.class);
 
   public static GazelleIndexSegmentImpl readFromAvroFile(File avroFile) throws IOException {
     MetadataCreator creator = new MetadataCreator();
@@ -79,8 +80,12 @@ public class SegmentCreator {
       }
               creators[j].addValue(value, columnTypes[j]);
     }
+        /*if (count % 100000 == 0) {
+          System.out.println("!count = " + count);
+        } */
         count++;
   }
+    logger.info("Created dictionaries for " + count + " elements from the avro file");
     TermValueList[] dictionaries = new TermValueList[schema.getFields().size()];
     for (int j = 0; j < columnTypes.length; j++) {
       dictionaries[j] = creators[j].produceDictionary();
@@ -89,7 +94,8 @@ public class SegmentCreator {
     SortedForwardIndexImpl[] sortedForwardIndexes = new SortedForwardIndexImpl[schema.getFields().size()];
     for (int j = 0; j < columnTypes.length; j++) {
       if (!creators[j].isSorted()) {
-          intArrays[j] = new CompressedIntArray(count, CompressedIntArray.getNumOfBits(dictionaries[j].size()), getByteBuffer(count, dictionaries[j].size()));
+        //System.out.println(columnNames[j] + " = " + dictionaries[j].size());  
+        intArrays[j] = new CompressedIntArray(count, CompressedIntArray.getNumOfBits(dictionaries[j].size()), getByteBuffer(count, dictionaries[j].size()));
       } else {
           sortedForwardIndexes[j] = new SortedForwardIndexImpl(dictionaries[j], new int[dictionaries[j].size()], new int[dictionaries[j].size()], count, creator.createMetadata(columnNames[j], dictionaries[j], columnTypes[j], count,  true));
       }
@@ -106,7 +112,17 @@ public class SegmentCreator {
         GenericRecord record = dataFileReader.next();
         for (int j = 0; j < columnTypes.length; j++) {
             if (!creators[j].isSorted()) {
-                intArrays[j].addInt(i, creators[j].getIndex(record.get(j)));
+                try {
+                  intArrays[j].addInt(i, creators[j].getIndex(record.get(j)));
+                } catch (Throwable ex) {
+                  StringBuilder  builder = new StringBuilder();
+                  builder.append("An error has occured: \ncapacity = " + intArrays[j].getCapacity());
+                  builder.append("\nbitSize = " + CompressedIntArray.getNumOfBits(dictionaries[j].size()));
+                  builder.append("\nbufferSize = " + CompressedIntArray.getRequiredBufferSize(intArrays[j].getCapacity(), CompressedIntArray.getNumOfBits(dictionaries[j].size())));
+                  builder.append("\ncounter = " + i);
+                  logger.error(builder.toString(), ex);
+                  throw new RuntimeException(ex);
+                }
             } else {
                 sortedForwardIndexes[j].add(i, creators[j].getIndex(record.get(j)));
             }

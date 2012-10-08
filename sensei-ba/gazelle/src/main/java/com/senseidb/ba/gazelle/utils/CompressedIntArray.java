@@ -16,7 +16,7 @@ private byte[] tempBuf;
   }
 
   public static int getRequiredBufferSize(int numOfElements, int numOfBitsPerElement) {
-    return (int) Math.ceil((float) numOfElements / 8 * numOfBitsPerElement);
+    return (int) Math.ceil((double) numOfElements / 8 * numOfBitsPerElement);
   }
   public static int getNumOfBits(int dictionarySize) {
       return  (int) Math.ceil(Math.log(dictionarySize)/Math.log(2));
@@ -113,5 +113,5 @@ public int getCapacity() {
 public ByteBuffer getStorage() {
   return buf;
 }
-  
+ 
 }
