@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -26,10 +25,11 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ColumnMetadata;
 import com.senseidb.ba.ForwardIndex;
 import com.senseidb.ba.gazelle.creators.SegmentCreator;
-import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
+import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.ReadMode;
+
 
 
 public class SegmentReaderTest {
@@ -49,8 +49,7 @@ public class SegmentReaderTest {
     _avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
     _jsonFile = new File(getClass().getClassLoader().getResource("data/sample_data.json").toURI());
 
-    SegmentCreator writer = new SegmentCreator();
-    _segment = writer.readFromAvroFile(_avroFile);
+    _segment = SegmentCreator.readFromAvroFile(_avroFile.getAbsolutePath(), FileSystemMode.DISK);
     SegmentPersistentManager.flush(_segment, _indexDir);
   }
 
