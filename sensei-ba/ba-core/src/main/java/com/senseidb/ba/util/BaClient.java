@@ -28,7 +28,7 @@ public class BaClient {
     File indexDir = new File("tmp");
     FileUtils.deleteDirectory(indexDir);
     indexDir.mkdirs();
-    ZkManager zkManager = new ZkManager("localhost:2181");
+    ZkManager zkManager = new ZkManager("localhost:2181", args11[0]);
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     System.out.println(usage);
     while(true) {

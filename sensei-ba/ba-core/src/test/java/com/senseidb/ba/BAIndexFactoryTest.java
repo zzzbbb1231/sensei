@@ -27,9 +27,9 @@ public class BAIndexFactoryTest extends TestCase {
     SingleNodeStarter.rmrf(indexDir);
     indexDir.mkdir();
      zkClient = new ZkClient("localhost:2181");
-     zkManager = new ZkManager(zkClient);
+     zkManager = new ZkManager(zkClient, "testCluster2");
      zkManager.removePartition(0);
-     baIndexFactory = new BaIndexFactory(indexDir, new ZeusIndexReaderDecorator(), zkClient, null, 0, null);
+     baIndexFactory = new BaIndexFactory(indexDir, "testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, 0, null);
      baIndexFactory.start();
      indexSegment = TestUtil.createIndexSegment();
   }
@@ -58,7 +58,7 @@ public class BAIndexFactoryTest extends TestCase {
   public void test2RegisteringTwoSegmentsAndRestartingFactory() throws Exception {
     test1RegisteringTwoSegments();
     baIndexFactory.shutdown();
-    baIndexFactory = new BaIndexFactory(indexDir, new ZeusIndexReaderDecorator(), zkClient, null, 0, null);
+    baIndexFactory = new BaIndexFactory(indexDir,"testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, 0, null);
     baIndexFactory.start();
     new Wait(){
       public boolean until() {return baIndexFactory.getIndexReaders().size() == 2;};
@@ -67,7 +67,7 @@ public class BAIndexFactoryTest extends TestCase {
   public void test3Delete() throws Exception {
     test1RegisteringTwoSegments();
     baIndexFactory.shutdown();
-    baIndexFactory = new BaIndexFactory(indexDir, new ZeusIndexReaderDecorator(), zkClient, null, 0, null);
+    baIndexFactory = new BaIndexFactory(indexDir, "testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, 0, null);
     baIndexFactory.start();
     zkManager.removeSegment(0, "segment2");
     new Wait() {

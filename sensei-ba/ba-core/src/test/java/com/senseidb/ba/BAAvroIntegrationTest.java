@@ -73,8 +73,8 @@ public class BAAvroIntegrationTest extends TestCase {
         "    }" + 
         "}";
       
-     JSONObject resp = TestUtil.search(new URL("http://localhost:8076/sensei"), new JSONObject(req).toString());
-     resp = TestUtil.search(new URL("http://localhost:8076/sensei"), new JSONObject(req).toString());
+     JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+     resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
      System.out.println(resp.toString(1));
      assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));
   }

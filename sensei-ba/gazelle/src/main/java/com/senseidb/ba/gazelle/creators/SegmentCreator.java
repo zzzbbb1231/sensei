@@ -34,6 +34,7 @@ import com.senseidb.ba.gazelle.utils.StreamUtils;
 public class SegmentCreator {
   private static Logger logger = Logger.getLogger(SegmentCreator.class);
 
+
   public static GazelleIndexSegmentImpl readFromAvroFile(String avroFilePath, FileSystemMode mode, FileSystem fs) throws IOException {
     MetadataCreator creator = new MetadataCreator();
     InputStream inputStream1 = null;
