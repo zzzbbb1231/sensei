@@ -18,35 +18,19 @@ import com.senseidb.ba.SortedForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
+import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.gazelle.utils.ReadMode;
 
 public class SegmentPersistentManager {
 
-  public static void flushOnHadoop(GazelleIndexSegmentImpl segment, String baseDir, FileSystem fs) throws IOException, ConfigurationException {
-    DictionaryPersistentManager.flushOnHadoop(segment.getColumnMetadataMap(), segment.getDictionaries(), baseDir, fs);
-    MetadataPersistentManager.flushOnHadoop(segment.getColumnMetadataMap(), baseDir, fs);
-    HashMap<String, Integer> dictionarySizeMap = new HashMap<String, Integer>();
-    for (String column : segment.getDictionaries().keySet()) {
-      dictionarySizeMap.put(column, segment.getDictionary(column).size());
-    }
-    List<GazelleForwardIndexImpl> forwardIndexes = new ArrayList<GazelleForwardIndexImpl>();
-    for (ForwardIndex forwardIndex : segment.getForwardIndexes().values()) {
-      if (forwardIndex instanceof GazelleForwardIndexImpl) {
-        forwardIndexes.add((GazelleForwardIndexImpl) forwardIndex);
-      } else if (forwardIndex instanceof SortedForwardIndex){
-        SortedForwardIndexImpl sortedIndex = (SortedForwardIndexImpl) forwardIndex;
-       SortedIndexPersistentManager.flushOnHadoop(new File(baseDir, sortedIndex.getColumnMetadata().getName() + ".ranges").getAbsolutePath(), sortedIndex, fs);
-      } else {
-        throw new UnsupportedOperationException(forwardIndex.getClass().getCanonicalName());
-      }
-    }
-    ForwardIndexPersistentManager.flushOnHadoop(forwardIndexes, baseDir, fs);
+  public static void flush(GazelleIndexSegmentImpl segment, String baseDir, FileSystemMode mode) throws IOException, ConfigurationException {
+    flush(segment, baseDir, mode, null);
   }
   
-  public static void flush(GazelleIndexSegmentImpl segment, File baseDir) throws IOException, ConfigurationException {
-    DictionaryPersistentManager.flush(segment.getColumnMetadataMap(), segment.getDictionaries(), baseDir);
-    MetadataPersistentManager.flush(segment.getColumnMetadataMap(), baseDir);
+  public static void flush(GazelleIndexSegmentImpl segment, String baseDir, FileSystemMode mode, FileSystem fs) throws IOException, ConfigurationException {
+    DictionaryPersistentManager.flush(segment.getColumnMetadataMap(), segment.getDictionaries(), baseDir, mode, fs);
+    MetadataPersistentManager.flush(segment.getColumnMetadataMap(), baseDir, mode, fs);
     HashMap<String, Integer> dictionarySizeMap = new HashMap<String, Integer>();
     for (String column : segment.getDictionaries().keySet()) {
       dictionarySizeMap.put(column, segment.getDictionary(column).size());
@@ -57,12 +41,13 @@ public class SegmentPersistentManager {
         forwardIndexes.add((GazelleForwardIndexImpl) forwardIndex);
       } else if (forwardIndex instanceof SortedForwardIndex){
         SortedForwardIndexImpl sortedIndex = (SortedForwardIndexImpl) forwardIndex;
-       SortedIndexPersistentManager.persist(new File(baseDir, sortedIndex.getColumnMetadata().getName() + ".ranges"), sortedIndex);
+        String fileName = baseDir +"/" +sortedIndex.getColumnMetadata().getName() + ".ranges";
+       SortedIndexPersistentManager.flush(fileName, sortedIndex, mode, fs);
       } else {
         throw new UnsupportedOperationException(forwardIndex.getClass().getCanonicalName());
       }
     }
-    ForwardIndexPersistentManager.flush(forwardIndexes, baseDir);
+    ForwardIndexPersistentManager.flush(forwardIndexes, baseDir, mode, fs);
   }
   
   public static GazelleIndexSegmentImpl read(File indexDir, ReadMode mode) throws ConfigurationException, IOException {

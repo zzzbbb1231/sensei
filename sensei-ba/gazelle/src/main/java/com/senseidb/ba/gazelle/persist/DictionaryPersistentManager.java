@@ -4,15 +4,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.util.Map;
 
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermFloatList;
@@ -23,64 +19,23 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ColumnMetadata;
 import com.senseidb.ba.ColumnType;
 import com.senseidb.ba.gazelle.creators.DictionaryCreator;
+import com.senseidb.ba.gazelle.utils.FileSystemMode;
+import com.senseidb.ba.gazelle.utils.StreamUtils;
 
 public class DictionaryPersistentManager {
   public static Logger logger =
       Logger.getLogger(DictionaryPersistentManager.class);
 
-  public static void flushOnHadoop(Map<String, ColumnMetadata> metadataMap, Map<String, TermValueList> termValueListMap, String basePath, FileSystem fs) throws IOException {
-    for (String column : metadataMap.keySet()) {
-      String dictFileName = metadataMap.get(column).getName() + ".dict";
-      Path outFile = new Path(basePath + "/" + dictFileName);
-      FSDataOutputStream ds = fs.create(outFile);
-      try {
-        switch (metadataMap.get(column).getColumnType()) {
-          case STRING:
-            TermStringList stringList =
-                (TermStringList) termValueListMap.get(column);
-            for (int i = 0; i < stringList.size(); i++) {
-              String entry = stringList.get(i);
-              byte[] entryInBytes = entry.getBytes("UTF8");
-              ds.writeShort(entryInBytes.length);
-              ds.write(entryInBytes);
-            }
-            break;
-          case INT:
-            TermIntList intList = (TermIntList) termValueListMap.get(column);
-            for (int i = 0; i < intList.size(); i++) {
-              ds.writeInt(intList.getPrimitiveValue(i));
-            }
-            break;
-          case LONG:
-            TermLongList longList = (TermLongList) termValueListMap.get(column);
-            for (int i = 0; i < longList.size(); i++) {
-              ds.writeLong(longList.getPrimitiveValue(i));
-            }
-            break;
-          case FLOAT:
-            TermFloatList floatList =
-                (TermFloatList) termValueListMap.get(column);
-            for (int i = 0; i < floatList.size(); i++) {
-              ds.writeFloat(floatList.getPrimitiveValue(i));
-            }
-            break;
-          default:
-            throw new UnsupportedOperationException();
-        }
-      } finally {
-        ds.close();
-      }
-    }
+  public static void flush(Map<String, ColumnMetadata> metadataMap, Map<String, TermValueList> termValueListMap, String basePath, FileSystemMode mode) throws IOException {
+    flush(metadataMap, termValueListMap, basePath, mode, null);
   }
 
-  public static void flush(Map<String, ColumnMetadata> metadataMap, Map<String, TermValueList> termValueListMap, File baseDir) throws IOException {
+  public static void flush(Map<String, ColumnMetadata> metadataMap, Map<String, TermValueList> termValueListMap, String baseDirPath, FileSystemMode mode, FileSystem fs) throws IOException {
     for (String column : metadataMap.keySet()) {
-      String dictFileName = metadataMap.get(column).getName() + ".dict";
-      if (!baseDir.exists()) {
-        baseDir.mkdirs();
-      }
-      OutputStream out = new FileOutputStream(new File(baseDir, dictFileName));
-      DataOutputStream ds = new DataOutputStream(out);
+      String dictFileName =
+          baseDirPath + "/" + metadataMap.get(column).getName() + ".dict";
+
+      DataOutputStream ds = StreamUtils.getOutputStream(dictFileName, mode, fs);
       try {
         switch (metadataMap.get(column).getColumnType()) {
           case STRING:
@@ -117,7 +72,6 @@ public class DictionaryPersistentManager {
         }
       } finally {
         ds.close();
-        out.close();
       }
     }
   }

@@ -48,12 +48,11 @@ public class SegmentReaderTest {
 
     _avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
     _jsonFile = new File(getClass().getClassLoader().getResource("data/sample_data.json").toURI());
-
+    System.out.println(_indexDir.getAbsolutePath());
     _segment = SegmentCreator.readFromAvroFile(_avroFile.getAbsolutePath(), FileSystemMode.DISK);
-    SegmentPersistentManager.flush(_segment, _indexDir);
+    SegmentPersistentManager.flush(_segment, _indexDir.getAbsolutePath(), FileSystemMode.DISK);
   }
 
-  
 
   @Test
   public void testdictionaryDataAccess() throws ConfigurationException, IOException {
@@ -185,6 +184,6 @@ public class SegmentReaderTest {
 
   @After
   public void tearDown() throws IOException {
-    FileUtils.deleteDirectory(_indexDir);
+    //FileUtils.deleteDirectory(_indexDir);
   }
 }

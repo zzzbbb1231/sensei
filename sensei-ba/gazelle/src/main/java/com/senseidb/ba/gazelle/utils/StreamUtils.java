@@ -28,8 +28,8 @@ public class StreamUtils {
     return is;
   }
   
-  public static OutputStream getOutputStream(String filePath, FileSystemMode mode ,FileSystem fs) throws IOException {
-    OutputStream is = null;
+  public static DataOutputStream getOutputStream(String filePath, FileSystemMode mode ,FileSystem fs) throws IOException {
+    DataOutputStream is = null;
     switch(mode) {
       case DISK:
         is = new DataOutputStream(new FileOutputStream(new File(filePath)));

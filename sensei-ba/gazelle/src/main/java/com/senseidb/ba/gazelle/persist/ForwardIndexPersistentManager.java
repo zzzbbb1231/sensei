@@ -1,5 +1,6 @@
 package com.senseidb.ba.gazelle.persist;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,9 +10,7 @@ import java.nio.channels.FileChannel.MapMode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -22,8 +21,10 @@ import org.mortbay.io.RuntimeIOException;
 import com.senseidb.ba.ColumnMetadata;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.gazelle.utils.ReadMode;
+import com.senseidb.ba.gazelle.utils.StreamUtils;
 
 public class ForwardIndexPersistentManager {
   public static Logger logger = Logger.getLogger(ForwardIndexPersistentManager.class);
@@ -62,9 +63,10 @@ public class ForwardIndexPersistentManager {
     return compressedIntArray;
   }
   
-  public static void flushOnHadoop(Collection<GazelleForwardIndexImpl> forwardIndexes, String basePath, FileSystem fs) throws IOException {
-    Path file = new Path(basePath + "/" + GazelleUtils.INDEX_FILENAME);
-    FSDataOutputStream ds = fs.create(file);
+  public static void flush(Collection<GazelleForwardIndexImpl> forwardIndexes, String basePath, FileSystemMode mode, FileSystem fs) throws IOException {
+    String filePath = basePath + "/" + GazelleUtils.INDEX_FILENAME;
+    Path file = new Path(filePath);
+    DataOutputStream ds = StreamUtils.getOutputStream(filePath, mode, fs);
     List<Long> sortedOffsetList = new ArrayList<Long>();
     try {
       int count = 0;
@@ -86,17 +88,7 @@ public class ForwardIndexPersistentManager {
     }
   }
 
-  public static void flush(Collection<GazelleForwardIndexImpl> forwardIndexes, File baseDir) throws IOException {
-    File file = new File(baseDir, GazelleUtils.INDEX_FILENAME);
-    RandomAccessFile fIdxFile = new RandomAccessFile(file, "rw");
-    try {
-      for(GazelleForwardIndexImpl gazelleForwardIndexImpl : forwardIndexes) { 
-        gazelleForwardIndexImpl.getCompressedIntArray().getStorage().rewind();
-        fIdxFile.getChannel().write(gazelleForwardIndexImpl.getCompressedIntArray().getStorage(), gazelleForwardIndexImpl.getColumnMetadata().getStartOffset());
-        fIdxFile.getChannel().force(true);
-      }
-    } finally {
-      fIdxFile.getChannel().close();
-    }
+  public static void flush(Collection<GazelleForwardIndexImpl> forwardIndexes, String basePath, FileSystemMode mode) throws IOException {
+    flush(forwardIndexes, basePath, mode, null);
   }
 }

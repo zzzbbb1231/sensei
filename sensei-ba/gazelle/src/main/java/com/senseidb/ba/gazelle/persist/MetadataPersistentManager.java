@@ -1,6 +1,6 @@
 package com.senseidb.ba.gazelle.persist;
 
-import java.io.File;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,19 +8,21 @@ import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.senseidb.ba.ColumnMetadata;
 import com.senseidb.ba.ColumnType;
+import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
+import com.senseidb.ba.gazelle.utils.StreamUtils;
 
 public class MetadataPersistentManager {
 
-  public static void flushOnHadoop(Map<String, ColumnMetadata> metadataMap, String basePath, FileSystem fs) throws ConfigurationException, IOException {
-    Path path = new Path(basePath + "/" + GazelleUtils.METADATA_FILENAME);
-    FSDataOutputStream ds = fs.create(path);
+  public static void flush(Map<String, ColumnMetadata> metadataMap, String basePath, FileSystemMode mode, FileSystem fs) throws ConfigurationException, IOException {
+    String fileName = basePath + "/" + GazelleUtils.METADATA_FILENAME;
+    Path path = new Path(fileName);
+    DataOutputStream ds = StreamUtils.getOutputStream(fileName, mode, fs);
     PropertiesConfiguration config = new PropertiesConfiguration();
     try {
       for (String column : metadataMap.keySet()) {
@@ -31,18 +33,10 @@ public class MetadataPersistentManager {
     }
   }
 
-  public static void flush(Map<String, ColumnMetadata> metadataMap, File baseDir) throws ConfigurationException {
-    PropertiesConfiguration config = new PropertiesConfiguration(new File(baseDir, GazelleUtils.METADATA_FILENAME));
-    try {
-      for (String column : metadataMap.keySet()) {
-        metadataMap.get(column).addToConfig(config);
-      }
-    } finally {
-      config.save();
-    
-    }
+  public static void flush(Map<String, ColumnMetadata> metadataMap, String basePath, FileSystemMode mode) throws ConfigurationException, IOException {
+    flush(metadataMap, basePath, mode, null);
   }
-
+  
   public static HashMap<String, ColumnMetadata> readFromFile(PropertiesConfiguration config) {
     HashMap<String, ColumnMetadata> columnMetadataMap = new HashMap<String, ColumnMetadata>();
     Iterator columns = config.getKeys("column");
