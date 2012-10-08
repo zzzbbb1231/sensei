@@ -6,11 +6,16 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.mortbay.io.RuntimeIOException;
 
@@ -56,6 +61,31 @@ public class ForwardIndexPersistentManager {
     }
     return compressedIntArray;
   }
+  
+  public static void flushOnHadoop(Collection<GazelleForwardIndexImpl> forwardIndexes, String basePath, FileSystem fs) throws IOException {
+    Path file = new Path(basePath + "/" + GazelleUtils.INDEX_FILENAME);
+    FSDataOutputStream ds = fs.create(file);
+    List<Long> sortedOffsetList = new ArrayList<Long>();
+    try {
+      int count = 0;
+      for(GazelleForwardIndexImpl gazelleForwardIndexImpl : forwardIndexes) { 
+        sortedOffsetList.add(count, new Long(gazelleForwardIndexImpl.getColumnMetadata().getStartOffset()));
+        count++;
+      }
+      Collections.sort(sortedOffsetList);
+      for (Long offset : sortedOffsetList) {
+        for(GazelleForwardIndexImpl gazelleForwardIndexImpl : forwardIndexes) { 
+          if (gazelleForwardIndexImpl.getColumnMetadata().getStartOffset() == offset.longValue()) {
+            gazelleForwardIndexImpl.getCompressedIntArray().getStorage().rewind();
+            ds.write(gazelleForwardIndexImpl.getCompressedIntArray().getStorage().array());
+          }
+        }
+      }
+    } finally {
+      ds.close();
+    }
+  }
+
   public static void flush(Collection<GazelleForwardIndexImpl> forwardIndexes, File baseDir) throws IOException {
     File file = new File(baseDir, GazelleUtils.INDEX_FILENAME);
     RandomAccessFile fIdxFile = new RandomAccessFile(file, "rw");

@@ -30,9 +30,11 @@ public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
   private ZookeeperTracker zookeeperTracker;
   private SegmentTracker segmentTracker;
   private final ExecutorService executorService;
+  private final String clusterName;
 
-  public BaIndexFactory(File idxDir, SenseiIndexReaderDecorator decorator, ZkClient zkClient, FileSystem fileSystem, int partitionId, ExecutorService executorService) {
+  public BaIndexFactory(File idxDir, String clusterName, SenseiIndexReaderDecorator decorator, ZkClient zkClient, FileSystem fileSystem, int partitionId, ExecutorService executorService) {
     this.idxDir = idxDir;
+    this.clusterName = clusterName;
     this.decorator = decorator;
     this.zkClient = zkClient;
     this.fileSystem = fileSystem;
@@ -87,7 +89,7 @@ public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
     }
     segmentTracker = new SegmentTracker();
     segmentTracker.start(idxDir, fileSystem, decorator, executorService);
-    zookeeperTracker = new ZookeeperTracker(zkClient, partitionId, segmentTracker);
+    zookeeperTracker = new ZookeeperTracker(zkClient, clusterName, partitionId, segmentTracker);
     zookeeperTracker.start();
     
   }

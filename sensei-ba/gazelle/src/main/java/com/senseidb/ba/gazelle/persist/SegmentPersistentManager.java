@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.hadoop.fs.FileSystem;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ColumnMetadata;
@@ -17,12 +18,32 @@ import com.senseidb.ba.SortedForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
-import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.gazelle.utils.ReadMode;
 
 public class SegmentPersistentManager {
 
+  public static void flushOnHadoop(GazelleIndexSegmentImpl segment, String baseDir, FileSystem fs) throws IOException, ConfigurationException {
+    DictionaryPersistentManager.flushOnHadoop(segment.getColumnMetadataMap(), segment.getDictionaries(), baseDir, fs);
+    MetadataPersistentManager.flushOnHadoop(segment.getColumnMetadataMap(), baseDir, fs);
+    HashMap<String, Integer> dictionarySizeMap = new HashMap<String, Integer>();
+    for (String column : segment.getDictionaries().keySet()) {
+      dictionarySizeMap.put(column, segment.getDictionary(column).size());
+    }
+    List<GazelleForwardIndexImpl> forwardIndexes = new ArrayList<GazelleForwardIndexImpl>();
+    for (ForwardIndex forwardIndex : segment.getForwardIndexes().values()) {
+      if (forwardIndex instanceof GazelleForwardIndexImpl) {
+        forwardIndexes.add((GazelleForwardIndexImpl) forwardIndex);
+      } else if (forwardIndex instanceof SortedForwardIndex){
+        SortedForwardIndexImpl sortedIndex = (SortedForwardIndexImpl) forwardIndex;
+       SortedIndexPersistentManager.flushOnHadoop(new File(baseDir, sortedIndex.getColumnMetadata().getName() + ".ranges").getAbsolutePath(), sortedIndex, fs);
+      } else {
+        throw new UnsupportedOperationException(forwardIndex.getClass().getCanonicalName());
+      }
+    }
+    ForwardIndexPersistentManager.flushOnHadoop(forwardIndexes, baseDir, fs);
+  }
+  
   public static void flush(GazelleIndexSegmentImpl segment, File baseDir) throws IOException, ConfigurationException {
     DictionaryPersistentManager.flush(segment.getColumnMetadataMap(), segment.getDictionaries(), baseDir);
     MetadataPersistentManager.flush(segment.getColumnMetadataMap(), baseDir);
