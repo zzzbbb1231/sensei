@@ -14,12 +14,13 @@ public class ZkSegmentCreator {
   private static ZkManager zkManager;
 
   public static void main(String[] args) throws Exception {
-    zkManager = new ZkManager("localhost:2181", "ba-server");
+    //zkManager = new ZkManager("localhost:2181", "ba-server");
     GazelleIndexSegmentImpl indexSegmentImpl = new SegmentCreator().readFromAvroFile(new File("/tmp/data/-part-1.avro"));
    
     File indexDir = new File("testIndex");
     SingleNodeStarter.rmrf(indexDir);
     indexDir.mkdirs();
     SegmentPersistentManager.flush(indexSegmentImpl, indexDir);
+    Thread.sleep(Long.MAX_VALUE);
   }
 }

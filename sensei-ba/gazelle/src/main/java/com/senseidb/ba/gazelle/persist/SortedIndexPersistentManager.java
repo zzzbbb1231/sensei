@@ -8,12 +8,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+import com.senseidb.ba.ColumnMetadata;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
 
 public class SortedIndexPersistentManager {
@@ -40,6 +42,7 @@ public class SortedIndexPersistentManager {
       dataOutputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
       for (int i = 0; i < sortedForwardIndexImpl.getColumnMetadata().getNumberOfDictionaryValues(); i++) {
         dataOutputStream.writeInt(sortedForwardIndexImpl.getMinDocIds()[i]);
+        
         dataOutputStream.writeInt(sortedForwardIndexImpl.getMaxDocIds()[i]);
       }
       dataOutputStream.flush();
@@ -62,4 +65,15 @@ public class SortedIndexPersistentManager {
       IOUtils.closeQuietly(dataInputStream);
     }
   }
+  /*public static void main(String[] args) throws Exception {
+    SortedForwardIndexImpl sortedForwardIndexImpl = new SortedForwardIndexImpl();
+    sortedForwardIndexImpl.setMinDocIds(new int[12024]);
+    sortedForwardIndexImpl.setMaxDocIds(new int[12024]);
+    ColumnMetadata columnMetadata = new ColumnMetadata();
+    columnMetadata.setNumberOfDictionaryValues(5000);
+    sortedForwardIndexImpl.setColumnMetadata(columnMetadata);
+    readMinMaxRanges(new File("/home/vzhabiuk/w/sensei-ba1/sensei/sensei-ba/ba-core/tmp/-part-1/shrd_advertiserId.ranges"), sortedForwardIndexImpl);
+    System.out.println(Arrays.toString(sortedForwardIndexImpl.getMinDocIds()));
+    
+  }*/
 }

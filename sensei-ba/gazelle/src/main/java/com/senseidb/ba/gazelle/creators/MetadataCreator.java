@@ -18,7 +18,7 @@ public class MetadataCreator {
     ColumnMetadata metadata = new ColumnMetadata();
     if (!sorted) {
     int numOfBits = CompressedIntArray.getNumOfBits(list.size());
-    int bufferSize = CompressedIntArray.getRequiredBufferSize(numOfElements, numOfBits);
+    int bufferSize = (int)CompressedIntArray.getRequiredBufferSize(numOfElements, numOfBits);
       metadata.setStartOffset(_startOffset);
       metadata.setBitsPerElement(numOfBits);
       metadata.setByteLength(bufferSize);

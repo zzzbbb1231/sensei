@@ -1,8 +1,10 @@
 package com.senseidb.ba.gazelle.creators;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -176,12 +178,13 @@ public class SegmentCreator {
 
   public static GazelleIndexSegmentImpl readFromAvroFile(File avroFile) throws IOException {
     MetadataCreator creator = new MetadataCreator();
-    FileInputStream inputStream1 = null;
-    FileInputStream inputStream2 = null;
+    InputStream inputStream1 = null;
+    InputStream inputStream2 = null;
     try {
     Map<String, GazelleForwardIndexImpl> ret = new HashMap<String, GazelleForwardIndexImpl>();
   DatumReader<GenericRecord> datumReader = new GenericDatumReader<GenericRecord>();
-    inputStream1 = new FileInputStream(avroFile);
+    byte[] byteArray = IOUtils.toByteArray(new FileInputStream(avroFile));
+    inputStream1 = new ByteArrayInputStream(byteArray);
       DataFileStream<GenericRecord> dataFileReader = new DataFileStream<GenericRecord>(inputStream1, datumReader);
 
     Schema schema = dataFileReader.getSchema();
@@ -244,7 +247,7 @@ public class SegmentCreator {
     }
     dataFileReader.close();
     datumReader = new GenericDatumReader<GenericRecord>();
-    inputStream2 = new FileInputStream(avroFile);
+    inputStream2 = new ByteArrayInputStream(byteArray);
       
     dataFileReader = new DataFileStream<GenericRecord>(inputStream2, datumReader);
      
@@ -298,7 +301,7 @@ public class SegmentCreator {
   }
 
   public static ByteBuffer getByteBuffer(int numOfElements, int dictionarySize) {
-    return ByteBuffer.allocate(CompressedIntArray.getRequiredBufferSize(numOfElements,
+    return ByteBuffer.allocate((int)CompressedIntArray.getRequiredBufferSize(numOfElements,
         CompressedIntArray.getNumOfBits(dictionarySize)));
   }
 
