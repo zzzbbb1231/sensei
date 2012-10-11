@@ -1,5 +1,8 @@
 package com.senseidb.ba.gazelle.creators;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -183,7 +186,7 @@ public class SegmentCreator {
   }
 
   public static ByteBuffer getByteBuffer(int numOfElements, int dictionarySize) {
-    return ByteBuffer.allocate(CompressedIntArray.getRequiredBufferSize(numOfElements, CompressedIntArray.getNumOfBits(dictionarySize)));
+    return ByteBuffer.allocate((int) CompressedIntArray.getRequiredBufferSize(numOfElements, CompressedIntArray.getNumOfBits(dictionarySize)));
   }
 
 }

@@ -2,6 +2,8 @@ package com.senseidb.ba.gazelle.utils;
 
 import java.nio.ByteBuffer;
 
+import org.springframework.util.Assert;
+
 public class CompressedIntArray {
   private final ByteBuffer buf;
   private int capacity;
@@ -11,12 +13,14 @@ private byte[] tempBuf;
   public CompressedIntArray(int numOfElements, int numOfBitsPerElement) {
     this.numOfBitsPerElement = numOfBitsPerElement;
     capacity = numOfElements;
-    buf = ByteBuffer.allocateDirect(getRequiredBufferSize(numOfElements, numOfBitsPerElement));
+    long requiredBufferSize = getRequiredBufferSize(numOfElements, numOfBitsPerElement);
+    Assert.state(requiredBufferSize <= Integer.MAX_VALUE);
+    buf = ByteBuffer.allocateDirect((int)requiredBufferSize);
     tempBuf = getByteBuf();
   }
 
-  public static int getRequiredBufferSize(int numOfElements, int numOfBitsPerElement) {
-    return (int) Math.ceil((double) numOfElements / 8 * numOfBitsPerElement);
+  public static long getRequiredBufferSize(long numOfElements, int numOfBitsPerElement) {   
+    return ((long)numOfElements * numOfBitsPerElement + 7) / 8;
   }
   public static int getNumOfBits(int dictionarySize) {
       return  (int) Math.ceil(Math.log(dictionarySize)/Math.log(2));
@@ -112,6 +116,10 @@ public int getCapacity() {
 
 public ByteBuffer getStorage() {
   return buf;
+}
+
+public int getNumOfBitsPerElement() {
+  return numOfBitsPerElement;
 }
  
 }

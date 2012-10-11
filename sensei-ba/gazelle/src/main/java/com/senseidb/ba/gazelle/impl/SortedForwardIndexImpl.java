@@ -23,9 +23,7 @@ public class SortedForwardIndexImpl implements ForwardIndex, SortedForwardIndex 
         this.maxDocIds = maxDocIds;
         this.length = length;
         this.columnMetadata = columnMetadata;
-        if (minDocIds.length == 0){
-          System.out.println("Empty");
-        }
+       
         minDocIds[0] = -1;
         maxDocIds[0] = -1;
         for (int i = 1; i < minDocIds.length; i++) {

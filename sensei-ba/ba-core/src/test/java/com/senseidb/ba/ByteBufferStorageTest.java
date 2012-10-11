@@ -7,7 +7,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.senseidb.ba.util.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 
 
 
