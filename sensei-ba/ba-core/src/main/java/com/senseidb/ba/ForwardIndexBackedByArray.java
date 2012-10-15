@@ -24,11 +24,10 @@ import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.indexing.DefaultSenseiInterpreter;
 
-public class ForwardIndexBackedByArray implements ForwardIndex {
+public class ForwardIndexBackedByArray implements SingleValueForwardIndex {
   private final String column;
   private TermValueList<?> dictionary;
   private int[] forwardIndex;
-  private int[] freqs;
   private final ColumnType columnType;
   public ForwardIndexBackedByArray(String column, ColumnType columnType) {
     this.column = column;
@@ -56,11 +55,9 @@ public class ForwardIndexBackedByArray implements ForwardIndex {
       long2IntMap.put(elements[i], i);
     }
     forwardIndex = new int[values.size()];
-    freqs = new int[termLongList.size()];
     for (int i = 0; i< values.size(); i++) {
       int dictIndex = values.get(i) != null && long2IntMap.containsKey(values.get(i)) ? long2IntMap.get(values.get(i)) : 0;
       forwardIndex[i] = dictIndex;
-      freqs[dictIndex]++;
     }
   }
  
@@ -85,11 +82,9 @@ public class ForwardIndexBackedByArray implements ForwardIndex {
       int2IntMap.put(elements[i], i);
     }
     forwardIndex = new int[values.size()];
-    freqs = new int[termIntList.size()];
     for (int i = 0; i< values.size(); i++) {
       int dictIndex = values.get(i) != null && int2IntMap.containsKey(values.get(i)) ? int2IntMap.get(values.get(i)) : 0;
       forwardIndex[i] = dictIndex;
-      freqs[dictIndex]++;
     }
   }
  
@@ -114,11 +109,9 @@ public class ForwardIndexBackedByArray implements ForwardIndex {
       obj2IntMap.put(termStringList.get(i), i);
     }
     forwardIndex = new int[values.size()];
-    freqs = new int[termStringList.size()];
     for (int i = 0; i< values.size(); i++) {
       int dictIndex = values.get(i) != null && obj2IntMap.containsKey(values.get(i)) ? obj2IntMap.get(values.get(i)) : 0;
       forwardIndex[i] = dictIndex;
-      freqs[dictIndex]++;
     }
   }
   
@@ -134,10 +127,7 @@ public class ForwardIndexBackedByArray implements ForwardIndex {
     return forwardIndex[docId];
   }
 
-  @Override
-  public int getFrequency(int valueId) {
-    return freqs[valueId];
-  }
+
   public TermValueList<?> getDictionary() {
     return dictionary;
   }

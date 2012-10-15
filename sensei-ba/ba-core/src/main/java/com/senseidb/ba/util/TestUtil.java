@@ -27,7 +27,7 @@ public class TestUtil {
     File segmentDir = new File(tempIndexDir, segmentId);
   
     
-    SegmentPersistentManager.flush(indexSegmentImpl, segmentDir);
+    SegmentPersistentManager.flushToDisk(indexSegmentImpl, segmentDir);
     File compressedFile = new File(tempIndexDir, segmentId + ".tar.gz");
     TarGzCompressionUtils.createTarGzOfDirectory(segmentDir.getAbsolutePath() + "/", compressedFile.getAbsolutePath());
     return compressedFile;

@@ -50,6 +50,7 @@ public class CompressedMultiArrayTest {
         assertEquals(length, buffer[j]);
       }
     }
+    assertEquals(9, compressedMultiArray.getMaxNumValuesPerDoc());
   }
   @Test
   public void test4ReadAllValuesWith1500Increment() {    

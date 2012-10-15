@@ -12,13 +12,12 @@ public class ColumnMetadata {
    */
   private String _name;
   private ColumnType _columnType;
-  private long _startOffset;
   private long _byteLength;
   private int _numberOfElements;
   private int _numberOfDictionaryValues;
   private int _bitsPerElement;
   private boolean _sorted;
-
+  private boolean multi;
  
   
   public ColumnMetadata(String name, ColumnType type) {
@@ -30,12 +29,12 @@ public class ColumnMetadata {
     
   }
   public void addToConfig(Configuration configuration) {
-    configuration.setProperty("column." + _name + ".startOffset", _startOffset);
     configuration.setProperty("column." + _name + ".numberOfElements", _numberOfElements);
     configuration.setProperty("column." + _name + ".byteLength",_byteLength);
     configuration.setProperty("column." + _name + ".numberOfDictionaryValues", _numberOfDictionaryValues);
     configuration.setProperty("column." + _name + ".bitsPerElement", _bitsPerElement);
     configuration.setProperty("column." + _name + ".sorted", _sorted);
+    configuration.setProperty("column." + _name + ".multi", multi);
     configuration.setProperty("column." + _name + ".columnType", _columnType.toString());
   }
 
@@ -59,13 +58,7 @@ public class ColumnMetadata {
     this._columnType = originalType;
   }
 
-  public long getStartOffset() {
-    return _startOffset;
-  }
-
-  public void setStartOffset(long startOffset) {
-    this._startOffset = startOffset;
-  }
+  
 
   public long getByteLength() {
     return _byteLength;
@@ -106,6 +99,14 @@ public class ColumnMetadata {
   public void setSorted(boolean sorted) {
     this._sorted = sorted;
   }
+
+public boolean isMulti() {
+    return multi;
+}
+
+public void setMulti(boolean multi) {
+    this.multi = multi;
+}
 
  
   

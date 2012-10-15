@@ -24,6 +24,7 @@ import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ColumnMetadata;
 import com.senseidb.ba.ForwardIndex;
+import com.senseidb.ba.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.creators.SegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
@@ -49,8 +50,8 @@ public class SegmentReaderTest {
     _avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
     _jsonFile = new File(getClass().getClassLoader().getResource("data/sample_data.json").toURI());
     System.out.println(_indexDir.getAbsolutePath());
-    _segment = SegmentCreator.readFromAvroFile(_avroFile.getAbsolutePath(), FileSystemMode.DISK);
-    SegmentPersistentManager.flush(_segment, _indexDir.getAbsolutePath(), FileSystemMode.DISK);
+    _segment = SegmentCreator.readFromAvroFile(_avroFile);
+    SegmentPersistentManager.flushToDisk(_segment, _indexDir);
   }
 
 
@@ -116,7 +117,7 @@ public class SegmentReaderTest {
 
       JSONObject obj = new JSONObject(line);
       for (String column : metadataMap.keySet()) {
-        ForwardIndex index =  segment.getForwardIndex(column);
+          SingleValueForwardIndex index =  (SingleValueForwardIndex) segment.getForwardIndex(column);
         TermValueList<?> list = index.getDictionary();
         String valueFromJson = obj.get(column).toString();
         int forwardIndexValue = index.getValueIndex(i);
@@ -144,7 +145,7 @@ public class SegmentReaderTest {
     Map<String, ColumnMetadata> metadataMap = segment.getColumnMetadataMap();
     long start = System.currentTimeMillis();
     for (String column : metadataMap.keySet()) {
-      ForwardIndex forwardIndex =  segment.getForwardIndex(column);
+        SingleValueForwardIndex forwardIndex =  (SingleValueForwardIndex) segment.getForwardIndex(column);
       int min = 0;
       int max = forwardIndex.getLength() - 1;
       for (int i = 0; i < forwardIndex.getLength(); i++) {
@@ -172,7 +173,7 @@ public class SegmentReaderTest {
     Map<String, ColumnMetadata> metadataMap = segment.getColumnMetadataMap();
     long start = System.currentTimeMillis();
     for (String column : metadataMap.keySet()) {
-      ForwardIndex forwardIndex =  segment.getForwardIndex(column);
+        SingleValueForwardIndex forwardIndex =  (SingleValueForwardIndex) segment.getForwardIndex(column);
       for (int i = 0; i < forwardIndex.getLength(); i++) {
         assertTrue(forwardIndex.getValueIndex(i) >= 0);
       }

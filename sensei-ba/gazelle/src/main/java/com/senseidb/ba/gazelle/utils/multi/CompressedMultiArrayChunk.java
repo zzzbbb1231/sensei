@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
+import java.util.Arrays;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.util.OpenBitSet;
@@ -28,6 +29,7 @@ public class CompressedMultiArrayChunk {
   private final int numBitsPerElement;
   private int[] skipList;
   private int[] offsets;
+private int maxNumValuesPerDoc;
   private static final int[] ARRAY_WITH_SINGLE_ZERO = new int[] {0};
   public CompressedMultiArrayChunk(int numBitsPerElement) {
     this.numBitsPerElement = numBitsPerElement;
@@ -95,13 +97,35 @@ public class CompressedMultiArrayChunk {
     currentOffsets.trim();
     skipList = currentSkipList.elements();
     offsets = currentOffsets.elements();
+    initMaxNumValuesPerDoc(openBitSet);
   }
 
-  public void flush(File file) {
+  private void initMaxNumValuesPerDoc(OpenBitSet openBitSet) {
+      maxNumValuesPerDoc = 0;
+      int index = 0;
+      int nextIndex = 0;
+     while ((nextIndex = openBitSet.nextSetBit(index + 1)) != -1) {
+         if (maxNumValuesPerDoc < (nextIndex - index)) {
+             maxNumValuesPerDoc = nextIndex - index;
+         }
+         index = nextIndex;
+     }
+}
+
+public void flush(File file) {
     openBitSet.trimTrailingZeros();
-    DataOutputStream dataOutputStream = null;
     try {
-      dataOutputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
+    DataOutputStream dataOutputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
+    
+    flush(dataOutputStream);
+    } catch (Exception ex) {
+        throw new RuntimeException();
+    }
+    
+  }
+
+public void flush(DataOutputStream dataOutputStream) {
+    try {
       dataOutputStream.writeInt(startElement);
       dataOutputStream.writeInt(currentSize);
       dataOutputStream.writeInt(openBitSet.getNumWords());
@@ -119,7 +143,7 @@ public class CompressedMultiArrayChunk {
     } finally {
       IOUtils.closeQuietly(dataOutputStream);
     }
-  }
+}
 
   public static CompressedMultiArrayChunk readFromFile(int numBitsPerElement, File file, ReadMode readMode) {
     CompressedMultiArrayChunk arrayChunk = new CompressedMultiArrayChunk(numBitsPerElement);
@@ -170,7 +194,41 @@ public class CompressedMultiArrayChunk {
   public MultiChunkIterator iterator() {
     return new MultiChunkIterator(skipList, offsets, openBitSet, compressedIntArray, startElement, currentSize);
   }
-
+  public int randomRead(int[] buffer, int index) {
+      if (skipList.length ==0 || index < skipList[0]) {
+          return 0;
+      }
+      int currentIndex = Arrays.binarySearch(skipList, index);
+      if (currentIndex < 0) {
+          currentIndex = -(currentIndex + 2);
+      }
+      int delta = index - skipList[currentIndex];
+      int bitSetIndex = offsets[currentIndex];
+      while (delta != 0 && bitSetIndex != -1) {
+        bitSetIndex = openBitSet.nextSetBit(bitSetIndex + 1);
+        if (bitSetIndex == -1) {
+          return 0;
+        }
+        delta--;
+      }
+     
+      int next = openBitSet.nextSetBit(bitSetIndex + 1);
+      if (next == -1) {
+        next = currentSize;
+      }
+      int ret = 0;
+      int tmp;
+      while(bitSetIndex < next) {
+        tmp = compressedIntArray.readInt(bitSetIndex);
+        if (tmp != 0) {
+          buffer[ret] = tmp;        
+          ret++;
+        }
+        bitSetIndex++;
+      }
+      return ret;
+  }
+  
   public OpenBitSet getOpenBitSet() {
     return openBitSet;
   }
@@ -194,5 +252,9 @@ public class CompressedMultiArrayChunk {
   public void setOffsets(int[] offsets) {
     this.offsets = offsets;
   }
+
+public int getMaxNumValuesPerDoc() {
+    return maxNumValuesPerDoc;
+}
   
 }

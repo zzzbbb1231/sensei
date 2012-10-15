@@ -8,7 +8,7 @@ import org.apache.avro.Schema.Type;
  */
 
 public enum ColumnType {
-  INT, LONG, STRING, FLOAT;
+  INT, LONG, STRING, FLOAT,INT_ARRAY, LONG_ARRAY, STRING_ARRAY, FLOAT_ARRAY;
 
   public static ColumnType valueOfStr(String name) {
     name = name.toUpperCase();
@@ -46,5 +46,23 @@ public enum ColumnType {
       return FLOAT;
     }
     throw new UnsupportedOperationException(type.toString());
+  }
+  public static ColumnType valueOfArrayType(Type type) {
+      if (type == Type.INT) {
+      return INT_ARRAY;
+    }
+    if (type == Type.LONG) {
+      return LONG_ARRAY;
+    }
+    if (type == Type.STRING) {
+      return STRING_ARRAY;
+    }
+    if (type == Type.DOUBLE || type == Type.FLOAT) {
+      return FLOAT_ARRAY;
+    }
+    throw new UnsupportedOperationException(type.toString());
+  }
+  public boolean isMulti() {
+      return name().endsWith("_ARRAY");
   }
 }

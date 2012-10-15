@@ -1,5 +1,6 @@
 package com.senseidb.ba.gazelle.utils.multi;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -8,7 +9,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.lucene.util.OpenBitSet;
+
+import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.ReadMode;
+import com.senseidb.ba.gazelle.utils.StreamUtils;
 
 public class CompressedMultiArray { 
     private CompressedMultiArrayChunk currentChunk;
@@ -16,7 +23,9 @@ public class CompressedMultiArray {
     private int numberOfElements = 0;   
     int maxNumOfElementsPerChunk;
     private final int numBitsPerElement;
-    private int initialSize;    
+    private int initialSize;
+    private CompressedMultiArrayChunk[] chunksArr;
+    private int maxNumValuesPerDoc;    
     private CompressedMultiArray(int numBitsPerElement) {
       this.numBitsPerElement = numBitsPerElement;
       
@@ -42,7 +51,15 @@ public class CompressedMultiArray {
       for (CompressedMultiArrayChunk arrayChunk : chunks) {
         arrayChunk.initSkipLists();
       }
+      chunksArr = chunks.toArray(new CompressedMultiArrayChunk[chunks.size()]);
+      initMaxNumValuesPerDoc(chunksArr);
     }
+    private void initMaxNumValuesPerDoc(CompressedMultiArrayChunk[] chunksArr) {
+        maxNumValuesPerDoc = 0;
+       for (CompressedMultiArrayChunk compressedMultiArrayChunk : chunksArr) {
+           maxNumValuesPerDoc = Math.max(maxNumValuesPerDoc, compressedMultiArrayChunk.getMaxNumValuesPerDoc());
+       }
+  }
     public void flushToFile(File dir, String columnName) {
       for (int i = 0; i < chunks.size(); i++) {
         File file = new File(dir, columnName + ".index.part" + String.format("%05d", i));
@@ -54,6 +71,19 @@ public class CompressedMultiArray {
         chunks.get(i).flush(file);
       }
     }
+    public void flushToFile(String dir, String columnName, FileSystemMode fileSystemMode, FileSystem fileSystem) {
+        for (int i = 0; i < chunks.size(); i++) {
+            DataOutputStream outputStream = null;
+            try {
+             outputStream = StreamUtils.getOutputStream(dir + "/" + columnName + ".index.part" + String.format("%05d", i), fileSystemMode, fileSystem);
+            
+          chunks.get(i).flush(outputStream);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }finally {
+            IOUtils.closeQuietly(outputStream);}
+        }
+      }
     public static CompressedMultiArray readFromFile(File dir, final String columnName, int numBitsPerElement,ReadMode readMode) {
       CompressedMultiArray compressedMultiArray = new CompressedMultiArray(numBitsPerElement);
       String[] fileNames = dir.list(new FilenameFilter() {
@@ -85,5 +115,24 @@ public class CompressedMultiArray {
       }
       return new CompositeMultiFacetIterator(iterators);
     }
-    
+
+    public int randomRead(int[] buffer, int index) {
+        if (chunksArr.length == 1) {
+            return chunksArr[0].randomRead(buffer, index);
+        }
+        int currentIndex = 0;
+        while (currentIndex < chunksArr.length - 1) {
+            if (chunksArr[currentIndex + 1].getStartElement() > index) {
+                break;
+            }
+            currentIndex++;
+        }
+        if (currentIndex >= chunksArr.length) {
+            return 0;
+        }
+        return chunksArr[currentIndex].randomRead(buffer, index);
+    }
+    public int getMaxNumValuesPerDoc() {
+        return maxNumValuesPerDoc;
+    }
 }

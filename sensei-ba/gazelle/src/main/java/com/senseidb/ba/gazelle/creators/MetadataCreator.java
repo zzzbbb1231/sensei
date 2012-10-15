@@ -12,19 +12,15 @@ import com.senseidb.ba.gazelle.utils.CompressedIntArray;
  */
 
 public class MetadataCreator {
-  private  long _startOffset = 0;
 
-  public  ColumnMetadata createMetadata(String column, TermValueList list, ColumnType type, int numOfElements, boolean sorted) {
+  public  static ColumnMetadata createMetadata(String column, TermValueList list, ColumnType type, int numOfElements, boolean sorted) {
     ColumnMetadata metadata = new ColumnMetadata();
     if (!sorted) {
     int numOfBits = CompressedIntArray.getNumOfBits(list.size());
     int bufferSize = (int)CompressedIntArray.getRequiredBufferSize(numOfElements, numOfBits);
-      metadata.setStartOffset(_startOffset);
       metadata.setBitsPerElement(numOfBits);
       metadata.setByteLength(bufferSize);
-      _startOffset += bufferSize;
     } else {
-      metadata.setStartOffset(-1);
       metadata.setBitsPerElement(-1);
       metadata.setByteLength(-1);
 
@@ -36,5 +32,17 @@ public class MetadataCreator {
     metadata.setNumberOfElements(numOfElements);
     return metadata;
   }
-  
+  public  static ColumnMetadata createMultiMetadata(String column, TermValueList list, ColumnType type, int numOfElements) {
+      ColumnMetadata metadata = new ColumnMetadata();
+      int numOfBits = CompressedIntArray.getNumOfBits(list.size());
+        metadata.setBitsPerElement(numOfBits);
+        metadata.setByteLength(-1);
+        metadata.setMulti(true);
+      metadata.setSorted(false);
+      metadata.setName(column);
+      metadata.setColumnType(type);
+      metadata.setNumberOfDictionaryValues(list.size());
+      metadata.setNumberOfElements(numOfElements);
+      return metadata;
+    }
 }

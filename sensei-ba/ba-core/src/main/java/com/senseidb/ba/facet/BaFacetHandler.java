@@ -25,6 +25,8 @@ import com.browseengine.bobo.sort.DocComparator;
 import com.browseengine.bobo.sort.DocComparatorSource;
 import com.senseidb.ba.ForwardIndex;
 import com.senseidb.ba.IndexSegment;
+import com.senseidb.ba.MultiValueForwardIndex;
+import com.senseidb.ba.SingleValueForwardIndex;
 import com.senseidb.ba.SortedForwardIndex;
 
 public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
@@ -73,21 +75,15 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         //Go by inverted index path
         if (zeusDataCache.invertedIndexPresent(index)) {
            final DocIdSet invertedIndex = zeusDataCache.getInvertedIndexes()[index];
-           return new RandomAccessDocIdSet() {
-            @Override
-            public DocIdSetIterator iterator() throws IOException {
-              return invertedIndex.iterator();
-            }
-            @Override
-            public boolean get(int docId) {
-              return zeusDataCache.getForwardIndex().getValueIndex(docId) == index;
-            }
-          };
+           return new FacetUtils.InvertedIndexDocIdSet(zeusDataCache, invertedIndex, index);
         }
-        else {
-          return new ForwardDocIdSet(zeusDataCache.getForwardIndex(), index); 
-       }
+        else if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex){
+          return new FacetUtils.ForwardDocIdSet(((SingleValueForwardIndex)zeusDataCache.getForwardIndex()), index); 
+       }else if (zeusDataCache.getForwardIndex() instanceof MultiValueForwardIndex){
+           return new MultiFacetUtils.MultiForwardDocIdSet(((MultiValueForwardIndex)zeusDataCache.getForwardIndex()), index); 
+        }
         
+       throw new UnsupportedOperationException(); 
     }};
   }
 
@@ -105,24 +101,13 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         if (forwardIndex instanceof SortedForwardIndex) {
             return new SortedFacetUtils.SortedFacetCountCollector((SortedForwardIndex)forwardIndex, getName(), fakeCache, docBase, sel, fspec);
         }
-        return new DefaultFacetCountCollector(getName(), dataCache.getFakeCache(), docBase, sel, fspec) {
-         
-          @Override
-          public void collect(int docid) {
-            int valueIndex = forwardIndex.getValueIndex(docid);
-            _count.add(valueIndex, _count.get(valueIndex) + 1);
-            
-          }
-
-          @Override
-          public void collectAll() {
-            for (int i = 0; i < forwardIndex.getLength(); i++) {
-                collect(i);
+        if (forwardIndex instanceof SingleValueForwardIndex) {
+        return new FacetUtils.ForwardIndexCountCollector(getName(),  dataCache.getFakeCache(), (SingleValueForwardIndex)forwardIndex,docBase, sel, fspec );
+        }
+        if (forwardIndex instanceof MultiValueForwardIndex) {
+            return new MultiFacetUtils.MultiForwardIndexCountCollector(getName(),  dataCache.getFakeCache(), (MultiValueForwardIndex)forwardIndex,docBase, sel, fspec );
             }
-            
-          }
-          
-        };
+        throw new UnsupportedOperationException();
       }
     };
   }
@@ -138,7 +123,21 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
             return new String[] { forwardIndex.getDictionary().get(dictionaryValueId)};
         }
     }
-    return new String[] { forwardIndex.getDictionary().get(forwardIndex.getValueIndex(id))};
+    if (forwardIndex instanceof SingleValueForwardIndex) {
+        SingleValueForwardIndex forwardIndex2 = (SingleValueForwardIndex)forwardIndex;
+        return new String[] { forwardIndex2.getDictionary().get(forwardIndex2.getValueIndex(id))};
+    }
+    if (forwardIndex instanceof MultiValueForwardIndex) {
+        MultiValueForwardIndex forwardIndex2 = (MultiValueForwardIndex)forwardIndex;
+        int[] buffer = new int[forwardIndex2.getMaxNumValuesPerDoc()];
+        int count = forwardIndex2.randomRead(buffer, id);
+        String[] ret = new String[count];
+        while (count > 0) {
+            ret[count] = forwardIndex2.getDictionary().get(buffer[count]);
+        }
+        return ret;
+    }
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -150,65 +149,26 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         if (zeusDataCache.getForwardIndex() instanceof SortedForwardIndex) {
             return new SortedFacetUtils.SortedDocComparator();
         }
-        return new DocComparator() {
+        if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
+            final SingleValueForwardIndex singleValueForwardIndex = (SingleValueForwardIndex)zeusDataCache.getForwardIndex();
+            return new DocComparator() {
           @Override
           public Comparable value(ScoreDoc doc) {
-            int index = zeusDataCache.getForwardIndex().getValueIndex(doc.doc);
+            int index = singleValueForwardIndex.getValueIndex(doc.doc);
             return zeusDataCache.getForwardIndex().getDictionary().getComparableValue(index);          
           }
           @Override
           public int compare(ScoreDoc doc1, ScoreDoc doc2) {
-            return zeusDataCache.getForwardIndex().getValueIndex(doc2.doc) -zeusDataCache.getForwardIndex().getValueIndex(doc1.doc);
+            return singleValueForwardIndex.getValueIndex(doc2.doc) - singleValueForwardIndex.getValueIndex(doc1.doc);
           }
         };
       }
+        if (zeusDataCache.getForwardIndex() instanceof MultiValueForwardIndex) {
+            throw new UnsupportedOperationException("Sorts are not supported for multi value columns");
+        }
+        throw new UnsupportedOperationException();
+      }
     };
   }
-  private static class ForwardIndexIterator extends DocIdSetIterator {
-    int doc = -1;
-    private final ForwardIndex forwardIndex;
-    private final int index;
-    public ForwardIndexIterator(ForwardIndex forwardIndex, int index) {
-      this.forwardIndex = forwardIndex;
-      this.index = index;
-    }
-    @Override
-    public int nextDoc() throws IOException {
-      while (true) {
-        doc++;
-        if (forwardIndex.getLength() <= doc) return NO_MORE_DOCS;
-          if (forwardIndex.getValueIndex(doc) == index) {
-            return doc;
-          }
-        }
-    }
-    @Override
-    public int docID() {
-      return doc;
-    }
-
-    @Override
-    public int advance(int target) throws IOException {
-      doc = target - 1;
-      return nextDoc();
-    }
-  }
-  public static class ForwardDocIdSet extends RandomAccessDocIdSet {
-    private ForwardIndex forwardIndex;
-    private int index;
-
-    public ForwardDocIdSet(ForwardIndex forwardIndex, int index) {
-      this.forwardIndex = forwardIndex;
-      this.index = index;
-    }
-    @Override
-    public DocIdSetIterator iterator() throws IOException {
-      return new ForwardIndexIterator(forwardIndex, index);
-    }
-    
-    @Override
-    public boolean get(int docId) {
-      return forwardIndex.getValueIndex(docId) == index;
-    }
-  }
+  
 }

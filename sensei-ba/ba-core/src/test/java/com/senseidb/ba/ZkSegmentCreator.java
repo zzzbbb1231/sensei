@@ -20,7 +20,7 @@ public class ZkSegmentCreator {
     File indexDir = new File("testIndex");
     SingleNodeStarter.rmrf(indexDir);
     indexDir.mkdirs();
-    SegmentPersistentManager.flush(indexSegmentImpl, indexDir);
+    SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
     Thread.sleep(Long.MAX_VALUE);
   }
 }

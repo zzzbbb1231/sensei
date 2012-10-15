@@ -108,6 +108,26 @@ public void addValue(Object original, ColumnType type) {
     case STRING:
       addStringValue((String)original);
       break;
+    case LONG_ARRAY:
+        for(Long item : (Long[])original) {
+            addLongValue((Long)item);
+        }
+        break;
+      case INT_ARRAY:
+          for(Integer item : (Integer[])original) {
+              addIntValue((Integer)item);
+          }
+        break;
+      case FLOAT_ARRAY:
+          for(Float item : (Float[])original) {
+              addFloatValue((Float)item);
+          }
+        break;
+      case STRING_ARRAY:
+          for(String item : (String[])original) {
+              addStringValue((String)item);
+          }
+        break;
     default:
       throw new UnsupportedOperationException(original.toString());
   }
@@ -160,6 +180,29 @@ public int getIndex(Object value, ColumnType columnType) {
     throw new UnsupportedOperationException("" + value);
   }
 }
+public int[] getIndexes(Object[] values, ColumnType columnType) {
+    int[] ret = new int[values.length];
+    if (columnType ==  ColumnType.INT_ARRAY) {
+      for(int i = 0; i < values.length; i++) {
+          ret[i] = getIntIndex((Integer)values[i]);
+      }
+    } else if (columnType ==  ColumnType.LONG_ARRAY) {
+        for(int i = 0; i < values.length; i++) {
+            ret[i] = getLongIndex((Long)values[i]);
+        }
+    } else if (columnType ==  ColumnType.STRING_ARRAY) {
+        for(int i = 0; i < values.length; i++) {
+            ret[i] = getStringIndex((String)values[i]);
+        }
+    } else if (columnType ==  ColumnType.FLOAT_ARRAY) {
+        for(int i = 0; i < values.length; i++) {
+            ret[i] = getFloatIndex((Float)values[i]);
+        }
+    } else {
+      throw new UnsupportedOperationException("" + values);
+    }
+    return ret;
+  }
 public int getIndex(Object value) {
   if (value == null) {
     count++;

@@ -44,13 +44,13 @@ public class MetadataPersistentManager {
       String key = (String) columns.next();
       String columnName = key.split("\\.")[1];
       ColumnMetadata metadata = new ColumnMetadata();
-      metadata.setStartOffset(config.getLong("column." + columnName + ".startOffset"));
       metadata.setByteLength(config.getLong("column." + columnName + ".byteLength"));
       metadata.setNumberOfElements(config.getInt("column." + columnName + ".numberOfElements"));
       metadata.setNumberOfDictionaryValues(config.getInt("column." + columnName + ".numberOfDictionaryValues"));
       metadata.setBitsPerElement(config.getInt("column." + columnName + ".bitsPerElement"));
       metadata.setColumnType(ColumnType.valueOfStr(config.getString("column." + columnName + ".columnType")));
       metadata.setSorted(config.getBoolean("column." + columnName + ".sorted"));
+      metadata.setMulti(config.getBoolean("column." + columnName + ".multi"));
       metadata.setName(columnName);
       if (!columnMetadataMap.containsKey(columnName)) {
         columnMetadataMap.put(columnName, metadata);

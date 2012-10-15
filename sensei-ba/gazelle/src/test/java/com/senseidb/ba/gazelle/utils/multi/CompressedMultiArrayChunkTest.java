@@ -36,8 +36,6 @@ public class CompressedMultiArrayChunkTest {
 
   @Test
   public void test1AddElements() {    
-    System.out.println(Arrays.toString(compressedMultiArrayChunk.getSkipList()));
-    System.out.println(Arrays.toString(compressedMultiArrayChunk.getOffsets()));
     assertEquals(compressedMultiArrayChunk.getOffsets().length, compressedMultiArrayChunk.getSkipList().length);
     assertEquals(23, compressedMultiArrayChunk.getSkipList().length);
     assertEquals(0, compressedMultiArrayChunk.getOffsets()[0]);
@@ -59,6 +57,19 @@ public class CompressedMultiArrayChunkTest {
         assertEquals(length, buffer[j]);
       }
     }
+  }
+  @Test
+  public void test3bRandomReadAllValues() {    
+    
+    for (int i = 0; i < 10000; i++) {
+     
+      int length = i % 10;
+      assertEquals(length, compressedMultiArrayChunk.randomRead(buffer, i));
+      for (int j = 0; j < length; j++) {
+        assertEquals(length, buffer[j]);
+      }
+    }
+    assertEquals(0, compressedMultiArrayChunk.randomRead(buffer, 10000));
   }
   @Test
   public void test4ReadAllValuesWith1000Increment() {    
@@ -106,7 +117,6 @@ public class CompressedMultiArrayChunkTest {
     MultiFacetIterator iterator = compressedMultiArrayChunk.iterator();
     
     for (int i = 0; i < 10000; i+=1) {
-      System.out.println(i);
      
       assertTrue(iterator.advance(i));
       int length = i % 10;      

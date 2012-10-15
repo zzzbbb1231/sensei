@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ForwardIndex;
+import com.senseidb.ba.SingleValueForwardIndex;
 import com.senseidb.ba.SortedForwardIndex;
 import com.senseidb.ba.gazelle.creators.SegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
@@ -65,7 +66,7 @@ public class SegmentPersistentManagerTest extends TestCase{
         avroFileStream = new FileInputStream(avroFile);*/
         GazelleIndexSegmentImpl indexSegmentImpl = SegmentCreator.readFromAvroFile(avroFile);
        
-        SegmentPersistentManager.flush(indexSegmentImpl, indexDir);
+        SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
         GazelleIndexSegmentImpl persistedIndexSegment = SegmentPersistentManager.read(indexDir, ReadMode.DBBuffer);
         
         IOUtils.closeQuietly(avroFileStream);
@@ -79,7 +80,7 @@ public void test2CheckForwardIndexes() throws Exception {
     avroFileStream = new FileInputStream(avroFile);*/
     GazelleIndexSegmentImpl indexSegmentImpl = SegmentCreator.readFromAvroFile(avroFile);
    
-    SegmentPersistentManager.flush(indexSegmentImpl, indexDir);
+    SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
     GazelleIndexSegmentImpl persistedIndexSegment = SegmentPersistentManager.read(indexDir, ReadMode.DBBuffer);
     ForwardIndex forwardIndex = persistedIndexSegment.getForwardIndex("shrd_advertiserId");
     assertTrue(forwardIndex instanceof SortedForwardIndexImpl);
@@ -94,7 +95,7 @@ private void compareWithJsonFile(GazelleIndexSegmentImpl indexSegmentImpl) throw
         JSONObject json = new JSONObject(line);
        
         for (String column : indexSegmentImpl.getColumnTypes().keySet()) {
-            ForwardIndex forwardIndex = indexSegmentImpl.getForwardIndex(column);
+            SingleValueForwardIndex forwardIndex = (SingleValueForwardIndex) indexSegmentImpl.getForwardIndex(column);
             TermValueList<?> dictionary = indexSegmentImpl.getDictionary(column);
             
                 String jsonValue = json.get(column).toString();

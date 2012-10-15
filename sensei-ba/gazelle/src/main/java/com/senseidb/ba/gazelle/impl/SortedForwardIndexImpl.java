@@ -8,9 +8,10 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ColumnMetadata;
 import com.senseidb.ba.ColumnType;
 import com.senseidb.ba.ForwardIndex;
+import com.senseidb.ba.SingleValueForwardIndex;
 import com.senseidb.ba.SortedForwardIndex;
 
-public class SortedForwardIndexImpl implements ForwardIndex, SortedForwardIndex {
+public class SortedForwardIndexImpl implements SingleValueForwardIndex, SortedForwardIndex {
     private int[] minDocIds;
     private int[] maxDocIds;
     private TermValueList<?> dictionary;
@@ -63,10 +64,7 @@ public SortedForwardIndexImpl() {
         return index;
     }
 
-    @Override
-    public int getFrequency(int valueId) {
-        throw new UnsupportedOperationException();
-    }
+    
 
     @Override
     public TermValueList<?> getDictionary() {

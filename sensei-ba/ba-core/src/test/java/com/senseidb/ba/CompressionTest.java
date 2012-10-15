@@ -28,7 +28,7 @@ public class CompressionTest extends TestCase {
       indexDir.mkdir();
       avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
       GazelleIndexSegmentImpl indexSegmentImpl = SegmentCreator.readFromAvroFile(avroFile);
-      SegmentPersistentManager.flush(indexSegmentImpl, segmentDir);
+      SegmentPersistentManager.flushToDisk(indexSegmentImpl, segmentDir);
 
   }
   @After

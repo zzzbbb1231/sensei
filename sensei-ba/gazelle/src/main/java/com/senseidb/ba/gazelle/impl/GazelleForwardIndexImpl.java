@@ -5,8 +5,9 @@ import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 import com.senseidb.ba.ColumnMetadata;
 import com.senseidb.ba.ColumnType;
 import com.senseidb.ba.ForwardIndex;
+import com.senseidb.ba.SingleValueForwardIndex;
 
-public class GazelleForwardIndexImpl implements ForwardIndex {
+public class GazelleForwardIndexImpl implements SingleValueForwardIndex {
   private CompressedIntArray compressedIntArray;
   private final String _column;
   private TermValueList<?> _dictionary;
@@ -32,10 +33,6 @@ public class GazelleForwardIndexImpl implements ForwardIndex {
     return compressedIntArray.readInt(docId);
   }
 
-  @Override
-  public int getFrequency(int valueId) {
-    return 0;
-  }
 
   @Override
   public TermValueList<?> getDictionary() {

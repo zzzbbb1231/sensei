@@ -31,7 +31,7 @@ public class BAAvroIntegrationTest extends TestCase {
     indexDir.mkdir();
     File avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
     GazelleIndexSegmentImpl indexSegmentImpl =  SegmentCreator.readFromAvroFile(avroFile);
-    com.senseidb.ba.gazelle.persist.SegmentPersistentManager.flush(indexSegmentImpl, indexDir);
+    com.senseidb.ba.gazelle.persist.SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
     FileUtils.copyFileToDirectory(avroFile, new File("avroIndex"));
     
     
