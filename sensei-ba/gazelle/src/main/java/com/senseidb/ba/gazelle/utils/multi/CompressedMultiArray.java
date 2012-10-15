@@ -97,6 +97,7 @@ public class CompressedMultiArray {
         File file = new File(dir, fileName);
         compressedMultiArray.chunks.add(CompressedMultiArrayChunk.readFromFile(numBitsPerElement, file, readMode));
       }
+      compressedMultiArray.initSkipLists();
       return compressedMultiArray;
     }
     public int getMaxNumOfElementsPerChunk() {

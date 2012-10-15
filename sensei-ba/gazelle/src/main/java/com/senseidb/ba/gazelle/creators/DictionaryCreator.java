@@ -87,6 +87,10 @@ public void addValue(Object original, ColumnType type) {
     containsNulls = true;
     return;
   }
+  if (type.isMulti()) {
+      isSorted = false;
+      
+    }
   if (isSorted) {
     if (!original.equals(previousValue) && contains(original, type)) {
       isSorted = false;
@@ -109,22 +113,22 @@ public void addValue(Object original, ColumnType type) {
       addStringValue((String)original);
       break;
     case LONG_ARRAY:
-        for(Long item : (Long[])original) {
+        for(Object item : (Object[])original) {
             addLongValue((Long)item);
         }
         break;
       case INT_ARRAY:
-          for(Integer item : (Integer[])original) {
+          for(Object item : (Object[])original) {
               addIntValue((Integer)item);
           }
         break;
       case FLOAT_ARRAY:
-          for(Float item : (Float[])original) {
+          for(Object item : (Object[])original) {
               addFloatValue((Float)item);
           }
         break;
       case STRING_ARRAY:
-          for(String item : (String[])original) {
+          for(Object item : (Object[])original) {
               addStringValue((String)item);
           }
         break;

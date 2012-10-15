@@ -95,6 +95,9 @@ private void compareWithJsonFile(GazelleIndexSegmentImpl indexSegmentImpl) throw
         JSONObject json = new JSONObject(line);
        
         for (String column : indexSegmentImpl.getColumnTypes().keySet()) {
+            if (!(indexSegmentImpl.getForwardIndex(column) instanceof SingleValueForwardIndex)) {
+                continue;
+            }
             SingleValueForwardIndex forwardIndex = (SingleValueForwardIndex) indexSegmentImpl.getForwardIndex(column);
             TermValueList<?> dictionary = indexSegmentImpl.getDictionary(column);
             

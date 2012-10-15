@@ -133,6 +133,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         int count = forwardIndex2.randomRead(buffer, id);
         String[] ret = new String[count];
         while (count > 0) {
+            --count;
             ret[count] = forwardIndex2.getDictionary().get(buffer[count]);
         }
         return ret;

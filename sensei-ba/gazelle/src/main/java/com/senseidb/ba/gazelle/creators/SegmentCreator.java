@@ -42,19 +42,21 @@ public class SegmentCreator {
       ForwardIndexCreator[] creators = new  ForwardIndexCreator[schema.getFields().size()];
       int i = 0;
       for (Field field : schema.getFields()) {
-        Type type = field.schema().getType();
-        if (type == Type.UNION) {
-          type =
+        
+        Schema fieldSchema = field.schema();
+        if (fieldSchema.getType() == Type.UNION) {
+            fieldSchema =
               ((Schema) CollectionUtils.find(field.schema().getTypes(), new Predicate() {
                 @Override
                 public boolean evaluate(Object object) {
                   return ((Schema) object).getType() != Type.NULL;
                 }
-              })).getType();
+              }));
         }
         ColumnType columnType;
+        Type type = fieldSchema.getType();
         if (type == Type.ARRAY) {
-            columnType = ColumnType.valueOfArrayType(field.schema().getElementType().getType());
+            columnType = ColumnType.valueOfArrayType(fieldSchema.getElementType().getType());
         } else {
             columnType = ColumnType.valueOf(type);
         }

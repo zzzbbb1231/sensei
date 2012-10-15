@@ -1,8 +1,12 @@
 package com.senseidb.ba.gazelle.creators;
 
 import java.nio.ByteBuffer;
+import java.util.Iterator;
 
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericData.Array;
 import org.apache.avro.util.Utf8;
+import org.springframework.util.Assert;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ColumnMetadata;
@@ -34,6 +38,8 @@ public class ForwardIndexCreator {
     public void addValueToDictionary(Object value) {
         if (value instanceof Utf8) {
             value = ((Utf8) value).toString();
+          } else if (value  instanceof Array) {
+              value = transform((Array) value);
           }
         dictionaryCreator.addValue(value, columnType);
     }
@@ -60,8 +66,26 @@ public class ForwardIndexCreator {
             i++;
         }
         if (compressedMultiArray != null) {
-            compressedMultiArray.add(dictionaryCreator.getIndexes((Object[]) value, columnType));
+            compressedMultiArray.add(dictionaryCreator.getIndexes(transform((Array) value), columnType));
         }
+    }
+    
+    public static Object[] transform(GenericData.Array arr) {
+        if (arr == null) {
+            return new Object[0];
+        }
+        Object[] ret = new Object[(int)arr.size()];
+        Iterator iterator = arr.iterator();
+        int i = 0;
+        while (iterator.hasNext()) {
+            Object value = iterator.next();
+            if (value instanceof Utf8) {
+                value = ((Utf8) value).toString();
+              }
+            ret[i++] = value;
+        }
+        Assert.state(i == ret.length);
+        return ret;
     }
     public ForwardIndex produceForwardIndex() {
         if (compressedIntArray != null) {

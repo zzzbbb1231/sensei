@@ -37,7 +37,11 @@ public class DictionaryPersistentManager {
 
       DataOutputStream ds = StreamUtils.getOutputStream(dictFileName, mode, fs);
       try {
-        switch (metadataMap.get(column).getColumnType()) {
+        ColumnType columnType = metadataMap.get(column).getColumnType();
+        if (columnType.isMulti()) {
+            columnType = columnType.getElementType();
+        }
+        switch (columnType) {
           case STRING:
             TermStringList stringList =
                 (TermStringList) termValueListMap.get(column);
@@ -83,6 +87,9 @@ public class DictionaryPersistentManager {
     try {
       fIs = new FileInputStream(dictionaryFile);
       dIs = new DataInputStream(fIs);
+      if (type.isMulti()) {
+          type = type.getElementType();
+      }
       switch (type) {
         case STRING:
           TermStringList termStringList = new TermStringList();
@@ -151,7 +158,8 @@ public class DictionaryPersistentManager {
           list = termIntList;
           break;
         default:
-          break;
+          throw new UnsupportedOperationException();
+            
       }
 
     } catch (Exception e) {

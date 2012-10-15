@@ -49,5 +49,14 @@
   }, {
     "name" : "met_impressionCount",
     "type" :"long"
-  } ]
+  } , {
+            "name":"dim_skills",
+            "type":["null",
+                {
+                    "type":"array",
+                    "items":"int"
+                }
+            ],
+            "default":null
+        }]
 }

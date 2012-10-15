@@ -119,7 +119,7 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
           
           @Override
           public boolean accept(File dir, String name) {
-            return name.contains(GazelleUtils.INDEX_FILENAME);
+            return name.contains(GazelleUtils.METADATA_FILENAME);
           }
         });
         if (persistentIndexes.length > 0) {

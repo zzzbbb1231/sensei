@@ -145,5 +145,30 @@ public void test3FilterAndFacetBySortedColumn() throws Exception {
    System.out.println(resp.toString(1));
    assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));
 }
-
+public void test4FilterOnMultiColumn() throws Exception {
+    
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_skills\": {" + 
+        "                \"values\": [\"3\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+        "}";
+      
+     JSONObject resp = null;
+     for (int i = 0; i < 2; i ++) {
+       resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+     }
+     System.out.println(resp.toString(1));
+     assertEquals("numhits is wrong", 6, resp.getInt("numhits"));
+}
 }

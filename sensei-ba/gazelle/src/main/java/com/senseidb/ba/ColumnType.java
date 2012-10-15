@@ -1,6 +1,7 @@
 package com.senseidb.ba;
 
 import org.apache.avro.Schema.Type;
+import org.springframework.util.Assert;
 
 
 /**
@@ -64,5 +65,9 @@ public enum ColumnType {
   }
   public boolean isMulti() {
       return name().endsWith("_ARRAY");
+  }
+  public ColumnType getElementType() {
+      Assert.state(isMulti());
+      return valueOfStr(name().substring(0, name().indexOf("_ARRAY")));
   }
 }

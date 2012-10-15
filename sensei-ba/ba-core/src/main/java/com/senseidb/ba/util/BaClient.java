@@ -68,7 +68,7 @@ public class BaClient {
             zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);
             System.out.println("The segment has been registered");
           } else if (filePath.isDirectory()) {
-            if (new File(filePath, GazelleUtils.INDEX_FILENAME).exists()) {
+            if (new File(filePath, GazelleUtils.METADATA_FILENAME).exists()) {
             GazelleIndexSegmentImpl indexSegmentImpl = SegmentPersistentManager.read(filePath, ReadMode.DBBuffer);
             File compressedFile = TestUtil.createCompressedSegment(segmentId, indexSegmentImpl, indexDir);
             zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);

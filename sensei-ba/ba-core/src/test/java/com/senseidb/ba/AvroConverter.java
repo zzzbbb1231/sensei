@@ -18,7 +18,10 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.util.Utf8;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.Predicate;
 import org.apache.commons.io.FileUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class AvroConverter {
@@ -51,11 +54,32 @@ public static void dumpAvro() throws URISyntaxException, FileNotFoundException, 
         Iterator keys = json.keys();
         while(keys.hasNext()) {
           String key = (String) keys.next();
+          if (key.contains("skill")) {
+              System.out.println();
+          }
           Object obj = json.get(key);
           if (obj instanceof Integer && schema.getField(key).schema().getType() == Type.LONG) {
             obj = Long.valueOf((Integer)obj);
           } if (obj instanceof String) {
             obj = new Utf8(obj.toString());
+          } if (obj instanceof org.json.JSONArray) {
+              JSONArray arr = (JSONArray) obj;
+              Schema type = schema.getField(key).schema();
+              if (schema.getField(key).schema().getType() == Type.UNION) {
+                  type =
+                      ((Schema) CollectionUtils.find(schema.getField(key).schema().getTypes(), new Predicate() {
+                        @Override
+                        public boolean evaluate(Object object) {
+                          return ((Schema) object).getType() == Type.ARRAY;
+                        }
+                      }));
+                }
+              
+              GenericData.Array arrAvro = new GenericData.Array(arr.length(), type);
+              for (int j = 0; j < arr.length(); j++) {
+                  arrAvro.add(arr.get(j));
+              }
+              obj = arrAvro;
           }
           datum.put(key, obj);
         }
