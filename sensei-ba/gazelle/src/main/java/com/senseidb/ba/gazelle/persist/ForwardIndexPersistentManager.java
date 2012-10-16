@@ -2,27 +2,21 @@ package com.senseidb.ba.gazelle.persist;
 
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
-import org.mortbay.io.RuntimeIOException;
 
 import com.senseidb.ba.ColumnMetadata;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
-import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.ba.gazelle.utils.StreamUtils;
 
