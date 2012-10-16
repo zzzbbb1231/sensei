@@ -171,4 +171,29 @@ public void test4FilterOnMultiColumn() throws Exception {
      System.out.println(resp.toString(1));
      assertEquals("numhits is wrong", 6, resp.getInt("numhits"));
 }
+
+public void test5FacetByMultiColumn() throws Exception {
+    
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 0,\n" + 
+        "    \"facets\": {\n" + 
+        "        \"dim_skills\": {\n" + 
+        "            \"max\": 10,\n" + 
+        "            \"minCount\": 1,\n" + 
+        "            \"expand\": false,\n" + 
+        "            \"order\": \"hits\"\n" + 
+        "        }\n" + 
+        "    }" + 
+        "}";
+      
+     JSONObject resp = null;
+     for (int i = 0; i < 2; i ++) {
+       resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+     }
+     JSONObject facetValue = resp.getJSONObject("facets").getJSONArray("dim_skills").getJSONObject(0);
+     assertEquals("0000000003", facetValue.getString("value"));
+     assertEquals(6, facetValue.getInt("count"));
+  }
 }

@@ -61,16 +61,15 @@ public class MultiFacetUtils {
         }
         @Override
         public int nextDoc() throws IOException {
-          while (true) {
-            doc++;
-            if (!iterator.advance(doc)) return NO_MORE_DOCS;
-              int count = iterator.readValues(buffer);
+          while (doc < length -1 && iterator.advance(++doc)) {
+            int count = iterator.readValues(buffer);
               while(count > 0) {
                   if (index == buffer[--count]) {
                       return doc;
                   }
               }
             }
+          return NO_MORE_DOCS;
         }
         @Override
         public int docID() {

@@ -20,6 +20,7 @@ import org.apache.avro.io.JsonEncoder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.JsonGenerator;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -28,6 +29,7 @@ import org.junit.Test;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.ForwardIndex;
+import com.senseidb.ba.MultiValueForwardIndex;
 import com.senseidb.ba.SingleValueForwardIndex;
 import com.senseidb.ba.SortedForwardIndex;
 import com.senseidb.ba.gazelle.creators.SegmentCreator;
@@ -95,7 +97,19 @@ private void compareWithJsonFile(GazelleIndexSegmentImpl indexSegmentImpl) throw
         JSONObject json = new JSONObject(line);
        
         for (String column : indexSegmentImpl.getColumnTypes().keySet()) {
-            if (!(indexSegmentImpl.getForwardIndex(column) instanceof SingleValueForwardIndex)) {
+            if (indexSegmentImpl.getForwardIndex(column) instanceof MultiValueForwardIndex) {
+                MultiValueForwardIndex multiValueForwardIndex = (MultiValueForwardIndex) indexSegmentImpl.getForwardIndex(column);
+                JSONArray object = json.optJSONArray(column);
+                int[] buffer = new int[multiValueForwardIndex.getMaxNumValuesPerDoc()];
+                int count = multiValueForwardIndex.randomRead(buffer, i);
+                if (object == null) {
+                    assertEquals(0, count);
+                } else {
+                    for (int j = 0; j < object.length(); j++) {
+                        count--;
+                        assertEquals(prepareValue(object.getString(j)), prepareValue(multiValueForwardIndex.getDictionary().get(buffer[j])));
+                    }
+                }
                 continue;
             }
             SingleValueForwardIndex forwardIndex = (SingleValueForwardIndex) indexSegmentImpl.getForwardIndex(column);
@@ -105,12 +119,17 @@ private void compareWithJsonFile(GazelleIndexSegmentImpl indexSegmentImpl) throw
                 int valueIndex = forwardIndex.getValueIndex(i);
                
                 String value = dictionary.get(valueIndex);
-                value = value.replaceFirst("^0+(?!$)", "");
-                value = value.replaceFirst("^-0+(?!$)", "-");
+                value = prepareValue(value);
                 assertEquals(jsonValue, value);
         }
         i++;
     }
+}
+
+private static String prepareValue(String value) {
+    value = value.replaceFirst("^0+(?!$)", "");
+    value = value.replaceFirst("^-0+(?!$)", "-");
+    return value;
 }
 public void dumpToJson(InputStream fileStream, PrintStream out) throws Exception {
      
