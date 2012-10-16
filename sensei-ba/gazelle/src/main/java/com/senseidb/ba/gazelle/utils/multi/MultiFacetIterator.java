@@ -6,4 +6,6 @@ public interface MultiFacetIterator {
 
   public abstract int readValues(int[] buffer);
 
+  int find(int fromIndex, int value);
+
 }

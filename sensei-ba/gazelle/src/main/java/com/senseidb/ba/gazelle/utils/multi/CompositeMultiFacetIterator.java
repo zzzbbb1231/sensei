@@ -33,5 +33,23 @@ public class CompositeMultiFacetIterator implements MultiFacetIterator {
   public int readValues(int[] buffer) {
     return currentIterator.readValues(buffer);
   }
-
+  @Override
+  public int find(int fromIndex, int value) {
+   if (!advance(fromIndex)) {
+     return -1;
+   }
+   int ret = currentIterator.find(fromIndex, value);
+   if (ret >= 0) {
+     return ret;
+   }
+   while (++currentIndex < iterators.length) {
+     currentIterator = iterators[currentIndex];
+     ret = currentIterator.find(fromIndex, value);
+     if (ret >= 0) {
+       return ret;
+     }
+   }
+   return -1;
+  }
+  
 }

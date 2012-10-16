@@ -17,6 +17,7 @@
     <module>ba-core</module>
     <module>ba-hadoop</module>
     <module>gazelle</module>
+    <module>config-example</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

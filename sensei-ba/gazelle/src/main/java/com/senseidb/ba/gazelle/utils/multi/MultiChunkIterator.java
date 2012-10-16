@@ -66,6 +66,19 @@ public class MultiChunkIterator implements MultiFacetIterator {
     previousIndex = index;
     return true;
   }
+ @Override
+  public int find(int fromIndex, int value) {
+    if (!advance(fromIndex)) {
+      return -1;
+    }
+    int index= previousBitSetIndex + 1;
+      while (++index < bitSetSize) {
+        if (compressedIntArray.readInt(index) == value) {
+          return startElement + openBitSet.prevSetBit(index);
+        }       
+      }
+    return -1;  
+  }
   /* (non-Javadoc)
    * @see com.senseidb.ba.gazelle.utils.MultiFacetIterator#readValues(int[])
    */
@@ -118,5 +131,10 @@ public class MultiChunkIterator implements MultiFacetIterator {
     return startElement;
   }
   
-  
+  public static void main(String[] args) {
+    OpenBitSet bitSet = new OpenBitSet(5);
+    bitSet.set(1);
+    bitSet.set(2);
+    System.out.println(bitSet.prevSetBit(2));
+  }
 }
