@@ -1,5 +1,7 @@
 package com.senseidb.ba.gazelle.utils.multi;
 
+import com.browseengine.bobo.util.BigSegmentedArray;
+
 public class CompositeMultiFacetIterator implements MultiFacetIterator {
   private MultiChunkIterator currentIterator;
   private int currentIndex;
@@ -43,13 +45,18 @@ public class CompositeMultiFacetIterator implements MultiFacetIterator {
      return ret;
    }
    while (++currentIndex < iterators.length) {
-     currentIterator = iterators[currentIndex];
+     currentIterator = iterators[currentIndex];     
+     fromIndex = Math.max(currentIterator.getStartElement(), fromIndex);
      ret = currentIterator.find(fromIndex, value);
      if (ret >= 0) {
        return ret;
      }
    }
    return -1;
+  }
+  @Override
+  public void count(BigSegmentedArray counts) {
+    currentIterator.count(counts);
   }
   
 }

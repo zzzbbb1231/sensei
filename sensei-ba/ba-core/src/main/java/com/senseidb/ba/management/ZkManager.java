@@ -25,7 +25,11 @@ public class ZkManager {
         zkClient.createPersistent(partitionPath, true);
       }
       SegmentInfo segmentInfo = new SegmentInfo(segmentId, pathUrl, type, timeCreated, timeToLive);
-      zkClient.createPersistent(partitionPath + "/" + segmentId, segmentInfo.toByteArray());
+      if (zkClient.exists(partitionPath + "/" + segmentId)) {
+        removeSegment(partition, segmentId);
+      }
+        zkClient.createPersistent(partitionPath + "/" + segmentId, segmentInfo.toByteArray());
+      
     }
     public void removePartition(int partition) {
       String partitionPath = ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName + "/" + partition;

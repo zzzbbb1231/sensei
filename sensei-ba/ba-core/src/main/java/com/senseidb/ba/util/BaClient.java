@@ -26,8 +26,11 @@ public class BaClient {
                     "clean <partitionId> <segmentId>- purges the partition's segment\n"  +
                     "add <partition_id> <segmentId> <avroPath|gazelleDirectoryPath>\n";  
     File indexDir = new File("tmp");
-    FileUtils.deleteDirectory(indexDir);
-    indexDir.mkdirs();
+    
+    //FileUtils.deleteDirectory(indexDir);
+    if (!indexDir.exists()) {
+      indexDir.mkdirs();
+    }
     ZkManager zkManager = new ZkManager("localhost:2181", args11[0]);
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     System.out.println(usage);
@@ -60,7 +63,7 @@ public class BaClient {
           String segmentId = arguments[2];
           String path = arguments[3];
           File filePath = new File(path);
-          FileUtils.deleteDirectory(indexDir);
+          //FileUtils.deleteDirectory(indexDir);
           indexDir.mkdirs();
           if (path.endsWith(".avro")) {
             GazelleIndexSegmentImpl indexSegmentImpl =  SegmentCreator.readFromAvroFile(new File(path));
@@ -83,10 +86,14 @@ public class BaClient {
               System.out.println("There are " + avroFiles.length + " avro files to index");
               for (File avroFile : avroFiles) {
                 segmentId = avroFile.getName().substring(0, avroFile.getName().length() - ".avro".length());
+                File compressedFile = new File(indexDir, segmentId + ".tar.gz");
+                if (!compressedFile.exists() ) {
                 GazelleIndexSegmentImpl indexSegmentImpl =  SegmentCreator.readFromAvroFile(avroFile);
-                File compressedFile = TestUtil.createCompressedSegment(segmentId, indexSegmentImpl, indexDir);
+                 compressedFile = TestUtil.createCompressedSegment(segmentId, indexSegmentImpl, indexDir);
+                 System.out.println("Registered the segment " + segmentId + " containing " + indexSegmentImpl.getLength());
+                }
+                System.out.println("Registered the segment " + segmentId);
                 zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);
-                System.out.println("Registered the segment " + segmentId + " containing " + indexSegmentImpl.getLength());
               }
               System.out.println("Done registering segments");
             }
@@ -100,6 +107,6 @@ public class BaClient {
         ex.printStackTrace();
       }
     }
-    FileUtils.deleteDirectory(indexDir);
+    //FileUtils.deleteDirectory(indexDir);
   }
 }

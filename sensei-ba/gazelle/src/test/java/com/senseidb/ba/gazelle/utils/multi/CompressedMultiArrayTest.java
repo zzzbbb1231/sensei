@@ -53,6 +53,24 @@ public class CompressedMultiArrayTest {
     assertEquals(9, compressedMultiArray.getMaxNumValuesPerDoc());
   }
   @Test
+  public void test7FindValues() {    
+    MultiFacetIterator iterator = compressedMultiArray.iterator();
+    int index = 0;
+    int i =0;
+    
+    while (true) {
+      index = iterator.find(index + 1, 9);
+      if (index == -1) {
+        break;
+      }
+      assertEquals(9, index % 10);
+      i++;
+    }
+    assertEquals(1000, i);
+    
+    assertEquals(9, compressedMultiArray.getMaxNumValuesPerDoc());
+  }
+  @Test
   public void test4ReadAllValuesWith1500Increment() {    
     MultiFacetIterator iterator = compressedMultiArray.iterator();    
     for (int i = 0; i < 10000; i+=500) {     

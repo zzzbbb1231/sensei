@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.apache.lucene.util.OpenBitSet;
 
+import com.browseengine.bobo.util.BigSegmentedArray;
 import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 
 public class MultiChunkIterator implements MultiFacetIterator {
@@ -71,11 +72,19 @@ public class MultiChunkIterator implements MultiFacetIterator {
     if (!advance(fromIndex)) {
       return -1;
     }
-    int index= previousBitSetIndex + 1;
-      while (++index < bitSetSize) {
-        if (compressedIntArray.readInt(index) == value) {
-          return startElement + openBitSet.prevSetBit(index);
-        }       
+    int offset = 0;
+    int index= previousBitSetIndex;    
+    int next = openBitSet.nextSetBit(index + 1);
+    
+    while (index < bitSetSize) {
+        if (index == next) {
+          offset++;
+          next = openBitSet.nextSetBit(index + 1);
+        }
+       if (compressedIntArray.readInt(index) == value) {
+          return fromIndex + offset;
+        } 
+       index++;
       }
     return -1;  
   }
@@ -136,5 +145,19 @@ public class MultiChunkIterator implements MultiFacetIterator {
     bitSet.set(1);
     bitSet.set(2);
     System.out.println(bitSet.prevSetBit(2));
+  }
+
+  @Override
+  public void count(BigSegmentedArray counts) {
+    int i = previousBitSetIndex;
+    int next = openBitSet.nextSetBit(i + 1);
+    if (next == -1) {
+      next = bitSetSize;
+    }
+    int tmp;
+    while(i < next) {
+      counts.add(compressedIntArray.readInt(i), counts.get(i) + 1);
+      i++;
+    }
   }
 }

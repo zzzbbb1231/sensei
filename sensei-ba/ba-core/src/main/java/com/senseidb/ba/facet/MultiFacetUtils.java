@@ -51,25 +51,19 @@ public class MultiFacetUtils {
         private final int index;
         private int length;
         private MultiFacetIterator iterator;
-        private int[] buffer;
         public MultiForwardIndexIterator(MultiValueForwardIndex forwardIndex, int index) {
           this.forwardIndex = forwardIndex;
           this.index = index;
            length = forwardIndex.getLength();
            iterator = forwardIndex.getIterator();
-           buffer = new int[forwardIndex.getMaxNumValuesPerDoc()];
         }
         @Override
-        public int nextDoc() throws IOException {
-          while (doc < length -1 && iterator.advance(++doc)) {
-            int count = iterator.readValues(buffer);
-              while(count > 0) {
-                  if (index == buffer[--count]) {
-                      return doc;
-                  }
-              }
-            }
-          return NO_MORE_DOCS;
+        public int nextDoc() throws IOException {         
+          doc =  iterator.find(doc + 1, index);
+          if ( doc < 0) {
+            return NO_MORE_DOCS;
+          }
+          return doc;
         }
         @Override
         public int docID() {

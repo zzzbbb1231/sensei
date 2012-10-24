@@ -5,6 +5,7 @@ import java.util.Iterator;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Array;
+import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.util.Utf8;
 import org.springframework.util.Assert;
 
@@ -79,6 +80,9 @@ public class ForwardIndexCreator {
         int i = 0;
         while (iterator.hasNext()) {
             Object value = iterator.next();
+            if (value instanceof Record) {
+              value = ((Record)value).get(0);
+            }
             if (value instanceof Utf8) {
                 value = ((Utf8) value).toString();
               }

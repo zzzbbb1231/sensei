@@ -1,11 +1,15 @@
 package com.senseidb.ba.gazelle.persist;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -41,6 +45,7 @@ public class DictionaryPersistentManager {
         if (columnType.isMulti()) {
             columnType = columnType.getElementType();
         }
+        
         switch (columnType) {
           case STRING:
             TermStringList stringList =
@@ -86,27 +91,33 @@ public class DictionaryPersistentManager {
     DataInputStream dIs = null;
     try {
       fIs = new FileInputStream(dictionaryFile);
-      dIs = new DataInputStream(fIs);
+      dIs = new DataInputStream(new BufferedInputStream(fIs));
       if (type.isMulti()) {
           type = type.getElementType();
       }
+      logger.debug("initializing the dictionary from file " + dictionaryFile.getCanonicalPath());
       switch (type) {
         case STRING:
-          TermStringList termStringList = new TermStringList();
-
+          final String[] arr =  new String[dictionarySize];
+          byte[] buffer = new byte[10000];
+          TermStringList termStringList = new TermStringList(dictionarySize);
           for (int i = 0; i < dictionarySize; i++) {
             int length = dIs.readShort();
-            byte[] bytes = new byte[length];
-            dIs.read(bytes);
-            String str = new String(bytes, "UTF8");
+            if (length > buffer.length ) {
+              buffer = new byte[2 * length];
+            }
+           
+            int read = dIs.read(buffer, 0, length);
+            String str = new String(buffer, 0, length, "UTF8");
             if (i != 0) {
+              arr[i] = str;
               termStringList.add(str);
             } else {
+              //arr[i] = "";
               termStringList.add(null);
-            }
-            list = termStringList;
-            list.seal();
+            }           
           }
+          list = termStringList;
           break;
         case LONG:
           final long[] longArr = new long[dictionarySize];
@@ -114,7 +125,7 @@ public class DictionaryPersistentManager {
             longArr[i] = dIs.readLong();
           }
           TermLongList termLongList =
-              new TermLongList(DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(type)) {
+              new TermLongList(dictionarySize, DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(type)) {
                 public int size() {
                   return longArr.length;
                 }
@@ -130,7 +141,7 @@ public class DictionaryPersistentManager {
             floatArr[i] = dIs.readFloat();
           }
           TermFloatList termFloatList =
-              new TermFloatList(DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(type)) {
+              new TermFloatList(dictionarySize, DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(type)) {
                 public int size() {
                   return floatArr.length;
                 }
@@ -147,7 +158,7 @@ public class DictionaryPersistentManager {
             intArr[i] = dIs.readInt();
           }
           TermIntList termIntList =
-              new TermIntList(DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(type)) {
+              new TermIntList(dictionarySize, DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(type)) {
                 public int size() {
                   return intArr.length;
                 }
@@ -165,8 +176,7 @@ public class DictionaryPersistentManager {
     } catch (Exception e) {
       throw new RuntimeException(e);
     } finally {
-      dIs.close();
-      fIs.close();
+      dIs.close();     
     }
     return list;
   }

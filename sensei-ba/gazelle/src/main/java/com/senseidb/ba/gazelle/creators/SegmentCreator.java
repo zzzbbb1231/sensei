@@ -36,6 +36,7 @@ public class SegmentCreator {
       DataFileStream<GenericRecord> dataFileReader =
           new DataFileStream<GenericRecord>(inputStream1, datumReader);
       Schema schema = dataFileReader.getSchema();
+      //System.out.println(schema.toString(true));
       if (dataFileReader.getSchema() == null) {
         throw new IllegalStateException();
       }
@@ -44,19 +45,17 @@ public class SegmentCreator {
       for (Field field : schema.getFields()) {
         
         Schema fieldSchema = field.schema();
-        if (fieldSchema.getType() == Type.UNION) {
-            fieldSchema =
-              ((Schema) CollectionUtils.find(field.schema().getTypes(), new Predicate() {
-                @Override
-                public boolean evaluate(Object object) {
-                  return ((Schema) object).getType() != Type.NULL;
-                }
-              }));
-        }
+        fieldSchema = extractSchemaFromUnionIfNeeded(fieldSchema);
         ColumnType columnType;
         Type type = fieldSchema.getType();
         if (type == Type.ARRAY) {
-            columnType = ColumnType.valueOfArrayType(fieldSchema.getElementType().getType());
+            Schema elementSchema = extractSchemaFromUnionIfNeeded(fieldSchema.getElementType());
+            if (elementSchema.getType() == Type.RECORD) {
+              elementSchema = elementSchema.getField("null").schema();
+              elementSchema = extractSchemaFromUnionIfNeeded(elementSchema);
+            }
+            columnType = ColumnType.valueOfArrayType( elementSchema.getType());
+            
         } else {
             columnType = ColumnType.valueOf(type);
         }
@@ -101,8 +100,10 @@ public class SegmentCreator {
           creators[j].addValueToForwardIndex(record.get(j));
         }
         i++;
-      }
+        
+       }
       dataFileReader.close();
+      System.out.println("Created the segment");
       GazelleIndexSegmentImpl indexSegmentImpl = new GazelleIndexSegmentImpl();
       for (int j = 0; j < creators.length; j++) {
         indexSegmentImpl.getColumnTypes().put(creators[j].getColumnName(), creators[j].getColumnType());
@@ -119,6 +120,19 @@ public class SegmentCreator {
       IOUtils.closeQuietly(inputStream1);
       IOUtils.closeQuietly(inputStream2);
     }
+  }
+
+  public static Schema extractSchemaFromUnionIfNeeded(Schema fieldSchema) {
+    if (fieldSchema.getType() == Type.UNION) {
+        fieldSchema =
+          ((Schema) CollectionUtils.find(fieldSchema.getTypes(), new Predicate() {
+            @Override
+            public boolean evaluate(Object object) {
+              return ((Schema) object).getType() != Type.NULL;
+            }
+          }));
+    }
+    return fieldSchema;
   }
 
   public static GazelleIndexSegmentImpl readFromAvroFile(File avroFile) throws IOException {
