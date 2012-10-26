@@ -38,7 +38,14 @@ public class CompressedMultiArray {
       chunks.add(currentChunk);
       maxNumOfElementsPerChunk = Integer.MAX_VALUE / numBitsPerElement;
     }
-    
+    public void add(int[] values, int length) {      
+      if (currentChunk.getCurrentSize() + length > maxNumOfElementsPerChunk) {
+        currentChunk = new CompressedMultiArrayChunk(numberOfElements, numBitsPerElement, initialSize);
+        chunks.add(currentChunk);      
+      }
+      currentChunk.add(values, length);
+      numberOfElements++;
+    }
     public void add(int... values) {      
       if (currentChunk.getCurrentSize() + values.length > maxNumOfElementsPerChunk) {
         currentChunk = new CompressedMultiArrayChunk(numberOfElements, numBitsPerElement, initialSize);

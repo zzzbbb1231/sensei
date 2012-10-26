@@ -41,18 +41,21 @@ private int maxNumValuesPerDoc;
     compressedIntArray = new CompressedIntArray(initialSize, numBitsPerElement);
     openBitSet = new OpenBitSet(initialSize);
   }
-
-  public void add(int... values) {
+  public void add(int[] values, int length) {
     if (values.length == 0) {
       values = ARRAY_WITH_SINGLE_ZERO;
     }
     Assert.state(skipList == null);
-    ensureCapacity(currentSize + values.length);
+    ensureCapacity(currentSize + length);
     openBitSet.set(currentSize);
-    for (int i = 0; i < values.length; i++) {
+    for (int i = 0; i < length; i++) {
       compressedIntArray.addInt(currentSize + i, values[i]);
     }
-    currentSize += values.length;
+    currentSize += length;
+    
+  }
+  public void add(int... values) {
+   add(values, values.length);
   }
 
   private void ensureCapacity(int newCapacity) {
@@ -256,5 +259,7 @@ public void flush(DataOutputStream dataOutputStream) {
 public int getMaxNumValuesPerDoc() {
     return maxNumValuesPerDoc;
 }
+
+
   
 }

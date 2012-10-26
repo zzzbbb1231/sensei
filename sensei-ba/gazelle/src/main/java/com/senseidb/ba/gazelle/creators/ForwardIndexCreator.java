@@ -14,7 +14,7 @@ import com.senseidb.ba.ColumnMetadata;
 import com.senseidb.ba.ColumnType;
 import com.senseidb.ba.ForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
-import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl;
+import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 import com.senseidb.ba.gazelle.utils.multi.CompressedMultiArray;
@@ -104,7 +104,7 @@ public class ForwardIndexCreator {
         if (compressedMultiArray != null) {
             compressedMultiArray.initSkipLists();
             metadata = MetadataCreator.createMultiMetadata(columnName, dictionary, columnType, count);
-            return new MultiValueForwardIndexImpl(columnName, compressedMultiArray, dictionary, metadata);
+            return new MultiValueForwardIndexImpl1(columnName, compressedMultiArray, dictionary, metadata);
         }
         throw new UnsupportedOperationException();
     }
