@@ -2,9 +2,7 @@ package com.senseidb.ba.gazelle.persist;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -17,7 +15,7 @@ import com.senseidb.ba.ForwardIndex;
 import com.senseidb.ba.SortedForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
-import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl;
+import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
@@ -49,8 +47,8 @@ public class SegmentPersistentManager {
         SortedForwardIndexImpl sortedIndex = (SortedForwardIndexImpl) forwardIndex;
         String fileName = baseDir +"/" +sortedIndex.getColumnMetadata().getName() + ".ranges";
        SortedIndexPersistentManager.flush(fileName, sortedIndex, mode, fs);
-      }  else if (forwardIndex instanceof MultiValueForwardIndexImpl){
-          MultiValueForwardIndexImpl multiValueForwardIndex = (MultiValueForwardIndexImpl) forwardIndex;
+      }  else if (forwardIndex instanceof MultiValueForwardIndexImpl1){
+          MultiValueForwardIndexImpl1 multiValueForwardIndex = (MultiValueForwardIndexImpl1) forwardIndex;
          
           multiValueForwardIndex.getCompressedMultiArray().flushToFile(baseDir, multiValueForwardIndex.getColumnMetadata().getName(), mode, fs);
         } else {
@@ -81,7 +79,7 @@ public class SegmentPersistentManager {
           GazelleForwardIndexImpl gazelleForwardIndexImpl = new GazelleForwardIndexImpl(columnMetadata.getName(), ForwardIndexPersistentManager.readForwardIndex(columnMetadata, new File(indexDir, columnMetadata.getName() + ".fwd"), mode), dictionary, columnMetadata);
           ret.put(columnMetadata.getName(), gazelleForwardIndexImpl);
         } else if (columnMetadata.isMulti()) {
-            MultiValueForwardIndexImpl forwardIndexImpl = new MultiValueForwardIndexImpl(columnMetadata.getName(), CompressedMultiArray.readFromFile(indexDir, columnMetadata.getName(), columnMetadata.getBitsPerElement(), mode), dictionary, columnMetadata);
+            MultiValueForwardIndexImpl1 forwardIndexImpl = new MultiValueForwardIndexImpl1(columnMetadata.getName(), CompressedMultiArray.readFromFile(indexDir, columnMetadata.getName(), columnMetadata.getBitsPerElement(), mode), dictionary, columnMetadata);
             ret.put(columnMetadata.getName(), forwardIndexImpl);
         }
       
