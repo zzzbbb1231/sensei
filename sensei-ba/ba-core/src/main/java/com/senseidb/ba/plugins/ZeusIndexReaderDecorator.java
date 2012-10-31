@@ -24,6 +24,14 @@ import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
 public class ZeusIndexReaderDecorator extends SenseiIndexReaderDecorator {
   final static String[] emptyString = new String[0];
+  private final List<FacetHandler> customFacetHandlers;
+  @SuppressWarnings("rawtypes")
+  public ZeusIndexReaderDecorator(List<FacetHandler> customFacetHandlers) {
+    this.customFacetHandlers = customFacetHandlers;
+  }
+  public ZeusIndexReaderDecorator() {
+    this(Collections.EMPTY_LIST);
+  }
   @Override
 public BoboIndexReader decorate(ZoieIndexReader<BoboIndexReader> zoieReader) throws IOException {
   SegmentToZoieReaderAdapter adapter = (SegmentToZoieReaderAdapter<?>)zoieReader;
@@ -33,6 +41,9 @@ public BoboIndexReader decorate(ZoieIndexReader<BoboIndexReader> zoieReader) thr
  
   for (String column : offlineSegment.getColumnTypes().keySet()) {
     facetHandlers.add(new BaFacetHandler(column, column, IndexSegment.class.getSimpleName()));
+  }
+  if (customFacetHandlers != null) {
+    facetHandlers.addAll((List<? extends FacetHandler<?>>) customFacetHandlers);
   }
   BoboIndexReader indexReader =  new BoboIndexReader(adapter,  facetHandlers, Collections.EMPTY_LIST, new BoboIndexReader.WorkArea(), false) {
     public void facetInit() throws IOException {

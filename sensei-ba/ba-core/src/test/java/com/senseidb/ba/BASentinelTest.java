@@ -60,17 +60,19 @@ public class BASentinelTest  extends TestCase {
         "            \"dim_memberGender\": {" + 
         "                \"values\": [\"m\"]," + 
         "                \"excludes\": []," + 
-        "                \"operator\": \"or\"" + 
+        "                \"operator\": \"or\"," + 
         "            }" + 
         "        }" + 
         "    }" + 
-        "   ], \"sort\": [{\"dim_memberCompany\": \"desc\"}]," +
+        "   ], " +
+        "\"sort\": [{\"dim_memberCompany\": \"desc\"}]," +
         "    \"facets\": {\n" + 
         "        \"dim_memberCompany\": {\n" + 
         "            \"max\": 10,\n" + 
         "            \"minCount\": 1,\n" + 
         "            \"expand\": false,\n" + 
-        "            \"order\": \"hits\"\n" + 
+        "            \"order\": \"hits\",\n" + 
+        " \"properties\":{\"maxFacetsPerKey\":1}" +
         "        }\n" + 
         "    }" + 
         "}";
@@ -196,4 +198,43 @@ public void test5FacetByMultiColumn() throws Exception {
      assertEquals("0000000003", facetValue.getString("value"));
      assertEquals(6, facetValue.getInt("count"));
   }
+public void test6SumGroupBy() throws Exception {
+  
+  String req = "{" + 
+      "  " + 
+      "    \"from\": 0," + 
+      "    \"size\": 10,\n" + 
+      "    \"selections\": [" + 
+      "    {" + 
+      "        \"terms\": {" + 
+      "            \"dim_memberGender\": {" + 
+      "                \"values\": [\"m\"]," + 
+      "                \"excludes\": []," + 
+      "                \"operator\": \"or\"," + 
+      "            }" + 
+      "        }" + 
+      "    }" + 
+      "   ], " +
+      "    \"facets\": {\n" + 
+      "        \"sumGroupBy\": {\n" + 
+      "            \"max\": 10,\n" + 
+      "            \"minCount\": 1,\n" + 
+      "            \"expand\": false,\n" + 
+      "            \"order\": \"hits\",\n" + 
+      " \"properties\":{\"dimension\":\"shrd_advertiserId\", \"metric\":\"met_impressionCount\"}" +
+      "        }\n" + 
+      "    }" + 
+      "}";
+    
+   JSONObject resp = null;
+   for (int i = 0; i < 2; i ++) {
+     resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+   }
+   System.out.println(resp.toString(1));
+   assertEquals("2", resp.getJSONObject("facets").getJSONArray("sumGroupBy").getJSONObject(3).getString("count"));
+   assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));
+}
+public void test3() {
+  System.out.println();
+}
 }

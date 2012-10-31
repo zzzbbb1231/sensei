@@ -49,7 +49,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
     return new ZeusDataCache(offlineSegment.getForwardIndex(columnName), offlineSegment.getInvertedIndex(columnName));
     
   }
-
+  
   @Override
   public RandomAccessFilter buildRandomAccessFilter(final String value, Properties selectionProperty) throws IOException {
     
