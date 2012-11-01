@@ -24,15 +24,15 @@ public class BAAvroIntegrationTest extends TestCase {
   
   @Before
   public void setUp() throws Exception {
-    File indexDir = new File("avroIndex"); 
+    File indexDir = new File("/tmp/static-ba"); 
     SingleNodeStarter.rmrf(indexDir);
     indexDir.mkdir();
-    indexDir = new File(indexDir, "segment1");
-    indexDir.mkdir();
+    File index1Dir = new File(indexDir, "segment1");
+    index1Dir.mkdir();
     File avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
     GazelleIndexSegmentImpl indexSegmentImpl =  SegmentCreator.readFromAvroFile(avroFile);
-    com.senseidb.ba.gazelle.persist.SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
-    FileUtils.copyFileToDirectory(avroFile, new File("avroIndex"));
+    com.senseidb.ba.gazelle.persist.SegmentPersistentManager.flushToDisk(indexSegmentImpl, index1Dir);
+    FileUtils.copyFileToDirectory(avroFile, indexDir);
     
     
     File ConfDir1 = new File(BASentinelTest.class.getClassLoader().getResource("ba-conf-avro").toURI());

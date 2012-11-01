@@ -4,9 +4,9 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans 
                            http://www.springframework.org/schema/beans/spring-beans.xsd">
- <bean id="sumGroupBy" class="com.senseidb.ba.facet.SumGroupByFacerHandler" />
+
+    <bean id="sumGroupBy" class="com.senseidb.ba.facet.SumGroupByFacerHandler" />
       <bean id="sum" class="com.senseidb.ba.facet.SumFacetHandler" lazy-init="false">
     <constructor-arg value="sum" />
   </bean>
-   
 </beans>

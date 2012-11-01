@@ -47,12 +47,7 @@ public class CompressedMultiArray {
       numberOfElements++;
     }
     public void add(int... values) {      
-      if (currentChunk.getCurrentSize() + values.length > maxNumOfElementsPerChunk) {
-        currentChunk = new CompressedMultiArrayChunk(numberOfElements, numBitsPerElement, initialSize);
-        chunks.add(currentChunk);      
-      }
-      currentChunk.add(values);
-      numberOfElements++;
+     add(values, values.length);
     }
     public void initSkipLists() {
       for (CompressedMultiArrayChunk arrayChunk : chunks) {
