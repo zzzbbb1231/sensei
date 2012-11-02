@@ -25,9 +25,9 @@ import com.senseidb.util.SingleNodeStarter;
 public class ZkSegmentCreator {
   private static ZkManager zkManager;
 
-  public static void main() throws Exception {
+  public static void main(String[] args) throws Exception {
     //zkManager = new ZkManager("localhost:2181", "ba-server");
-    GazelleIndexSegmentImpl indexSegmentImpl = new SegmentCreator().readFromAvroFile(new File("/tmp/ads_data_prepared_for_indexer/part-r-00000.avro"));
+    GazelleIndexSegmentImpl indexSegmentImpl = new SegmentCreator().readFromAvroFile(new File("/tmp/ba-index-standalone/part-1.avro"));
    
     File indexDir = new File("testIndex");
     SingleNodeStarter.rmrf(indexDir);
@@ -36,11 +36,11 @@ public class ZkSegmentCreator {
     
   }
   
-  public static void main(String[] args) throws Exception {
+  public static void main() throws Exception {
     DatumReader<GenericRecord> datumReader =
         new GenericDatumReader<GenericRecord>();
     DataFileStream<GenericRecord> dataFileReader =
-        new DataFileStream<GenericRecord>(new BufferedInputStream(new FileInputStream(new File("/tmp/ads_data_prepared_for_indexer/part-r-00000.avro"))), datumReader);
+        new DataFileStream<GenericRecord>(new BufferedInputStream(new FileInputStream(new File("/tmp/ba-index-standalone/part-1.avro"))), datumReader);
     Schema schema = dataFileReader.getSchema();
     int count = 0;
     int i = 0;
