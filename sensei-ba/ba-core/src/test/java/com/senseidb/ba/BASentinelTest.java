@@ -284,4 +284,23 @@ public class BASentinelTest  extends Assert {
     assertEquals("32830", resp.getJSONObject("facets").getJSONArray("sum").getJSONObject(0).getString("count"));
     assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));
   }
+  @Test
+  public void test8FilterOrQuery() throws Exception {
+    String req = "{\"filter\":{\"or\":[{\"term\":{\"dim_memberGender\":\"f\"}}]}}";
+   
+      
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+   
+  
+    assertEquals("numhits is wrong", 5614, resp.getInt("numhits"));
+     req = "{\"filter\":{\"or\":[{\"term\":{\"dim_memberGender\":\"f\"}},{\"term\":{\"shrd_advertiserId\":\"-500\"}}]}}";
+    
+    
+     resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+   
+  
+    assertEquals("numhits is wrong", 5616, resp.getInt("numhits"));
+  }
+ 
+  
 }

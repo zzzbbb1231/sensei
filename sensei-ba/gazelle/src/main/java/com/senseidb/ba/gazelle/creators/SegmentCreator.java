@@ -51,7 +51,11 @@ public class SegmentCreator {
         if (type == Type.ARRAY) {
             Schema elementSchema = extractSchemaFromUnionIfNeeded(fieldSchema.getElementType());
             if (elementSchema.getType() == Type.RECORD) {
-              elementSchema = elementSchema.getField("null").schema();
+              if (elementSchema.getField("token") != null) {
+                elementSchema = elementSchema.getField("token").schema();
+              } else {
+                elementSchema = elementSchema.getField("null").schema();
+              }
               elementSchema = extractSchemaFromUnionIfNeeded(elementSchema);
             }
             columnType = ColumnType.valueOfArrayType( elementSchema.getType());
