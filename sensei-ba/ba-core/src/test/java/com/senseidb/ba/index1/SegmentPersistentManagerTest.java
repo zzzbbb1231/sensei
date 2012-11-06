@@ -28,10 +28,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.senseidb.ba.ForwardIndex;
-import com.senseidb.ba.MultiValueForwardIndex;
-import com.senseidb.ba.SingleValueForwardIndex;
-import com.senseidb.ba.SortedForwardIndex;
+import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.MultiValueForwardIndex;
+import com.senseidb.ba.gazelle.SingleValueForwardIndex;
+import com.senseidb.ba.gazelle.SortedForwardIndex;
 import com.senseidb.ba.gazelle.creators.SegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;

@@ -21,8 +21,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
-import com.senseidb.ba.ColumnType;
-import com.senseidb.ba.ForwardIndex;
+import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 
 public class SegmentCreator {

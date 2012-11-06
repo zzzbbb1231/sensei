@@ -13,7 +13,7 @@ import java.util.List;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 
-import com.senseidb.ba.ColumnMetadata;
+import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;

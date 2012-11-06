@@ -12,9 +12,9 @@ import proj.zoie.api.ZoieIndexReader;
 
 import com.browseengine.bobo.api.BoboIndexReader;
 import com.browseengine.bobo.facets.FacetHandler;
-import com.senseidb.ba.IndexSegment;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.ba.facet.BaFacetHandler;
+import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.plugin.SenseiPlugin;
 import com.senseidb.plugin.SenseiPluginRegistry;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;

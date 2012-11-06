@@ -10,7 +10,7 @@ import com.browseengine.bobo.facets.data.TermShortList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
-import com.senseidb.ba.SingleValueForwardIndex;
+import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.plugins.ZeusFactoryFactory;
 
 /**

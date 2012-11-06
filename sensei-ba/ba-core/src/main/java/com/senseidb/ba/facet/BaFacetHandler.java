@@ -20,11 +20,11 @@ import com.browseengine.bobo.facets.filter.FacetRangeFilter;
 import com.browseengine.bobo.facets.filter.RandomAccessFilter;
 import com.browseengine.bobo.sort.DocComparator;
 import com.browseengine.bobo.sort.DocComparatorSource;
-import com.senseidb.ba.ForwardIndex;
-import com.senseidb.ba.IndexSegment;
-import com.senseidb.ba.MultiValueForwardIndex;
-import com.senseidb.ba.SingleValueForwardIndex;
-import com.senseidb.ba.SortedForwardIndex;
+import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.IndexSegment;
+import com.senseidb.ba.gazelle.MultiValueForwardIndex;
+import com.senseidb.ba.gazelle.SingleValueForwardIndex;
+import com.senseidb.ba.gazelle.SortedForwardIndex;
 import com.senseidb.ba.util.QueryUtils;
 
 public class BaFacetHandler extends FacetHandler<ZeusDataCache> {

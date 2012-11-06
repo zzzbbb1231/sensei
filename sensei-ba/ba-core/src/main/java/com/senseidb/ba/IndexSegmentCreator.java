@@ -11,6 +11,9 @@ import java.util.Set;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.gazelle.IndexSegment;
+
 public class IndexSegmentCreator {
     public static IndexSegment convert(String[] jsonDocs, Set<String> excludedColumns)  {
       Map<String, List> columnValues = new HashMap<String, List>();

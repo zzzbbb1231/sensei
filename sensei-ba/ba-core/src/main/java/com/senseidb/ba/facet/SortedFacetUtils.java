@@ -15,7 +15,7 @@ import com.browseengine.bobo.facets.FacetCountCollectorSource;
 import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
 import com.browseengine.bobo.sort.DocComparator;
-import com.senseidb.ba.SortedForwardIndex;
+import com.senseidb.ba.gazelle.SortedForwardIndex;
 
 public class SortedFacetUtils {
   public static class SortedForwardDocIdSet extends RandomAccessDocIdSet {

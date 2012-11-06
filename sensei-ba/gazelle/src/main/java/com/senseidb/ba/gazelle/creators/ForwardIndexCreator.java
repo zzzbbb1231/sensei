@@ -10,9 +10,9 @@ import org.apache.avro.util.Utf8;
 import org.springframework.util.Assert;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.senseidb.ba.ColumnMetadata;
-import com.senseidb.ba.ColumnType;
-import com.senseidb.ba.ForwardIndex;
+import com.senseidb.ba.gazelle.ColumnMetadata;
+import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;

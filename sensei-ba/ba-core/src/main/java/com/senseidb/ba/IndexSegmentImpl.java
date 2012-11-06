@@ -7,6 +7,9 @@ import java.util.Map;
 import org.apache.lucene.search.DocIdSet;
 
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.IndexSegment;
 
 public class IndexSegmentImpl implements IndexSegment {
   Map<String, ForwardIndex> forwardIndexes = new HashMap<String, ForwardIndex>();

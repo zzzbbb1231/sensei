@@ -9,7 +9,7 @@ import com.browseengine.bobo.api.FacetSpec;
 import com.browseengine.bobo.docidset.RandomAccessDocIdSet;
 import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
-import com.senseidb.ba.MultiValueForwardIndex;
+import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.utils.multi.MultiFacetIterator;
 
 public class MultiFacetUtils {
@@ -28,12 +28,7 @@ public class MultiFacetUtils {
 
     @Override
     public void collect(int docid) {
-      iterator.advance(docid);
-      int count = iterator.readValues(buffer);
-      while (count > 0) {
-        int valueIndex = buffer[--count];
-        _count.add(valueIndex, _count.get(valueIndex) + 1);
-      }
+      iterator.count(_count, docid);
     }
 
     @Override

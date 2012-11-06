@@ -11,6 +11,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 import org.junit.Test;
 
+import com.senseidb.ba.gazelle.IndexSegment;
+
 public class OfflineIndexTest extends TestCase {
 
   @Test

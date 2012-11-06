@@ -3,8 +3,8 @@ package com.senseidb.ba.gazelle.creators;
 import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.senseidb.ba.ColumnMetadata;
-import com.senseidb.ba.ColumnType;
+import com.senseidb.ba.gazelle.ColumnMetadata;
+import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 
 /**

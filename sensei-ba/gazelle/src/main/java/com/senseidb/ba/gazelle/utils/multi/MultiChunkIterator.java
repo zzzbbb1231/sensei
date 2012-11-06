@@ -33,7 +33,7 @@ public class MultiChunkIterator implements MultiFacetIterator {
   }
   
   /* (non-Javadoc)
-   * @see com.senseidb.ba.gazelle.utils.MultiFacetIterator#advance(int)
+   * @see com.senseidb.ba.gazelle.gazelle.utils.MultiFacetIterator#advance(int)
    */
   @Override
   public boolean advance(int index) {
@@ -113,7 +113,7 @@ public class MultiChunkIterator implements MultiFacetIterator {
     return -1;  
   }
   /* (non-Javadoc)
-   * @see com.senseidb.ba.gazelle.utils.MultiFacetIterator#readValues(int[])
+   * @see com.senseidb.ba.gazelle.gazelle.utils.MultiFacetIterator#readValues(int[])
    */
   @Override
   public int readValues(int[] buffer) {
@@ -164,24 +164,27 @@ public class MultiChunkIterator implements MultiFacetIterator {
     return startElement;
   }
   
-  public static void main(String[] args) {
-    OpenBitSet bitSet = new OpenBitSet(5);
-    bitSet.set(1);
-    bitSet.set(2);
-    System.out.println(bitSet.prevSetBit(2));
-  }
+ 
 
   @Override
-  public void count(BigSegmentedArray counts) {
-    int i = previousBitSetIndex;
-    int next = openBitSet.nextSetBit(i + 1);
+  public void count(BigSegmentedArray counts, int docId) {
+    if (!advance(docId)) {
+      return ;
+    }
+    int index= previousBitSetIndex;    
+    int next = openBitSet.nextSetBit(index + 1);
     if (next == -1) {
       next = bitSetSize;
     }
-    int tmp;
-    while(i < next) {
-      counts.add(compressedIntArray.readInt(i), counts.get(i) + 1);
-      i++;
-    }
+    while (index < next) {
+        if (index == next) {
+         return;
+        }
+        
+        int valueIndex = compressedIntArray.readInt(index);
+        counts.add(valueIndex, counts.get(valueIndex) + 1);
+       index++;
+      }
+    return;  
   }
 }

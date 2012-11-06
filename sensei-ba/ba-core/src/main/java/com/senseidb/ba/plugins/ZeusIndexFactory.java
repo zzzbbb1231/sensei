@@ -25,9 +25,9 @@ import proj.zoie.api.ZoieIndexReader;
 import proj.zoie.mbean.ZoieAdminMBean;
 
 import com.browseengine.bobo.api.BoboIndexReader;
-import com.senseidb.ba.IndexSegment;
 import com.senseidb.ba.IndexSegmentCreator;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
+import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.ba.gazelle.creators.SegmentCreator;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;

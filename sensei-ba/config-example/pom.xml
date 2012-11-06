@@ -62,7 +62,7 @@
 						</goals>
 						
 						<configuration>
-						<includeArtifactIds>sensei-ba-core, gazelle, commons-compress, zkclient, avro, jackson-core-asl, jackson-mapper-asl </includeArtifactIds>
+						<includeArtifactIds>sensei-ba-core, sensei-ba-gazelle, commons-compress, zkclient, avro, jackson-core-asl, jackson-mapper-asl </includeArtifactIds>
 							<outputDirectory>${project.build.directory}/config/ext</outputDirectory>
 						</configuration>
 					</execution>
@@ -74,7 +74,7 @@
 						</goals>
 						
 						<configuration>
-						<includeArtifactIds>sensei-ba-core, gazelle, commons-compress, zkclient, avro, jackson-core-asl, jackson-mapper-asl</includeArtifactIds>
+						<includeArtifactIds>sensei-ba-core, sensei-ba-gazelle, commons-compress, zkclient, avro, jackson-core-asl, jackson-mapper-asl</includeArtifactIds>
 							<outputDirectory>${project.build.directory}/config-standalone/ext</outputDirectory>
 						</configuration>
 					</execution>

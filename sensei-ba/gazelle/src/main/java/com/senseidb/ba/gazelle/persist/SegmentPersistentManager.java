@@ -10,9 +10,9 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.hadoop.fs.FileSystem;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.senseidb.ba.ColumnMetadata;
-import com.senseidb.ba.ForwardIndex;
-import com.senseidb.ba.SortedForwardIndex;
+import com.senseidb.ba.gazelle.ColumnMetadata;
+import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.SortedForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;

@@ -9,7 +9,7 @@
     <relativePath>../../sensei-parent/pom.xml</relativePath>
   </parent>
 
-  <artifactId>gazelle</artifactId>
+  <artifactId>sensei-ba-gazelle</artifactId>
   <packaging>jar</packaging>
   <name>gazelle index reader/writer</name>
   <description>A generic forward index reader/writer</description>

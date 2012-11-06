@@ -4,7 +4,7 @@ import org.apache.lucene.search.DocIdSet;
 
 import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.senseidb.ba.ForwardIndex;
+import com.senseidb.ba.gazelle.ForwardIndex;
 
 public class ZeusDataCache {
   private FacetDataCache fakeCache;

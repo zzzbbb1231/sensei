@@ -20,19 +20,26 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.browseengine.bobo.facets.filter.RandomAccessFilter;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
 import com.browseengine.bobo.sort.DocComparatorSource;
-import com.senseidb.ba.SingleValueForwardIndex;
+import com.senseidb.ba.gazelle.MultiValueForwardIndex;
+import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.plugins.ZeusFactoryFactory;
 
 /**
  * @author Praveen Neppalli Naga <pneppalli@linkedin.com>
- *
+ * 
  */
-public class SumGroupByFacerHandler extends FacetHandler<Serializable>{
+public class SumGroupByFacerHandler extends FacetHandler<Serializable> {
+
   public static final String[] EMPTY_STRING = new String[0];
 
   public SumGroupByFacerHandler() {
     super("sumGroupBy", asSet());
-   
+
+  }
+
+  public SumGroupByFacerHandler(String name) {
+    super("names", asSet());
+
   }
 
   public static Set<String> asSet(String... vals) {
@@ -42,6 +49,7 @@ public class SumGroupByFacerHandler extends FacetHandler<Serializable>{
     }
     return ret;
   }
+
   @Override
   public Serializable load(BoboIndexReader reader) throws IOException {
 
@@ -60,43 +68,38 @@ public class SumGroupByFacerHandler extends FacetHandler<Serializable>{
       public FacetCountCollector getFacetCountCollector(BoboIndexReader reader, int docBase) {
         String dimension = fspec.getProperties().get("dimension");
         String metric = fspec.getProperties().get("metric");
-        
-        ZeusDataCache groupByCache = (ZeusDataCache)reader.getFacetData(dimension);
+
+        ZeusDataCache groupByCache = (ZeusDataCache) reader.getFacetData(dimension);
         final ZeusDataCache sumOverDataCache = (ZeusDataCache) reader.getFacetData(metric);
-        final TermNumberList valList =   (TermNumberList) sumOverDataCache.getDictionary();
-        final SingleValueForwardIndex metricForwardIndex = (SingleValueForwardIndex)sumOverDataCache.getForwardIndex();
-        final SingleValueForwardIndex dimensionForwardIndex = (SingleValueForwardIndex)groupByCache.getForwardIndex();
-        if (valList instanceof TermIntList) {
-         final  TermIntList termIntList = (TermIntList) valList;
-        return new DefaultFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec) {
-          @Override
-          public void collectAll() {
-            for (int docid=0; docid<dimensionForwardIndex.getLength(); docid++)
-              collect(docid);
+        final TermNumberList valList = (TermNumberList) sumOverDataCache.getDictionary();
+        if (groupByCache.getForwardIndex() instanceof SingleValueForwardIndex) {
+          final SingleValueForwardIndex metricForwardIndex = (SingleValueForwardIndex) sumOverDataCache.getForwardIndex();
+          final SingleValueForwardIndex dimensionForwardIndex = (SingleValueForwardIndex) groupByCache.getForwardIndex();
+          if (valList instanceof TermIntList) {
+            final TermIntList termIntList = (TermIntList) valList;
+            return new GroupByFacetUtils.SingleValueIntFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, termIntList, dimensionForwardIndex, metricForwardIndex);
+          } else if (valList instanceof TermLongList) {
+            final TermLongList termLongList = (TermLongList) valList;
+            return new GroupByFacetUtils.SingleValueLongFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, termLongList, dimensionForwardIndex, metricForwardIndex);
+          } else {
+            throw new UnsupportedOperationException(valList.getClass().toString());
           }
-
-          @Override
-          public void collect(int docid) {
-            _count.add(dimensionForwardIndex.getValueIndex(docid),  _count.get(dimensionForwardIndex.getValueIndex(docid)) + termIntList.getPrimitiveValue((metricForwardIndex.getValueIndex(docid))));
+        } else if (groupByCache.getForwardIndex() instanceof MultiValueForwardIndex) {
+          final SingleValueForwardIndex metricForwardIndex = (SingleValueForwardIndex) sumOverDataCache.getForwardIndex();
+          final MultiValueForwardIndex dimensionForwardIndex = (MultiValueForwardIndex) groupByCache.getForwardIndex();
+          if (valList instanceof TermIntList) {
+            final TermIntList termIntList = (TermIntList) valList;
+            return new GroupByFacetUtils.MultiValueIntFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, termIntList, dimensionForwardIndex, metricForwardIndex);
+          } else if (valList instanceof TermLongList) {
+            final TermLongList termLongList = (TermLongList) valList;
+            return new GroupByFacetUtils.MultiValueLongFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, termLongList, dimensionForwardIndex, metricForwardIndex);
+          } else {
+            throw new UnsupportedOperationException(valList.getClass().toString());
           }
-        };
-        } else if (valList instanceof TermLongList) {
-          final  TermLongList termLongList = (TermLongList) valList;
-          return new DefaultFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec) {
-            @Override
-            public void collectAll() {
-              for (int docid=0; docid<dimensionForwardIndex.getLength(); docid++)
-                collect(docid);
-            }
-
-            @Override
-            public void collect(int docid) {
-              _count.add(dimensionForwardIndex.getValueIndex(docid),  _count.get(dimensionForwardIndex.getValueIndex(docid)) + (int)termLongList.getPrimitiveValue((metricForwardIndex.getValueIndex(docid))));
-            }
-          };
         } else {
-          throw new UnsupportedOperationException(valList.getClass().toString());
+          throw new UnsupportedOperationException("Either single or multi column value are supported");
         }
+
       }
     };
   }

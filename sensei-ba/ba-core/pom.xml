@@ -93,7 +93,7 @@
 		</dependency>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
-			<artifactId>gazelle</artifactId>
+			<artifactId>sensei-ba-gazelle</artifactId>
 			<version>${project.version}</version>
 			
 		</dependency>

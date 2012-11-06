@@ -11,8 +11,8 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import com.senseidb.ba.ColumnMetadata;
-import com.senseidb.ba.ColumnType;
+import com.senseidb.ba.gazelle.ColumnMetadata;
+import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.gazelle.utils.StreamUtils;

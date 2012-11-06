@@ -10,6 +10,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.browseengine.bobo.util.BigIntArray;
 import com.senseidb.ba.gazelle.utils.ReadMode;
 
 public class CompressedMultiArrayTest {
@@ -112,6 +113,18 @@ public class CompressedMultiArrayTest {
     } finally {
       FileUtils.deleteDirectory(dir);
     }
+  }
+  @Test
+  public void test6CountAllValues() {    
+    MultiFacetIterator iterator = compressedMultiArray.iterator();
+    BigIntArray counts = new BigIntArray(10);
+    for (int i = 0; i < 10000; i++) {
+      iterator.count(counts, i);
+    }
+    assertEquals(1000, counts.get(0));
+    assertEquals(1000, counts.get(1));
+    assertEquals(5000, counts.get(5));
+    assertEquals(9000, counts.get(9));
   }
   public int getBufferLength(int i) {
     int length = i % 10;

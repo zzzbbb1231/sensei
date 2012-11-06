@@ -24,7 +24,7 @@ import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.browseengine.bobo.util.BigNestedIntArray;
-import com.senseidb.ba.ColumnType;
+import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.utils.BufferedLoader;
 
 public class SinglePassIndexCreator {

@@ -1,4 +1,4 @@
-package com.senseidb.ba;
+package com.senseidb.ba.gazelle;
 
 import java.util.Map;
 

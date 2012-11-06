@@ -6,12 +6,12 @@ import java.util.Map;
 import org.apache.lucene.search.DocIdSet;
 
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.ba.gazelle.ColumnMetadata;
+import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.ba.gazelle.creators.MetadataCreator;
 import com.senseidb.ba.gazelle.utils.CompressedIntArray;
-import com.senseidb.ba.ColumnMetadata;
-import com.senseidb.ba.ColumnType;
-import com.senseidb.ba.ForwardIndex;
-import com.senseidb.ba.IndexSegment;
 
 public class GazelleIndexSegmentImpl implements IndexSegment {
   private Map<String, ColumnMetadata> columnMetatdaMap = new HashMap<String, ColumnMetadata>();

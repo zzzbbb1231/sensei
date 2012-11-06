@@ -31,7 +31,7 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.senseidb.ba.ColumnType;
+import com.senseidb.ba.gazelle.ColumnType;
 
 /**
  * @author dpatel

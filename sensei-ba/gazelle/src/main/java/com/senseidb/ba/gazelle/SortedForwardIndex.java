@@ -1,4 +1,4 @@
-package com.senseidb.ba;
+package com.senseidb.ba.gazelle;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 

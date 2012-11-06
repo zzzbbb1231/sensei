@@ -1,12 +1,12 @@
 package com.senseidb.ba.gazelle.impl;
 
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.ba.gazelle.ColumnMetadata;
+import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.MetadataAware;
+import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.utils.CompressedIntArray;
-import com.senseidb.ba.ColumnMetadata;
-import com.senseidb.ba.ColumnType;
-import com.senseidb.ba.ForwardIndex;
-import com.senseidb.ba.MetadataAware;
-import com.senseidb.ba.SingleValueForwardIndex;
 
 public class GazelleForwardIndexImpl implements SingleValueForwardIndex, MetadataAware {
   private CompressedIntArray compressedIntArray;

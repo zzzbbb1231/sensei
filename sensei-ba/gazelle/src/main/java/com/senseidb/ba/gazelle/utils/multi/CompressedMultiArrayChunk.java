@@ -9,19 +9,23 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.util.Arrays;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 import org.apache.lucene.util.OpenBitSet;
 import org.springframework.util.Assert;
 
+import com.senseidb.ba.gazelle.persist.DictionaryPersistentManager;
 import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 import com.senseidb.ba.gazelle.utils.ReadMode;
 
 public class CompressedMultiArrayChunk {
+  public static Logger logger =  Logger.getLogger(CompressedMultiArrayChunk.class);
   private OpenBitSet openBitSet;
   private CompressedIntArray compressedIntArray;
   private int startElement;
@@ -189,7 +193,11 @@ public void flush(DataOutputStream dataOutputStream) {
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     } finally {
-      IOUtils.closeQuietly(channel);
+      try {
+        channel.close();
+      } catch (IOException e) {
+       logger.error("Could not close the file channel",e);
+      }
       IOUtils.closeQuietly(fileInputStream);
     }
     arrayChunk.initSkipLists();

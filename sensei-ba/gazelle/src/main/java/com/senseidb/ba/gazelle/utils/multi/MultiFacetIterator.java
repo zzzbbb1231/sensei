@@ -10,5 +10,5 @@ public interface MultiFacetIterator {
 
   int find(int fromIndex, int startIndex, int endIndex);
   int find(int fromIndex, int value);
-  void count(BigSegmentedArray counts);
+  void count(BigSegmentedArray counts, int docId);
 }

@@ -333,6 +333,42 @@ public class BASentinelTest  extends Assert {
     assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));
   }
   @Test
+  public void test6SumGroupByMultiValue() throws Exception {
+  
+  String req = "{" + 
+      "  " + 
+      "    \"from\": 0," + 
+      "    \"size\": 10,\n" + 
+      "    \"selections\": [" + 
+      "    {" + 
+      "        \"terms\": {" + 
+      "            \"dim_memberGender\": {" + 
+      "                \"values\": [\"m\"]," + 
+      "                \"excludes\": []," + 
+      "                \"operator\": \"or\"," + 
+      "            }" + 
+      "        }" + 
+      "    }" + 
+      "   ], " +
+      "    \"facets\": {\n" + 
+      "        \"sumGroupBy\": {\n" + 
+      "            \"max\": 10,\n" + 
+      "            \"minCount\": 1,\n" + 
+      "            \"expand\": false,\n" + 
+      "            \"order\": \"hits\",\n" + 
+      " \"properties\":{\"dimension\":\"dim_skills\", \"metric\":\"met_impressionCount\"}" +
+      "        }\n" + 
+      "    }" + 
+      "}";
+    
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+   
+    System.out.println(resp.toString(1));
+    assertEquals("2", resp.getJSONObject("facets").getJSONArray("sumGroupBy").getJSONObject(3).getString("count"));
+    assertEquals("0000000002", resp.getJSONObject("facets").getJSONArray("sumGroupBy").getJSONObject(3).getString("value"));
+    assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));
+  }
+  @Test
   public void test7Sum() throws Exception {
   
   String req = "{" + 
@@ -372,18 +408,10 @@ public class BASentinelTest  extends Assert {
   @Test
   public void test8FilterOrQuery() throws Exception {
     String req = "{\"filter\":{\"or\":[{\"term\":{\"dim_memberGender\":\"f\"}}]}}";
-   
-      
     JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
-   
-  
     assertEquals("numhits is wrong", 5614, resp.getInt("numhits"));
      req = "{\"filter\":{\"or\":[{\"term\":{\"dim_memberGender\":\"f\"}},{\"term\":{\"shrd_advertiserId\":\"-500\"}}]}}";
-    
-    
      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
-   
-  
     assertEquals("numhits is wrong", 5616, resp.getInt("numhits"));
   }
  

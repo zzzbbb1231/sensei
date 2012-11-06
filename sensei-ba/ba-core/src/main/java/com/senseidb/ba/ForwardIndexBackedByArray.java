@@ -22,6 +22,8 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.indexing.DefaultSenseiInterpreter;
 
 public class ForwardIndexBackedByArray implements SingleValueForwardIndex {

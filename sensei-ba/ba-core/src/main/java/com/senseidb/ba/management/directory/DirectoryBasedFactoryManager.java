@@ -12,6 +12,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
@@ -54,6 +55,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
     private Timer timer = new Timer();
     private Map<Integer, MapBasedIndexFactory> readers = new HashMap<Integer, MapBasedIndexFactory>();
     private int maxPartition;
+    private AtomicInteger counter = new AtomicInteger();
     public DirectoryBasedFactoryManager() {
       super(null, null, null, null, null);
     }
@@ -111,7 +113,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
           });
         }
       } catch (Exception e) {        
-        e.printStackTrace();
+        logger.error(e.getMessage(), e);
       }
     }
     public void removeSegment(String segmentId) {
@@ -157,21 +159,32 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
         targetDir = file;
         gazelleIndexSegmentImpl = SegmentPersistentManager.read(file, ReadMode.DBBuffer);
       }
-      int hash = Math.abs(segmentId.hashCode()) % maxPartition;
+      int hash = Math.abs(counter.incrementAndGet()) % maxPartition;
       MapBasedIndexFactory mapBasedIndexFactory = readers.get(hash);
       SegmentToZoieReaderAdapter adapter = new SegmentToZoieReaderAdapter(gazelleIndexSegmentImpl, segmentId, decorator);
-      synchronized (globalLock) {        
-        segmentsMap.put(segmentId, adapter);
-        keyToAbsoluteFilePath.put(segmentId, targetDir.getAbsolutePath());
-        loadingSegments.remove(segmentId);
-        if (mapBasedIndexFactory != null) {
-          mapBasedIndexFactory.getReaders().put(segmentId, adapter);
+      if (duplicateForAllPartitions) {
+        synchronized (globalLock) {        
+          segmentsMap.put(segmentId, adapter);
+          keyToAbsoluteFilePath.put(segmentId, targetDir.getAbsolutePath());
+          loadingSegments.remove(segmentId);
+          for (MapBasedIndexFactory factory : readers.values()) {
+            factory.getReaders().put(segmentId, adapter);
+          }
+          }
         }
-        
+       else {
+        synchronized (globalLock) {        
+          segmentsMap.put(segmentId, adapter);
+          keyToAbsoluteFilePath.put(segmentId, targetDir.getAbsolutePath());
+          loadingSegments.remove(segmentId);
+          if (mapBasedIndexFactory != null) {
+            mapBasedIndexFactory.getReaders().put(segmentId, adapter);
+          }
+        }
       }
       logger.info("Created the new segment - " + segmentId + ", in the directory " + targetDir.getAbsoluteFile()+ ", the source is "+ file.getAbsoluteFile());
       logger.info("the new segment - " + segmentId + " contains " + gazelleIndexSegmentImpl.getLength() + " elements");
-      } catch (Exception e) {
+      } catch (Throwable e) {
         logger.error("Failed to initialize the segment data - " + file.getAbsolutePath(), e);
         synchronized (globalLock) {  
           loadingSegments.remove(segmentId);

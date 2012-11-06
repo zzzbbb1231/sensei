@@ -58,8 +58,13 @@ public class CompositeMultiFacetIterator implements MultiFacetIterator {
   }
 
   @Override
-  public void count(BigSegmentedArray counts) {
-    currentIterator.count(counts);
+  public void count(BigSegmentedArray counts, int docId) {
+    if (!advance(docId)) {
+      return ;
+    }
+    
+    
+    currentIterator.count(counts, docId);
   }
 
   @Override

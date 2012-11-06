@@ -10,7 +10,7 @@ import com.browseengine.bobo.api.FacetSpec;
 import com.browseengine.bobo.docidset.RandomAccessDocIdSet;
 import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
-import com.senseidb.ba.SingleValueForwardIndex;
+import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 
 public class FacetUtils {
   // CountCollector: static class I
