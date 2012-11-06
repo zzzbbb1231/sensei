@@ -12,6 +12,7 @@ public class CompositeMultiFacetIterator implements MultiFacetIterator {
     currentIterator = iterators[0];
     currentIndex = 0;
   }
+
   @Override
   public boolean advance(int index) {
     boolean res = currentIterator.advance(index);
@@ -22,7 +23,7 @@ public class CompositeMultiFacetIterator implements MultiFacetIterator {
         }
         currentIndex++;
       }
-      if (currentIndex >=  iterators.length) {
+      if (currentIndex >= iterators.length) {
         return false;
       }
       currentIterator = iterators[currentIndex];
@@ -35,28 +36,50 @@ public class CompositeMultiFacetIterator implements MultiFacetIterator {
   public int readValues(int[] buffer) {
     return currentIterator.readValues(buffer);
   }
+
   @Override
   public int find(int fromIndex, int value) {
-   if (!advance(fromIndex)) {
-     return -1;
-   }
-   int ret = currentIterator.find(fromIndex, value);
-   if (ret >= 0) {
-     return ret;
-   }
-   while (++currentIndex < iterators.length) {
-     currentIterator = iterators[currentIndex];     
-     fromIndex = Math.max(currentIterator.getStartElement(), fromIndex);
-     ret = currentIterator.find(fromIndex, value);
-     if (ret >= 0) {
-       return ret;
-     }
-   }
-   return -1;
+    if (!advance(fromIndex)) {
+      return -1;
+    }
+    int ret = currentIterator.find(fromIndex, value);
+    if (ret >= 0) {
+      return ret;
+    }
+    while (++currentIndex < iterators.length) {
+      currentIterator = iterators[currentIndex];
+      fromIndex = Math.max(currentIterator.getStartElement(), fromIndex);
+      ret = currentIterator.find(fromIndex, value);
+      if (ret >= 0) {
+        return ret;
+      }
+    }
+    return -1;
   }
+
   @Override
   public void count(BigSegmentedArray counts) {
     currentIterator.count(counts);
   }
-  
+
+  @Override
+  public int find(int fromIndex, int startIndex, int endIndex) {
+    if (!advance(fromIndex)) {
+      return -1;
+    }
+    int ret = currentIterator.find(fromIndex, startIndex, endIndex);
+    if (ret >= 0) {
+      return ret;
+    }
+    while (++currentIndex < iterators.length) {
+      currentIterator = iterators[currentIndex];
+      fromIndex = Math.max(currentIterator.getStartElement(), fromIndex);
+      ret = currentIterator.find(fromIndex, startIndex, endIndex);
+      if (ret >= 0) {
+        return ret;
+      }
+    }
+    return -1;
+  }
+
 }

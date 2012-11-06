@@ -8,6 +8,7 @@ public interface MultiFacetIterator {
 
   public abstract int readValues(int[] buffer);
 
+  int find(int fromIndex, int startIndex, int endIndex);
   int find(int fromIndex, int value);
   void count(BigSegmentedArray counts);
 }

@@ -24,8 +24,9 @@ public class BASentinelTest  extends TestCase {
   protected void tearDown() throws Exception {
     SingleNodeStarter.shutdown(); 
     SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
-    SingleNodeStarter.rmrf(new File("testIndex"));
+   
   }
+  
   @Override
   protected void setUp() throws Exception {    
     indexDir = new File("testIndex");
@@ -195,5 +196,90 @@ public void test5FacetByMultiColumn() throws Exception {
      JSONObject facetValue = resp.getJSONObject("facets").getJSONArray("dim_skills").getJSONObject(0);
      assertEquals("0000000003", facetValue.getString("value"));
      assertEquals(6, facetValue.getInt("count"));
+  }
+
+  
+  public void testRangeQueryOnSingleValuedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_memberRegion\": {" + 
+        "                \"values\": [\"[84 TO 4618]\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong",0 , resp.getInt("numhits"));
+  }
+
+  public void testRangeQueryOnSortedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_creativeId\": {" + 
+        "                \"values\": [\"[134006 TO 134006]\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
+    assertEquals("all documents are a part of the hit",20000 , resp.getInt("numhits"));
+  }
+  
+  public void testRangeQueryOnMultivaluedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_skills\": {" + 
+        "                \"values\": [\"[20 TO 40]\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
+    assertEquals("all documents are a part of the hit",6 , resp.getInt("numhits"));
   }
 }
