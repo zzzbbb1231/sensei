@@ -34,6 +34,7 @@ import com.senseidb.ba.SingleValueForwardIndex;
 import com.senseidb.ba.SortedForwardIndex;
 import com.senseidb.ba.gazelle.creators.SegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.ReadMode;
@@ -63,17 +64,21 @@ public class SegmentPersistentManagerTest extends TestCase{
     }
 @Test
     public void test1LoadPersistReadAndCompareWithJson() throws Exception {
-        FileInputStream avroFileStream = new FileInputStream(avroFile);
+        try {
+       FileInputStream avroFileStream = new FileInputStream(avroFile);
         /*dumpToJson(avroFileStream, new PrintStream( new FileOutputStream(new File("json.txt"))));
         avroFileStream = new FileInputStream(avroFile);*/
         GazelleIndexSegmentImpl indexSegmentImpl = SegmentCreator.readFromAvroFile(avroFile);
-       
+        MultiValueForwardIndexImpl1 forwardIndexImpl1 = (MultiValueForwardIndexImpl1) indexSegmentImpl.getForwardIndex("dim_skills");        
         SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
         GazelleIndexSegmentImpl persistedIndexSegment = SegmentPersistentManager.read(indexDir, ReadMode.DBBuffer);
         
         IOUtils.closeQuietly(avroFileStream);
         compareWithJsonFile(indexSegmentImpl);
         compareWithJsonFile(persistedIndexSegment);
+        } catch (Throwable throwable) {
+          throwable.printStackTrace();
+        }
     }
 @Test
 public void test2CheckForwardIndexes() throws Exception {
@@ -101,7 +106,7 @@ private void compareWithJsonFile(GazelleIndexSegmentImpl indexSegmentImpl) throw
                 MultiValueForwardIndex multiValueForwardIndex = (MultiValueForwardIndex) indexSegmentImpl.getForwardIndex(column);
                 JSONArray object = json.optJSONArray(column);
                 int[] buffer = new int[multiValueForwardIndex.getMaxNumValuesPerDoc()];
-                int count = multiValueForwardIndex.randomRead(buffer, i);
+                int count = multiValueForwardIndex.randomRead(buffer, i);                
                 if (object == null) {
                     assertEquals(0, count);
                 } else {

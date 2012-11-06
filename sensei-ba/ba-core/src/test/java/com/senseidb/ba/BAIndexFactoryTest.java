@@ -75,3 +75,4 @@ public class BAIndexFactoryTest extends TestCase {
     }; 
   }
 }
+

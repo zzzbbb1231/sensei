@@ -26,9 +26,10 @@ import org.json.JSONObject;
 
 public class AvroConverter {
 public static void main(String[] args) throws Exception {
-  File jsonFile = new File(AvroConverter.class.getClassLoader().getResource("data/sample_data.json").toURI());
+ /* File jsonFile = new File(AvroConverter.class.getClassLoader().getResource("data/sample_data.json").toURI());
   File avroSchema = new File(AvroConverter.class.getClassLoader().getResource("data/avro.schema").toURI());
-  jsonToAvro(jsonFile, avroSchema, "src/test/resources/data/sample_data.avro");
+  jsonToAvro(jsonFile, avroSchema, "src/test/resources/data/sample_data.avro");*/
+  dumpAvro();
 }
 public static void dumpAvro() throws URISyntaxException, FileNotFoundException, IOException {
   File avroFile = new File(AvroConverter.class.getClassLoader().getResource("data/sample_data.avro").toURI());
@@ -37,6 +38,11 @@ public static void dumpAvro() throws URISyntaxException, FileNotFoundException, 
     DataFileStream<GenericRecord> dataFileReader = new DataFileStream<GenericRecord>(inputStream1, datumReader);
 
   Schema schema = dataFileReader.getSchema();
+  int i = 0;
+  while (dataFileReader.hasNext() && i < 1000) {
+    System.out.println(dataFileReader.next());
+    i++;
+  }
   FileUtils.writeStringToFile(new File("avro.schema"), schema.toString(true));
 }
   public static void jsonToAvro(File jsonFile, File avroSchema, String avroFilePath) throws Exception {

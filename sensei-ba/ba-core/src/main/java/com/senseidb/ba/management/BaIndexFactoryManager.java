@@ -13,6 +13,7 @@ import proj.zoie.api.Zoie;
 import proj.zoie.api.indexing.ZoieIndexableInterpreter;
 import proj.zoie.impl.indexing.ZoieConfig;
 
+import com.browseengine.bobo.facets.FacetHandler;
 import com.senseidb.ba.plugins.ZeusIndexReaderDecorator;
 import com.senseidb.conf.ZoieFactoryFactory;
 import com.senseidb.plugin.SenseiPlugin;
@@ -29,6 +30,7 @@ public class BaIndexFactoryManager implements SenseiPlugin, ZoieFactoryFactory {
   private ExecutorService executorService;
   private volatile boolean stopped;
   private String clusterName;
+  private SenseiPluginRegistry pluginRegistry;
   
   @SuppressWarnings( { "unchecked", "rawtypes" })
   @Override
@@ -37,7 +39,7 @@ public class BaIndexFactoryManager implements SenseiPlugin, ZoieFactoryFactory {
     return new SenseiZoieFactory( idxDir, null, interpreter, decorator, config) {
       @Override
       public Zoie getZoieInstance(int nodeId, int partitionId) {
-        return new BaIndexFactory(SenseiZoieFactory.getPath(idxDir, nodeId, partitionId), clusterName, new ZeusIndexReaderDecorator(), zkClient, fileSystem, partitionId, executorService);
+        return new BaIndexFactory(SenseiZoieFactory.getPath(idxDir, nodeId, partitionId), clusterName, new ZeusIndexReaderDecorator(pluginRegistry.resolveBeansByListKey(SenseiPluginRegistry.FACET_CONF_PREFIX, FacetHandler.class)), zkClient, fileSystem, partitionId, executorService);
       }
       @Override
       public File getPath(int nodeId, int partitionId) {
@@ -48,6 +50,7 @@ public class BaIndexFactoryManager implements SenseiPlugin, ZoieFactoryFactory {
 
   @Override
   public void init(Map<String, String> config, SenseiPluginRegistry pluginRegistry) {
+    this.pluginRegistry = pluginRegistry;
     try {
     zookeeperUrl = pluginRegistry.getConfiguration().getString("sensei.cluster.url");
     zkClient = new ZkClient(zookeeperUrl);

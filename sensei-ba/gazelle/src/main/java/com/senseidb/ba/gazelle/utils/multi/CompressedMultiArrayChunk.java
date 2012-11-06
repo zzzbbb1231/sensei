@@ -44,6 +44,7 @@ private int maxNumValuesPerDoc;
   public void add(int[] values, int length) {
     if (values.length == 0) {
       values = ARRAY_WITH_SINGLE_ZERO;
+      length = 1;
     }
     Assert.state(skipList == null);
     ensureCapacity(currentSize + length);

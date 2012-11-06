@@ -55,18 +55,31 @@
 				<version>2.4</version>
 				<executions>
 					<execution>
+						<id>copy1</id>
 						<phase>package</phase>
 						<goals>
 							<goal>copy-dependencies</goal>
 						</goals>
 						
 						<configuration>
-						<includeArtifactIds>sensei-ba-core, gazelle, commons-compress, zkclient, avro</includeArtifactIds>
+						<includeArtifactIds>sensei-ba-core, gazelle, commons-compress, zkclient, avro, jackson-core-asl, jackson-mapper-asl </includeArtifactIds>
 							<outputDirectory>${project.build.directory}/config/ext</outputDirectory>
 						</configuration>
 					</execution>
+					<execution>
+						<id>copy2</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						
+						<configuration>
+						<includeArtifactIds>sensei-ba-core, gazelle, commons-compress, zkclient, avro, jackson-core-asl, jackson-mapper-asl</includeArtifactIds>
+							<outputDirectory>${project.build.directory}/config-standalone/ext</outputDirectory>
+						</configuration>
+					</execution>
 				</executions>
-			</plugin>
+			</plugin>			
 		</plugins>
 	</build>
 

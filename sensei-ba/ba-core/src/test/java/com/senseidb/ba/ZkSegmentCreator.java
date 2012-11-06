@@ -1,6 +1,17 @@
  package com.senseidb.ba;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileStream;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
+import org.json.JSONObject;
 
 import com.senseidb.ba.gazelle.creators.SegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
@@ -16,12 +27,35 @@ public class ZkSegmentCreator {
 
   public static void main(String[] args) throws Exception {
     //zkManager = new ZkManager("localhost:2181", "ba-server");
-    GazelleIndexSegmentImpl indexSegmentImpl = new SegmentCreator().readFromAvroFile(new File("/tmp/ads_data_prepared_for_indexer/part-r-00000.avro"));
+    GazelleIndexSegmentImpl indexSegmentImpl = new SegmentCreator().readFromAvroFile(new File("/tmp/ba-index-standalone/part-1.avro"));
    
     File indexDir = new File("testIndex");
     SingleNodeStarter.rmrf(indexDir);
     indexDir.mkdirs();
     SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
     
+  }
+  
+  public static void main() throws Exception {
+    DatumReader<GenericRecord> datumReader =
+        new GenericDatumReader<GenericRecord>();
+    DataFileStream<GenericRecord> dataFileReader =
+        new DataFileStream<GenericRecord>(new BufferedInputStream(new FileInputStream(new File("/tmp/ba-index-standalone/part-1.avro"))), datumReader);
+    Schema schema = dataFileReader.getSchema();
+    int count = 0;
+    int i = 0;
+    long time = System.currentTimeMillis();
+    while (dataFileReader.hasNext()) {
+      if (i == 10000) {
+        System.out.println("Time to process 10k elements is " + (System.currentTimeMillis() - time) + ",count = " + count);
+        i = 0;
+        time = System.currentTimeMillis();
+      }
+      
+      GenericRecord record = dataFileReader.next();
+      System.out.println(record.toString());
+      count += new JSONObject(record.toString()).hashCode();
+      i++;
+    }
   }
 }
