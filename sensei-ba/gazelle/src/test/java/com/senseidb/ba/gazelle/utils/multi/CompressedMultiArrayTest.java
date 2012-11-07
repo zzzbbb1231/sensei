@@ -47,7 +47,7 @@ public class CompressedMultiArrayTest {
       if (index == -1) {
         break;
       }
-      if (index <5 && index >7) {
+      if ((index%10 <5) || (index%10 >7)) {
         response = false;
       }
       i++;
