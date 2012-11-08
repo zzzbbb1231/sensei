@@ -158,11 +158,12 @@ public class FacetUtils {
     public int nextDoc() throws IOException {
       while (true) {
         doc++;
-        if (forwardIndex.getLength() <= doc)
+        if (forwardIndex.getLength() <= doc) {
           return NO_MORE_DOCS;
+        }
+          
 
-        if (forwardIndex.getValueIndex(doc) >= startIndex
-            & forwardIndex.getValueIndex(doc) <= endIndex) {
+        if (forwardIndex.getValueIndex(doc) >= startIndex && forwardIndex.getValueIndex(doc) <= endIndex) {
           return doc;
         }
       }
