@@ -4,6 +4,9 @@ import java.util.Map;
 
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.HandlerList;
+import org.mortbay.jetty.servlet.ServletHandler;
+import org.mortbay.jetty.servlet.ServletHolder;
+import org.mortbay.jetty.webapp.WebAppContext;
 
 import com.senseidb.plugin.SenseiPlugin;
 import com.senseidb.plugin.SenseiPluginRegistry;
@@ -37,11 +40,12 @@ public class JettyServerHolder implements SenseiPlugin {
   @Override
   public void start() {
      server = new Server(port);
-     HandlerList handlers = new HandlerList();
-     handlers.addHandler(new FileUploadHandler(directory));
-     handlers.addHandler(new FileListHandler(directory));
-     handlers.addHandler(new FileDownloadHandler(directory));
-     server.setHandler(handlers);
+     ServletHandler servletHandler = new ServletHandler();
+     
+     servletHandler.addServletWithMapping(FileManagementServlet.class, "/files/*");
+     servletHandler.getServlets()[0].setInitParameter("directory", directory);
+     
+     server.setHandler(servletHandler);
      try {
       server.start();
     } catch (Exception e) {

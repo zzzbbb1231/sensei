@@ -31,7 +31,7 @@ import org.junit.Test;
 import com.senseidb.ba.AvroConverter;
 import com.senseidb.ba.util.FileUploadUtils;
 
-public class FileUploadHandlerTest {
+public class FileManagementServletTest {
   private JettyServerHolder jettyServerHolder;
   private String directory;
   @Before
@@ -52,8 +52,8 @@ public class FileUploadHandlerTest {
   @Test
   public void test1() throws Exception {
     File avroFile = new File(AvroConverter.class.getClassLoader().getResource("data/sample_data.avro").toURI());
-      FileUploadUtils.sendFile("http://localhost:8088", avroFile.getName(), new FileInputStream(avroFile), avroFile.length());
-    String stringResponse = FileUploadUtils.getStringResponse("http://localhost:8088/list/");
+      FileUploadUtils.sendFile("localhost","8088", avroFile.getName(), new FileInputStream(avroFile), avroFile.length());
+    String stringResponse = FileUploadUtils.listFiles("localhost", "8088");
     System.out.println(stringResponse);
     assertTrue(stringResponse.contains("sample_data.avro"));
     assertEquals(avroFile.length(), FileUploadUtils.getFile("localhost", "8088", "sample_data.avro", new File("sample_data.avro1")));
