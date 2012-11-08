@@ -17,7 +17,7 @@ public class CompressedMultiArrayTest {
 
   private CompressedMultiArray compressedMultiArray;
   private int[] buffer;
-
+  
   @Before
   public void setUp() throws Exception {
     compressedMultiArray = new CompressedMultiArray(10, 1000);
@@ -26,8 +26,8 @@ public class CompressedMultiArrayTest {
        int length = i % 10;
        int[] arr = new int[length];
        Arrays.fill(arr, i % 10);
-       compressedMultiArray.add(arr);      
-     }  
+       compressedMultiArray.add(arr);
+     }
      compressedMultiArray.initSkipLists(); 
      buffer = new int[10];
   }
@@ -35,9 +35,29 @@ public class CompressedMultiArrayTest {
   @After
   public void tearDown() throws Exception {
   }
-
- 
- 
+  
+  @Test
+  public void testValidateRangeFindMethod() {    
+    MultiFacetIterator iterator = compressedMultiArray.iterator();
+    int index = 0;
+    int i =0;
+    boolean response = true;
+    while (true) {
+      index = iterator.find(index + 1, 5, 7);
+      if (index == -1) {
+        break;
+      }
+      if (index <5 && index >7) {
+        response = false;
+      }
+      i++;
+    }
+    assertTrue(response);
+    assertEquals(3000, i);
+    
+    assertEquals(9, compressedMultiArray.getMaxNumValuesPerDoc());
+  }
+  
   @Test
   public void test3ReadAllValues() {    
     MultiFacetIterator iterator = compressedMultiArray.iterator();
@@ -53,6 +73,9 @@ public class CompressedMultiArrayTest {
     }
     assertEquals(9, compressedMultiArray.getMaxNumValuesPerDoc());
   }
+  
+  
+  
   @Test
   public void test7FindValues() {    
     MultiFacetIterator iterator = compressedMultiArray.iterator();

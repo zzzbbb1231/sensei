@@ -19,7 +19,6 @@ public class MultiChunkIterator implements MultiFacetIterator {
   private int previousBitSetIndex = -1;
   private int previousIndex;
   
-  
   public MultiChunkIterator(int[] skipList, int[] offsets, OpenBitSet openBitSet, CompressedIntArray compressedIntArray, int startElement,
       int currentSize) {
     super();
@@ -83,8 +82,8 @@ public class MultiChunkIterator implements MultiFacetIterator {
           offset++;
           next = openBitSet.nextSetBit(index + 1);
         }
-       if (compressedIntArray.readInt(index) <= startIndex || compressedIntArray.readInt(index) >= endIndex) {
-          return fromIndex + offset;
+       if (compressedIntArray.readInt(index) >= startIndex && compressedIntArray.readInt(index) <= endIndex) {
+         return fromIndex + offset;
         } 
        index++;
       }
@@ -106,7 +105,7 @@ public class MultiChunkIterator implements MultiFacetIterator {
           next = openBitSet.nextSetBit(index + 1);
         }
        if (compressedIntArray.readInt(index) == value) {
-          return fromIndex + offset;
+         return fromIndex + offset;
         } 
        index++;
       }
