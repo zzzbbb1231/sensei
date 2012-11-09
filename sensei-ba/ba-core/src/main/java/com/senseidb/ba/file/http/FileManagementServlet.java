@@ -23,6 +23,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
+import org.springframework.util.Assert;
 
 import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;
@@ -42,13 +43,21 @@ public class FileManagementServlet extends HttpServlet {
       directory = config.getInitParameter("directory");
     }
     baseUrl = config.getInitParameter("baseUrl");
+    if (baseUrl == null) {
+      String port = config.getInitParameter("port");
+      Assert.notNull(port, "Either baseUrl or port parameter should be present");
+    }
     if (!baseUrl.endsWith("/")) {
       baseUrl += "/";
     }
     String zkUrl = config.getInitParameter("zkUrl");
-    clusterName = config.getInitParameter("clusterName"); 
+    Assert.notNull(zkUrl, "zkUrl parameter should be present");
+    clusterName = config.getInitParameter("clusterName");
+    Assert.notNull(clusterName, "clusterName parameter should be present");
     zkManager = new ZkManager(zkUrl, clusterName);
-    maxPartition = Integer.parseInt(config.getInitParameter("maxPartitionId"));
+    String maxPartitionId = config.getInitParameter("maxPartitionId");
+    Assert.notNull(maxPartition, "maxPartition parameter should be present");
+    maxPartition = Integer.parseInt(maxPartitionId);
     super.init(config);
   }
 
