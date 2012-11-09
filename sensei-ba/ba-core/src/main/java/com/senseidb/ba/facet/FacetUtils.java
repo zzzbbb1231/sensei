@@ -147,18 +147,20 @@ public class FacetUtils {
     private final SingleValueForwardIndex forwardIndex;
     private final int startIndex;
     private final int endIndex;
-
+    private final int forwardIndexLength;
+    
     public RangeForwardIndexIterator(final SingleValueForwardIndex forwardIndex, final int startIndex, final int endIndex) {
       this.forwardIndex = forwardIndex;
       this.startIndex = startIndex;
       this.endIndex = endIndex;
+      this.forwardIndexLength = forwardIndex.getLength();
     }
 
     @Override
     public int nextDoc() throws IOException {
       while (true) {
         doc++;
-        if (forwardIndex.getLength() <= doc) {
+        if (this.forwardIndexLength <= doc) {
           return NO_MORE_DOCS;
         }
           

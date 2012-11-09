@@ -210,8 +210,8 @@ public class BASentinelTest  extends Assert {
      assertEquals(6, facetValue.getInt("count"));
   }
 
-  
-  public void testRangeQueryOnSingleValuedColumn() throws Exception {
+  @Test
+  public void test1RangeQueryOnSingleValuedColumn() throws Exception {
     String req = "{" + 
         "  " + 
         "    \"from\": 0," + 
@@ -239,7 +239,66 @@ public class BASentinelTest  extends Assert {
     assertEquals("numhits is wrong",0 , resp.getInt("numhits"));
   }
 
-  public void testRangeQueryOnSortedColumn() throws Exception {
+  @Test
+  public void test2RangeQueryOnSingleValuedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_memberRegion\": {" + 
+        "                \"values\": [\"(4613 TO 4910)\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong",4444 , resp.getInt("numhits"));
+  }
+  
+  @Test
+  public void test3RangeQueryOnSingleValuedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_memberRegion\": {" + 
+        "                \"values\": [\"(4613 TO 4910]\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong",4808 , resp.getInt("numhits"));
+  }
+  
+  @Test
+  public void test1RangeQueryOnSortedColumn() throws Exception {
     String req = "{" + 
         "  " + 
         "    \"from\": 0," + 
@@ -267,7 +326,38 @@ public class BASentinelTest  extends Assert {
     assertEquals("all documents are a part of the hit",20000 , resp.getInt("numhits"));
   }
   
-  public void testRangeQueryOnMultivaluedColumn() throws Exception {
+  @Test
+  public void test2RangeQueryOnSortedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_creativeId\": {" + 
+        "                \"values\": [\"(134006 TO 134006)\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
+    // since creative id is only 1, not running an inclusive query results in 0 responses, which is correct
+    assertEquals("all documents are a part of the hit",0 , resp.getInt("numhits"));
+  }
+  
+  @Test
+  public void test1RangeQueryOnMultivaluedColumn() throws Exception {
     String req = "{" + 
         "  " + 
         "    \"from\": 0," + 
@@ -292,8 +382,67 @@ public class BASentinelTest  extends Assert {
       resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
     }
     System.out.println(resp.toString(1));
+    assertEquals("all documents are a part of the hit",0 , resp.getInt("numhits"));
+  }
+  
+  @Test
+  public void test2RangeQueryOnMultivaluedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_skills\": {" + 
+        "                \"values\": [\"(1 TO 3)\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
+    assertEquals("all documents are a part of the hit",2 , resp.getInt("numhits"));
+  }
+  
+  @Test
+  public void test3RangeQueryOnMultivaluedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_skills\": {" + 
+        "                \"values\": [\"(1 TO 3]\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
     assertEquals("all documents are a part of the hit",6 , resp.getInt("numhits"));
   }
+  
   
   @Test
   public void test6SumGroupBy() throws Exception {

@@ -111,11 +111,17 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
           eIndex = -(eIndex + 1);
           eIndex = Math.max(0, eIndex - 1);
         }
-        if (QueryUtils.isExclusiveRangeQuery(value)) {
-          sIndex += 1;
-          eIndex -= 1;
+        switch(QueryUtils.getStarIndexRangeType(value)) {
+          case EXCLUSIVE:
+            sIndex += 1;  
+          break;
         }
-        
+        switch(QueryUtils.getEndIndexRangeType(value)) {
+          case EXCLUSIVE:
+            eIndex -= 1;
+          break;  
+        }
+
         startIndex = sIndex;
         endIndex = eIndex;
         if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
