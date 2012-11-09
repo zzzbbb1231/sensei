@@ -298,6 +298,36 @@ public class BASentinelTest  extends Assert {
   }
   
   @Test
+  public void test4RangeQueryOnSingleValuedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_memberRegion\": {" + 
+        "                \"values\": [\"[* TO *]\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong",20000 , resp.getInt("numhits"));
+  }
+  
+  
+  @Test
   public void test1RangeQueryOnSortedColumn() throws Exception {
     String req = "{" + 
         "  " + 
@@ -354,6 +384,36 @@ public class BASentinelTest  extends Assert {
     System.out.println(resp.toString(1));
     // since creative id is only 1, not running an inclusive query results in 0 responses, which is correct
     assertEquals("all documents are a part of the hit",0 , resp.getInt("numhits"));
+  }
+  
+  @Test
+  public void test3RangeQueryOnSortedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"shrd_advertiserId\": {" + 
+        "                \"values\": [\"[-400 TO *)\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
+    // since creative id is only 1, not running an inclusive query results in 0 responses, which is correct
+    assertEquals("all documents are a part of the hit",10 , resp.getInt("numhits"));
   }
   
   @Test
@@ -443,6 +503,34 @@ public class BASentinelTest  extends Assert {
     assertEquals("all documents are a part of the hit",6 , resp.getInt("numhits"));
   }
   
+  @Test
+  public void test4RangeQueryOnMultivaluedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_skills\": {" + 
+        "                \"values\": [\"[* TO 1)\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
+    assertEquals("all documents are a part of the hit",19994 , resp.getInt("numhits"));
+  }
   
   @Test
   public void test6SumGroupBy() throws Exception {
