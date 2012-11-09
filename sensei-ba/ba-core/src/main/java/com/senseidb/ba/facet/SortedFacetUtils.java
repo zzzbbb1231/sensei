@@ -76,13 +76,17 @@ public class SortedFacetUtils {
     private final SortedForwardIndex forwardIndex;
     private int[] minDocIds;
     private int[] maxDocIds;
-
+    private int startIndex;
+    private int endIndex;
+    
     public RangeSortedForwardDocIdSet(SortedForwardIndex forwardIndex, int startValue, int endValue) {
       this.forwardIndex = forwardIndex;
       minDocIds = forwardIndex.getMinDocIds();
       maxDocIds = forwardIndex.getMaxDocIds();
       this.startValue = startValue;
       this.endValue = endValue;
+      this.startIndex = minDocIds[startValue];
+      this.endIndex = maxDocIds[endValue];
     }
 
     @Override
@@ -99,11 +103,11 @@ public class SortedFacetUtils {
         @Override
         public int nextDoc() throws IOException {
           if (doc == -1) {
-            doc = minDocIds[startValue];
+            doc = startIndex;
           } else {
             doc++;
           }
-          if (doc >= maxDocIds[endValue]) {
+          if (doc >= endIndex) {
             return NO_MORE_DOCS;
           }
           return doc;

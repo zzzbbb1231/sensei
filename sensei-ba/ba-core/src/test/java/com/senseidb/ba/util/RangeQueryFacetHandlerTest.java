@@ -49,7 +49,7 @@ public class RangeQueryFacetHandlerTest {
 
   @Test
   public void testRangeQueryOnSingleValueForwardIndex() throws Exception {
-    String colName = (String) singleValyeForwardIndexMap.keySet().toArray()[0];
+    String colName = "dim_memberIndustry";
     SingleValueForwardIndex forwardIndex = singleValyeForwardIndexMap.get(colName);
     TermValueList<?> termList = segmentImpl.getDictionary(colName);
     String someStartVal = termList.get(termList.size() - 10);

@@ -124,12 +124,16 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         }
         switch(QueryUtils.getStarIndexRangeType(value)) {
           case EXCLUSIVE:
-            sIndex += 1;  
+            if (!values[0].equals("*")) {
+              sIndex += 1;
+            }
           break;
         }
         switch(QueryUtils.getEndIndexRangeType(value)) {
           case EXCLUSIVE:
-            eIndex -= 1;
+            if (!values[1].equals("*")) {
+              eIndex -= 1;
+            }
           break;  
         }
 

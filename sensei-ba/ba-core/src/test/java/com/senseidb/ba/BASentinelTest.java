@@ -425,7 +425,7 @@ public class BASentinelTest  extends Assert {
     }
     System.out.println(resp.toString(1));
     // since creative id is only 1, not running an inclusive query results in 0 responses, which is correct
-    assertEquals("all documents are a part of the hit",10 , resp.getInt("numhits"));
+    assertEquals("all documents are a part of the hit",19998 , resp.getInt("numhits"));
   }
   
   @Test
