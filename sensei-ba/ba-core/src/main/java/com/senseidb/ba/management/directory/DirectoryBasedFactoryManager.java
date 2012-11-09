@@ -154,10 +154,10 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
           throw new IllegalStateException("The index directory hasn't been created");
         }
         new File(targetDir, "finishedLoading").createNewFile();
-        gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, ReadMode.DBBuffer);
+        gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, ReadMode.DirectMemory);
       } else if (fileType == FileType.GAZELLE){
         targetDir = file;
-        gazelleIndexSegmentImpl = SegmentPersistentManager.read(file, ReadMode.DBBuffer);
+        gazelleIndexSegmentImpl = SegmentPersistentManager.read(file, ReadMode.DirectMemory);
       }
       int hash = Math.abs(counter.incrementAndGet()) % maxPartition;
       MapBasedIndexFactory mapBasedIndexFactory = readers.get(hash);

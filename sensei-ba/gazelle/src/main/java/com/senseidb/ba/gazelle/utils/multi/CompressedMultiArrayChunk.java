@@ -180,9 +180,9 @@ public void flush(DataOutputStream dataOutputStream) {
       int offset = 4 + 4 + 4 + numWords * 8;
       int sizeInBytes = (int) CompressedIntArray.getRequiredBufferSize(arrayChunk.currentSize, numBitsPerElement);
       ByteBuffer byteBuffer = null;
-      if (readMode == ReadMode.MMAPPED) {
+      if (readMode == ReadMode.MemoryMapped) {
         byteBuffer = channel.map(MapMode.READ_ONLY, offset, sizeInBytes);        
-      } else if (readMode == ReadMode.DBBuffer) {
+      } else if (readMode == ReadMode.DirectMemory) {
         byteBuffer = ByteBuffer.allocateDirect(sizeInBytes);
         channel.read(byteBuffer, offset);
       } else {

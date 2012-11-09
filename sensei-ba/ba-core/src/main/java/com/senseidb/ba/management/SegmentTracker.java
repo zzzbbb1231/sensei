@@ -59,7 +59,7 @@ public class SegmentTracker {
             FileUtils.deleteDirectory(file);
             continue;
           }
-          GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DBBuffer);
+          GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DirectMemory);
           if (indexSegment == null) {
             logger.warn("The directory " + file.getAbsolutePath() + " doesn't contain the fully loaded segment");
             FileUtils.deleteDirectory(file);
@@ -121,7 +121,7 @@ public class SegmentTracker {
           throw new IllegalStateException("The index directory hasn't been created");
         }
         new File(file, "finishedLoading").createNewFile();
-        GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DBBuffer);
+        GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DirectMemory);
         logger.info("Loaded the new segment " + segmentId + " with " + indexSegment.getLength() + " elements");
         if (indexSegment == null) {
           FileUtils.deleteDirectory(file);

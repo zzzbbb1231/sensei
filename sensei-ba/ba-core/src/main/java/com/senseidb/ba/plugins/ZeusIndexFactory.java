@@ -123,7 +123,7 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
           }
         });
         if (persistentIndexes.length > 0) {
-          offlineSegments.add(new SegmentToZoieReaderAdapter(  SegmentPersistentManager.read(directory, ReadMode.DBBuffer), directory.getName(), decorator));
+          offlineSegments.add(new SegmentToZoieReaderAdapter(  SegmentPersistentManager.read(directory, ReadMode.DirectMemory), directory.getName(), decorator));
         }
     }
     } catch (Exception ex) {

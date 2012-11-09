@@ -57,7 +57,7 @@ public class SegmentReaderTest {
 
   @Test
   public void testdictionaryDataAccess() throws ConfigurationException, IOException {
-    GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(_indexDir, ReadMode.DBBuffer);
+    GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(_indexDir, ReadMode.DirectMemory);
     Map<String, ColumnMetadata> metadataMap = segment.getColumnMetadataMap();
     for (String column : metadataMap.keySet()) {
       switch (metadataMap.get(column).getColumnType()) {
@@ -93,19 +93,19 @@ public class SegmentReaderTest {
 
   @Test
   public void testgetLength() throws ConfigurationException, IOException {
-    GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(_indexDir, ReadMode.DBBuffer);
+    GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(_indexDir, ReadMode.DirectMemory);
     assertTrue(segment.getLength() > 0);
   }
 
   @Test
 
   public void testsegmentIndexDataValidityDBBufferModeNew() throws ConfigurationException, IOException, JSONException {
-    testsegmentIndexDataValidityFor(ReadMode.DBBuffer);
+    testsegmentIndexDataValidityFor(ReadMode.DirectMemory);
   }
 
   @Test
   public void testsegmentIndexDataValidityMMappedModeNew() throws ConfigurationException, IOException, JSONException {
-    testsegmentIndexDataValidityFor(ReadMode.MMAPPED);
+    testsegmentIndexDataValidityFor(ReadMode.MemoryMapped);
   }
 
   public void testsegmentIndexDataValidityFor(ReadMode mode) throws IOException, JSONException, ConfigurationException {
@@ -132,12 +132,12 @@ public class SegmentReaderTest {
 
   @Test
   public void testRandomScanPerfForMMappedMode() throws ConfigurationException, IOException {
-    testrandomScanPerfFor(ReadMode.MMAPPED);
+    testrandomScanPerfFor(ReadMode.MemoryMapped);
   }
 
   @Test
   public void testRandomScanPerfForDBBufferMode() throws ConfigurationException, IOException {
-    testrandomScanPerfFor(ReadMode.DBBuffer);
+    testrandomScanPerfFor(ReadMode.DirectMemory);
   }
 
   public void testrandomScanPerfFor(ReadMode mode) throws ConfigurationException, IOException {
@@ -160,12 +160,12 @@ public class SegmentReaderTest {
 
   @Test
   public void testSequentialScanPerfForMMappedMode() throws ConfigurationException, IOException {
-    testSequentialScanPerfFor(ReadMode.MMAPPED);
+    testSequentialScanPerfFor(ReadMode.MemoryMapped);
   }
 
   @Test
   public void testSequentialScanPerfForDBBufferMode() throws ConfigurationException, IOException {
-    testSequentialScanPerfFor(ReadMode.DBBuffer);
+    testSequentialScanPerfFor(ReadMode.DirectMemory);
   }
 
   public void testSequentialScanPerfFor(ReadMode mode) throws ConfigurationException, IOException {

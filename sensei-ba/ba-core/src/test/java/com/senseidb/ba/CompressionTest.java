@@ -42,7 +42,7 @@ public class CompressionTest extends TestCase {
     SingleNodeStarter.rmrf(segmentDir);
     TarGzCompressionUtils.unTar(compressedFile, indexDir);
     
-    GazelleIndexSegmentImpl read = SegmentPersistentManager.read(segmentDir, ReadMode.DBBuffer);
+    GazelleIndexSegmentImpl read = SegmentPersistentManager.read(segmentDir, ReadMode.DirectMemory);
     assertNotNull(read);
   }
 }

@@ -1,5 +1,6 @@
 package com.senseidb.ba.file.http;
 
+import java.net.UnknownHostException;
 import java.util.Map;
 
 import org.mortbay.jetty.Server;
@@ -26,25 +27,37 @@ public class JettyServerHolder implements SenseiPlugin {
   @Override
   public void init(Map<String, String> config, SenseiPluginRegistry pluginRegistry) {
     this.pluginRegistry = pluginRegistry;
+    String hostname = null;
     if (config.get("directory") != null) {
       setDirectoryPath(config.get("directory"));
     }
     if (config.get("port") != null) {
       setPort(Integer.parseInt(config.get("port")));
     } else {
-      throw new IllegalStateException("The Jetty port is not specified");
+        throw new IllegalStateException("The Jetty port is not specified");
     }
+    if (config.get("hostName") != null) {
+        hostname = config.get("hostName");
+      } else {
+          hostname = getHostName();
+      }
     maxPartitionId = pluginRegistry.getConfiguration().getInt("sensei.index.manager.default.maxpartition.id", 0);
     zkUrl = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_URL);
     clusterName = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_NAME);
-    baseUrl = "http://localhost:" + port + "/files/";
+    baseUrl = "http://" + hostname + ":" + port + "/files/";
   }
 
   public void setPort(int port) {
     this.port = port;
 
   }
-
+  public String getHostName() {
+      try {
+        return java.net.InetAddress.getLocalHost().getHostName();
+    } catch (UnknownHostException e) {
+        throw new RuntimeException(e);
+    }
+  }
   public void setDirectoryPath(String directory) {
     this.directory = directory;
 

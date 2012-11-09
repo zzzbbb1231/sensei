@@ -120,7 +120,7 @@ public class CompressedMultiArrayTest {
     dir.mkdirs();
    
     compressedMultiArray.flushToFile(dir, "multiValueColumnName");
-    compressedMultiArray = CompressedMultiArray.readFromFile( dir, "multiValueColumnName", 10, ReadMode.DBBuffer);
+    compressedMultiArray = CompressedMultiArray.readFromFile( dir, "multiValueColumnName", 10, ReadMode.DirectMemory);
    
     MultiFacetIterator iterator = compressedMultiArray.iterator();
     

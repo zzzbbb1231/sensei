@@ -111,7 +111,7 @@ public class CompressedMultiArrayChunkTest {
     int[] offsets = compressedMultiArrayChunk.getOffsets();
     int[] skipList = compressedMultiArrayChunk.getSkipList();
     compressedMultiArrayChunk.flush(file);
-    compressedMultiArrayChunk = CompressedMultiArrayChunk.readFromFile(10, file, ReadMode.DBBuffer);
+    compressedMultiArrayChunk = CompressedMultiArrayChunk.readFromFile(10, file, ReadMode.DirectMemory);
     assertTrue(Arrays.equals(offsets, compressedMultiArrayChunk.getOffsets()));
     assertTrue(Arrays.equals(skipList, compressedMultiArrayChunk.getSkipList()));
     MultiFacetIterator iterator = compressedMultiArrayChunk.iterator();

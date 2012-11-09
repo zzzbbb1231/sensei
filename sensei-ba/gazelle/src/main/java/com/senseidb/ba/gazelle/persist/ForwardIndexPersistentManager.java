@@ -32,11 +32,11 @@ public class ForwardIndexPersistentManager {
     try {
       forwardIndexFile = new RandomAccessFile(file, "r");
       switch (mode) {
-      case DBBuffer:
+      case DirectMemory:
         byteBuffer =  ByteBuffer.allocateDirect((int)metadata.getByteLength());
         forwardIndexFile.getChannel().read(byteBuffer);
         break;
-      case MMAPPED:
+      case MemoryMapped:
         byteBuffer =
             forwardIndexFile.getChannel().map(MapMode.READ_ONLY, 0, metadata.getByteLength());
         break;

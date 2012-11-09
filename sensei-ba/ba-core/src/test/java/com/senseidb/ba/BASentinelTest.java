@@ -28,14 +28,12 @@ public class BASentinelTest  extends Assert {
   private static File indexDir;
   private static File compressedSegment;
   private static GazelleIndexSegmentImpl indexSegmentImpl;
-  private static JettyServerHolder jettyServerHolder;
   private static String httpUploadDirectory;
   @AfterClass
   public static void tearDown() throws Exception {
     SingleNodeStarter.shutdown(); 
     SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
     FileUtils.deleteDirectory(new File(httpUploadDirectory));
-    jettyServerHolder.stop();
   }
   
   @BeforeClass
@@ -44,12 +42,10 @@ public class BASentinelTest  extends Assert {
     SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
     SingleNodeStarter.rmrf(indexDir);
     File ConfDir1 = new File(BASentinelTest.class.getClassLoader().getResource("ba-conf").toURI());
-    jettyServerHolder = new JettyServerHolder();
-    jettyServerHolder.setPort(8088);
      httpUploadDirectory = "/tmp/fileUpload";
     FileUtils.deleteDirectory(new File(httpUploadDirectory));
     new File(httpUploadDirectory).mkdirs();
-    createAndLaunchJettyServer();
+    //createAndLaunchJettyServer();
     zkManager = new ZkManager("localhost:2181", "testCluster2");
     zkManager.removePartition(0);
     zkManager.removePartition(1);
@@ -66,14 +62,7 @@ public class BASentinelTest  extends Assert {
 
   }
 
-  public static void createAndLaunchJettyServer() {
-    jettyServerHolder.setDirectoryPath(httpUploadDirectory);
-    jettyServerHolder.setClusterName("testCluster2");
-    jettyServerHolder.setMaxPartitionId(1);
-    jettyServerHolder.setZkUrl("localhost:2181");
-    jettyServerHolder.setBaseUrl("http://localhost:8088/files/");
-    jettyServerHolder.start();
-  }
+  
 
   @Test
   public void test1FilterAndFacetCountOnNotSortedColumn() throws Exception {

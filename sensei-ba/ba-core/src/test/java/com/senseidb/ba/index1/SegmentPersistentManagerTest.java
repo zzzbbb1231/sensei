@@ -71,7 +71,7 @@ public class SegmentPersistentManagerTest extends TestCase{
         GazelleIndexSegmentImpl indexSegmentImpl = SegmentCreator.readFromAvroFile(avroFile);
         MultiValueForwardIndexImpl1 forwardIndexImpl1 = (MultiValueForwardIndexImpl1) indexSegmentImpl.getForwardIndex("dim_skills");        
         SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
-        GazelleIndexSegmentImpl persistedIndexSegment = SegmentPersistentManager.read(indexDir, ReadMode.DBBuffer);
+        GazelleIndexSegmentImpl persistedIndexSegment = SegmentPersistentManager.read(indexDir, ReadMode.DirectMemory);
         
         IOUtils.closeQuietly(avroFileStream);
         compareWithJsonFile(indexSegmentImpl);
@@ -88,7 +88,7 @@ public void test2CheckForwardIndexes() throws Exception {
     GazelleIndexSegmentImpl indexSegmentImpl = SegmentCreator.readFromAvroFile(avroFile);
    
     SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
-    GazelleIndexSegmentImpl persistedIndexSegment = SegmentPersistentManager.read(indexDir, ReadMode.DBBuffer);
+    GazelleIndexSegmentImpl persistedIndexSegment = SegmentPersistentManager.read(indexDir, ReadMode.DirectMemory);
     ForwardIndex forwardIndex = persistedIndexSegment.getForwardIndex("shrd_advertiserId");
     assertTrue(forwardIndex instanceof SortedForwardIndexImpl);
     assertEquals(Arrays.toString(new int[] {-1, 0 , 1, 3, 6}),Arrays.toString( ((SortedForwardIndex) forwardIndex).getMinDocIds()));
