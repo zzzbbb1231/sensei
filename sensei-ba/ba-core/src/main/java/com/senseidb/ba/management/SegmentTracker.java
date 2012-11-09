@@ -96,8 +96,30 @@ public class SegmentTracker {
     String uri = segmentInfo.getPathUrl();
     if (uri.contains(",")) {
       String[] uris =uri.split(",");
-      uri = uris[uris.length - 1];
+      uri = uris[uris.length - 1].trim();
+      boolean success = false;
+      for (int index= uris.length - 1; index >= 0; index ++) {
+        String currentUri = uris[index].trim();
+        logger.info("trying to load segment  + " + segmentId + ", by uri - " + currentUri);
+        success = instantiateSegmentForUri(segmentId, currentUri);
+        if (success) {
+          break;
+        } else {
+          logger.info("Couldn't load the segment by the uri " + currentUri);
+        }
+      }
+      if (!success) {
+        logger.info("[final]Failed to load the segment - " + segmentId + ", by the collection of uris" + segmentInfo.getPathUrl());
+      }
+    } else {
+      if (!instantiateSegmentForUri(segmentId, uri)) {
+        logger.info("[final]Failed to load the segment - " + segmentId + ", by the uri -" + segmentInfo.getPathUrl());
+      }
     }
+   
+  }
+
+  public boolean instantiateSegmentForUri(String segmentId, String uri) {
     try {
 
       if (uri.startsWith("hdfs:")) {
@@ -134,10 +156,12 @@ public class SegmentTracker {
           loadingSegments.remove(segmentId);
           referenceCounts.put(segmentId, new AtomicInteger(1));
         }
+        return true;
       }
     } catch (Exception ex) {
       logger.error(ex.getMessage(), ex);
     }
+    return false;
   }
   public void incrementCount(final String segmentId) {
     referenceCounts.get(segmentId).incrementAndGet();
