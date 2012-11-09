@@ -23,6 +23,7 @@ import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.ReadMode;
+import com.senseidb.ba.util.FileUploadUtils;
 import com.senseidb.ba.util.TarGzCompressionUtils;
 
 public class SegmentTracker {
@@ -45,6 +46,8 @@ public class SegmentTracker {
     this.fileSystem = fileSystem;
     this.senseiDecorator = senseiDecorator;
     this.executorService = executorService;
+    logger.info("Bootstrapping indexes on the startup");
+    long time = System.currentTimeMillis();
     synchronized (globalLock) {
       for (File file : indexDir.listFiles()) {
         try {
@@ -65,11 +68,13 @@ public class SegmentTracker {
           segmentsMap.put(file.getName(), new SegmentToZoieReaderAdapter(indexSegment, file.getName(), senseiDecorator));
           activeSegments.add(file.getName());
           referenceCounts.put(file.getName(), new AtomicInteger(1));
+          logger.info("Bootstrapped the  segment " + file.getName() + " with " + indexSegment.getLength() + " elements");
         } catch (Exception ex) {
           logger.error("Couldn't load the segment - " + file.getAbsolutePath(), ex);
         }
       }
     }
+    logger.info("Finished index boostrap. Total time = " + (System.currentTimeMillis() - time) / 1000 + "secs");
   }
 
   public void addSegment(final String segmentId, final SegmentInfo segmentInfo) {
@@ -89,13 +94,28 @@ public class SegmentTracker {
 
   public void instantiateSegment(String segmentId, SegmentInfo segmentInfo) {
     String uri = segmentInfo.getPathUrl();
+    if (uri.contains(",")) {
+      String[] uris =uri.split(",");
+      uri = uris[uris.length - 1];
+    }
     try {
 
       if (uri.startsWith("hdfs:")) {
         throw new UnsupportedOperationException("Not implemented yet");
       } else {
-        TarGzCompressionUtils.unTar(new File(uri), indexDir);
+        if (uri.startsWith("http:")) {
+          
+          File tempFile = new File(indexDir, segmentId + "tar.gz");
+          FileUploadUtils.getFile(uri, tempFile);
+          logger.info("Downloaded file from " + uri);
+          TarGzCompressionUtils.unTar(tempFile, indexDir);
+          
+          FileUtils.deleteQuietly(tempFile);
+        } else {
+          TarGzCompressionUtils.unTar(new File(uri), indexDir);
+        }
         File file = new File(indexDir, segmentId);
+        logger.info("Uncompressed segment into " + file.getAbsolutePath());
         Thread.sleep(100);
         if (!file.exists()) {
           throw new IllegalStateException("The index directory hasn't been created");

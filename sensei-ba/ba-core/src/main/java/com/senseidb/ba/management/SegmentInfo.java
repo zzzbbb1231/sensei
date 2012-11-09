@@ -66,6 +66,9 @@ public class SegmentInfo {
   public String getPathUrl() {
     return pathUrl;
   }
+  public String[] getPathUrls() {
+    return pathUrl.split(",");
+  }
   public void setPathUrl(String pathUrl) {
     this.pathUrl = pathUrl;
   }

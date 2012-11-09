@@ -42,6 +42,10 @@ public class FileManagementServletTest {
     FileUtils.deleteDirectory(new File(directory));
     new File(directory).mkdirs();
     jettyServerHolder.setDirectoryPath(directory);
+    jettyServerHolder.setClusterName("bla");
+    jettyServerHolder.setMaxPartitionId(0);
+    jettyServerHolder.setZkUrl("localhost:2181");
+    jettyServerHolder.setBaseUrl("http://localhost:8088/files/");
     jettyServerHolder.start();
   }
   @After

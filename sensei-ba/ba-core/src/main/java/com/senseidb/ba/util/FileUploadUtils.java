@@ -81,6 +81,21 @@ public class FileUploadUtils {
       throw new RuntimeException(ex);
     }
 }
+  public static long  getFile(String url, File file) {
+    try {
+      HttpClient httpClient = new HttpClient();
+      GetMethod httpget = new GetMethod(url);
+      httpClient.executeMethod(httpget);
+      long ret = httpget.getResponseContentLength();
+      BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file));
+      IOUtils.copyLarge(httpget.getResponseBodyAsStream(), output);
+      IOUtils.closeQuietly(output);
+  
+      return ret;
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+}
   public static void main(String[] args) throws Exception {
     JettyServerHolder jettyServerHolder = new JettyServerHolder();
     jettyServerHolder.setPort(8088);
