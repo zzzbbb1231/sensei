@@ -24,16 +24,31 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 
+import com.senseidb.ba.management.SegmentType;
+import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
 
 public class FileManagementServlet extends HttpServlet {
   private static Logger logger = Logger.getLogger(DirectoryBasedFactoryManager.class);  
   private String directory = "/tmp/uploads";
+  private String baseUrl;
+  private String clusterName;
+  private ZkManager zkManager;
+  private int maxPartition;
+  
   @Override
   public void init(ServletConfig config) throws ServletException {
     if (config.getInitParameter("directory") != null) {
       directory = config.getInitParameter("directory");
     }
+    baseUrl = config.getInitParameter("baseUrl");
+    if (!baseUrl.endsWith("/")) {
+      baseUrl += "/";
+    }
+    String zkUrl = config.getInitParameter("zkUrl");
+    clusterName = config.getInitParameter("clusterName"); 
+    zkManager = new ZkManager(zkUrl, clusterName);
+    maxPartition = Integer.parseInt(config.getInitParameter("maxPartitionId"));
     super.init(config);
   }
 
@@ -79,15 +94,22 @@ public class FileManagementServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_MULTIPLE_CHOICES);        
         return;
       }
-      BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(new File(directory, fileName)));
+      File file = new File(directory, fileName);
+      BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
       try {
-        IOUtils.copyLarge(req.getInputStream(), outputStream);
+        IOUtils.copyLarge(req.getInputStream(), outputStream);        
         resp.setStatus(HttpServletResponse.SC_CREATED);     
       } finally {
         outputStream.close();
       }
+      notifyZookeeperNewFileCreated(file); 
     }
+  }
 
+  private void notifyZookeeperNewFileCreated(File file) {
+    int partitionId = Math.abs(file.getName().hashCode()) % (maxPartition + 1);
+    SegmentType segmentType =  SegmentType.COMPRESSED_GAZELLE;
+    zkManager.registerSegment(partitionId, file.getName(), baseUrl + file.getName(), segmentType, System.currentTimeMillis(), -1L);
   }
 
   public void handleMultiPartUpload(HttpServletRequest req, HttpServletResponse resp) {
@@ -103,7 +125,9 @@ public class FileManagementServlet extends HttpServlet {
           continue;
         }
 
-        item.write(new File(directory, item.getFieldName()));
+        File file = new File(directory, item.getFieldName());
+        item.write(file);
+        notifyZookeeperNewFileCreated(file);
         logger.info("Finished uploading file - " + item.getFieldName());
       }
     } catch (Exception ex) {

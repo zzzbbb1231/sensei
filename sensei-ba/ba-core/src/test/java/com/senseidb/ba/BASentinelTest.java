@@ -1,19 +1,24 @@
 package com.senseidb.ba;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.net.URL;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.senseidb.ba.file.http.JettyServerHolder;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;
+import com.senseidb.ba.util.FileUploadUtils;
 import com.senseidb.ba.util.TestUtil;
 import com.senseidb.util.SingleNodeStarter;
 
@@ -23,11 +28,14 @@ public class BASentinelTest  extends Assert {
   private static File indexDir;
   private static File compressedSegment;
   private static GazelleIndexSegmentImpl indexSegmentImpl;
+  private static JettyServerHolder jettyServerHolder;
+  private static String httpUploadDirectory;
   @AfterClass
   public static void tearDown() throws Exception {
     SingleNodeStarter.shutdown(); 
     SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
-   
+    FileUtils.deleteDirectory(new File(httpUploadDirectory));
+    jettyServerHolder.stop();
   }
   
   @BeforeClass
@@ -36,6 +44,12 @@ public class BASentinelTest  extends Assert {
     SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
     SingleNodeStarter.rmrf(indexDir);
     File ConfDir1 = new File(BASentinelTest.class.getClassLoader().getResource("ba-conf").toURI());
+    jettyServerHolder = new JettyServerHolder();
+    jettyServerHolder.setPort(8088);
+     httpUploadDirectory = "/tmp/fileUpload";
+    FileUtils.deleteDirectory(new File(httpUploadDirectory));
+    new File(httpUploadDirectory).mkdirs();
+    createAndLaunchJettyServer();
     zkManager = new ZkManager("localhost:2181", "testCluster2");
     zkManager.removePartition(0);
     zkManager.removePartition(1);
@@ -44,12 +58,21 @@ public class BASentinelTest  extends Assert {
     indexSegmentImpl = TestUtil.createIndexSegment();
     for (int i = 0; i < 2; i++) {
       File compressedFile = TestUtil.createCompressedSegment("segment" + i, indexSegmentImpl, indexDir);
-      zkManager.registerSegment(i % 2, "segment" + i, compressedFile.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE,
-          System.currentTimeMillis(), Long.MAX_VALUE);
-
+      FileInputStream inputStream = new FileInputStream(compressedFile);
+      FileUploadUtils.sendFile("localhost", "8088", "segment" + i, inputStream, compressedFile.length());
+      IOUtils.closeQuietly(inputStream);
     }
     SingleNodeStarter.waitTillServerStarts(20000);
 
+  }
+
+  public static void createAndLaunchJettyServer() {
+    jettyServerHolder.setDirectoryPath(httpUploadDirectory);
+    jettyServerHolder.setClusterName("testCluster2");
+    jettyServerHolder.setMaxPartitionId(1);
+    jettyServerHolder.setZkUrl("localhost:2181");
+    jettyServerHolder.setBaseUrl("http://localhost:8088/files/");
+    jettyServerHolder.start();
   }
 
   @Test

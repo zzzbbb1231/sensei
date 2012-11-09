@@ -5,9 +5,13 @@ import java.util.List;
 
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
+import org.apache.log4j.Logger;
+
+import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
 
 public class ZkManager {
-    private ZkClient zkClient;
+  private static Logger logger = Logger.getLogger(DirectoryBasedFactoryManager.class);    
+  private ZkClient zkClient;
     private final String clusterName;
     public ZkManager(String zkString, String clusterName) {
        this.clusterName = clusterName;
@@ -20,16 +24,24 @@ public class ZkManager {
     
    }
     public void registerSegment(int partition, String segmentId, String pathUrl, SegmentType type, long timeCreated, long timeToLive) {
+      logger.info("Registering the new segment with id = " + segmentId + ", partition = " + partition + ", pathUrl = " + pathUrl);
       String partitionPath = ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName + "/" + partition;
       if (!zkClient.exists(partitionPath)) {
         zkClient.createPersistent(partitionPath, true);
       }
-      SegmentInfo segmentInfo = new SegmentInfo(segmentId, pathUrl, type, timeCreated, timeToLive);
+      
       if (zkClient.exists(partitionPath + "/" + segmentId)) {
+        SegmentInfo oldSegmentInfo = SegmentInfo.fromBytes((byte[])zkClient.readData(partitionPath + "/" + segmentId));
+        pathUrl = oldSegmentInfo.getPathUrl() + "," + pathUrl;
+        timeCreated = oldSegmentInfo.getTimeCreated();
         removeSegment(partition, segmentId);
       }
-        zkClient.createPersistent(partitionPath + "/" + segmentId, segmentInfo.toByteArray());
-      
+      SegmentInfo segmentInfo = new SegmentInfo(segmentId, pathUrl, type, timeCreated, timeToLive);
+      zkClient.createPersistent(partitionPath + "/" + segmentId, segmentInfo.toByteArray());
+    }
+    public boolean segmentExists(int partition, String segmentId) {
+      String partitionPath = ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName + "/" + partition;
+      return zkClient.exists(partitionPath + "/" + segmentId);
     }
     public void removePartition(int partition) {
       String partitionPath = ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName + "/" + partition;
