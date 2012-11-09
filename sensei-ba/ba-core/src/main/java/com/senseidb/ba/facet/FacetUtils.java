@@ -66,19 +66,22 @@ public class FacetUtils {
     int doc = -1;
     private final SingleValueForwardIndex forwardIndex;
     private final int index;
-
+    private final int length;
     public ForwardIndexIterator(SingleValueForwardIndex forwardIndex, int index) {
       this.forwardIndex = forwardIndex;
       this.index = index;
+      this.length = this.forwardIndex.getLength();
     }
 
     @Override
     public int nextDoc() throws IOException {
+      int nextValueIndexed;
       while (true) {
         doc++;
-        if (forwardIndex.getLength() <= doc)
+        if (length <= doc)
           return NO_MORE_DOCS;
-        if (forwardIndex.getValueIndex(doc) == index) {
+        nextValueIndexed = forwardIndex.getValueIndex(doc);
+        if (nextValueIndexed == index) {
           return doc;
         }
       }
@@ -158,14 +161,15 @@ public class FacetUtils {
 
     @Override
     public int nextDoc() throws IOException {
+      int nextValueIndexed;
       while (true) {
         doc++;
         if (this.forwardIndexLength <= doc) {
           return NO_MORE_DOCS;
         }
           
-
-        if (forwardIndex.getValueIndex(doc) >= startIndex && forwardIndex.getValueIndex(doc) <= endIndex) {
+        nextValueIndexed = forwardIndex.getValueIndex(doc);
+        if (nextValueIndexed >= startIndex && nextValueIndexed <= endIndex) {
           return doc;
         }
       }

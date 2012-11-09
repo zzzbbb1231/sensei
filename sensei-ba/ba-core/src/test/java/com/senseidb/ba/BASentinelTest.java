@@ -338,6 +338,34 @@ public class BASentinelTest  extends Assert {
     assertEquals("numhits is wrong",20000 , resp.getInt("numhits"));
   }
   
+  @Test
+  public void test5RangeQueryOnSingleValuedColumn() throws Exception {
+    String req = "{" + 
+        "  " + 
+        "    \"from\": 0," + 
+        "    \"size\": 10,\n" + 
+        "    \"selections\": [" + 
+        "    {" + 
+        "        \"terms\": {" + 
+        "            \"dim_memberGender\": {" + 
+        "                \"values\": [\"[m TO n)\"]," + 
+        "                \"excludes\": []," + 
+        "                \"operator\": \"or\"" + 
+        "            }" + 
+        "        }" + 
+        "    }" + 
+        "   ]" +
+ 
+        "    }" + 
+        "}";
+
+    JSONObject resp = null;
+    for (int i = 0; i < 2; i ++) {
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    }
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong",13222 , resp.getInt("numhits"));
+  }
   
   @Test
   public void test1RangeQueryOnSortedColumn() throws Exception {

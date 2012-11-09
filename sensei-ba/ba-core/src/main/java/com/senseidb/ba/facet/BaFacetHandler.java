@@ -103,6 +103,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         final int endIndex;
         int sIndex;
         int eIndex;
+        
         if (values[0].equals("*")) {
           sIndex = 0;
         } else {
@@ -114,29 +115,31 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
           eIndex = zeusDataCache.getDictionary().indexOf(values[1]);
         }
         
-        
         if (sIndex < 0) {
           sIndex = -(sIndex + 1);
+        } else {
+          switch(QueryUtils.getStarIndexRangeType(value)) {
+            case EXCLUSIVE:
+              if (!values[0].equals("*")) {
+                sIndex += 1;
+              }
+            break;
+          }
         }
+        
         if (eIndex < 0) {
           eIndex = -(eIndex + 1);
           eIndex = Math.max(0, eIndex - 1);
+        } else {
+          switch(QueryUtils.getEndIndexRangeType(value)) {
+            case EXCLUSIVE:
+              if (!values[1].equals("*")) {
+                eIndex -= 1;
+              }
+            break;  
+          }
         }
-        switch(QueryUtils.getStarIndexRangeType(value)) {
-          case EXCLUSIVE:
-            if (!values[0].equals("*")) {
-              sIndex += 1;
-            }
-          break;
-        }
-        switch(QueryUtils.getEndIndexRangeType(value)) {
-          case EXCLUSIVE:
-            if (!values[1].equals("*")) {
-              eIndex -= 1;
-            }
-          break;  
-        }
-
+        
         startIndex = sIndex;
         endIndex = eIndex;
         if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
