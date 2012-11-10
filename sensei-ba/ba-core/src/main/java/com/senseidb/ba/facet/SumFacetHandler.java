@@ -53,7 +53,7 @@ public class SumFacetHandler extends FacetHandler<Serializable>{
 
   @Override
   public String[] getFieldValues(BoboIndexReader reader, int id) {
-    return SumGroupByFacerHandler.EMPTY_STRING;
+    return SumGroupByFacetHandler.EMPTY_STRING;
   }
 
   @Override

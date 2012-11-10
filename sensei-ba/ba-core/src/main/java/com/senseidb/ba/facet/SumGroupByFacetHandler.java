@@ -28,17 +28,17 @@ import com.senseidb.ba.plugins.ZeusFactoryFactory;
  * @author Praveen Neppalli Naga <pneppalli@linkedin.com>
  * 
  */
-public class SumGroupByFacerHandler extends FacetHandler<Serializable> {
+public class SumGroupByFacetHandler extends FacetHandler<Serializable> {
 
   public static final String[] EMPTY_STRING = new String[0];
 
-  public SumGroupByFacerHandler() {
+  public SumGroupByFacetHandler() {
     super("sumGroupBy", asSet());
 
   }
 
-  public SumGroupByFacerHandler(String name) {
-    super("names", asSet());
+  public SumGroupByFacetHandler(String name) {
+    super(name, asSet());
 
   }
 
