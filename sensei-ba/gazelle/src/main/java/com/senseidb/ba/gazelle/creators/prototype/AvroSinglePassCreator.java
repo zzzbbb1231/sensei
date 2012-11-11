@@ -1,4 +1,4 @@
-package com.senseidb.ba.gazelle.creators;
+package com.senseidb.ba.gazelle.creators.prototype;
 
 import it.unimi.dsi.fastutil.Swapper;
 import it.unimi.dsi.fastutil.ints.IntComparator;
@@ -20,6 +20,8 @@ import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.MetadataAware;
+import com.senseidb.ba.gazelle.creators.ForwardIndexCreator;
+import com.senseidb.ba.gazelle.creators.MetadataCreator;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;

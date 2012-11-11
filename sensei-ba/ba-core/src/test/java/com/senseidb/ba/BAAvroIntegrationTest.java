@@ -12,7 +12,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.util.TestUtil;
 import com.senseidb.util.SingleNodeStarter;
@@ -30,7 +30,7 @@ public class BAAvroIntegrationTest extends TestCase {
     File index1Dir = new File(indexDir, "segment1");
     index1Dir.mkdir();
     File avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
-    GazelleIndexSegmentImpl indexSegmentImpl =  SegmentCreator.readFromAvroFile(avroFile);
+    GazelleIndexSegmentImpl indexSegmentImpl =  AvroSegmentCreator.readFromAvroFile(avroFile);
     com.senseidb.ba.gazelle.persist.SegmentPersistentManager.flushToDisk(indexSegmentImpl, index1Dir);
     FileUtils.copyFileToDirectory(avroFile, indexDir);
     

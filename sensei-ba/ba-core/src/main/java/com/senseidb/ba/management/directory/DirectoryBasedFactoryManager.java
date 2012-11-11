@@ -25,7 +25,7 @@ import proj.zoie.impl.indexing.ZoieConfig;
 
 import com.browseengine.bobo.facets.FacetHandler;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
-import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
@@ -144,7 +144,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
       try {
       File targetDir = new File(explodeDirectory, segmentId);
       if (fileType == FileType.AVRO) {
-        gazelleIndexSegmentImpl = SegmentCreator.readFromAvroFile(file);
+        gazelleIndexSegmentImpl = AvroSegmentCreator.readFromAvroFile(file);
         SegmentPersistentManager.flushToDisk(gazelleIndexSegmentImpl, targetDir);
         new File(targetDir, "finishedLoading").createNewFile();
       } else if (fileType == FileType.COMPRESSED_GAZELLE) {

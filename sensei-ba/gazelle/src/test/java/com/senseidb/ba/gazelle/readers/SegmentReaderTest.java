@@ -25,7 +25,7 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
-import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
@@ -50,7 +50,7 @@ public class SegmentReaderTest {
     _avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
     _jsonFile = new File(getClass().getClassLoader().getResource("data/sample_data.json").toURI());
     System.out.println(_indexDir.getAbsolutePath());
-    _segment = SegmentCreator.readFromAvroFile(_avroFile);
+    _segment = AvroSegmentCreator.readFromAvroFile(_avroFile);
     SegmentPersistentManager.flushToDisk(_segment, _indexDir);
   }
 

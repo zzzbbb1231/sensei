@@ -32,7 +32,7 @@ import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
-import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
@@ -68,7 +68,7 @@ public class SegmentPersistentManagerTest extends TestCase{
        FileInputStream avroFileStream = new FileInputStream(avroFile);
         /*dumpToJson(avroFileStream, new PrintStream( new FileOutputStream(new File("json.txt"))));
         avroFileStream = new FileInputStream(avroFile);*/
-        GazelleIndexSegmentImpl indexSegmentImpl = SegmentCreator.readFromAvroFile(avroFile);
+        GazelleIndexSegmentImpl indexSegmentImpl = AvroSegmentCreator.readFromAvroFile(avroFile);
         MultiValueForwardIndexImpl1 forwardIndexImpl1 = (MultiValueForwardIndexImpl1) indexSegmentImpl.getForwardIndex("dim_skills");        
         SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
         GazelleIndexSegmentImpl persistedIndexSegment = SegmentPersistentManager.read(indexDir, ReadMode.DirectMemory);
@@ -85,7 +85,7 @@ public void test2CheckForwardIndexes() throws Exception {
     FileInputStream avroFileStream = new FileInputStream(avroFile);
     /*dumpToJson(avroFileStream, new PrintStream( new FileOutputStream(new File("json.txt"))));
     avroFileStream = new FileInputStream(avroFile);*/
-    GazelleIndexSegmentImpl indexSegmentImpl = SegmentCreator.readFromAvroFile(avroFile);
+    GazelleIndexSegmentImpl indexSegmentImpl = AvroSegmentCreator.readFromAvroFile(avroFile);
    
     SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
     GazelleIndexSegmentImpl persistedIndexSegment = SegmentPersistentManager.read(indexDir, ReadMode.DirectMemory);

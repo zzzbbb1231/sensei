@@ -9,7 +9,7 @@ import java.util.Collections;
 
 import org.apache.commons.io.FileUtils;
 
-import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
@@ -66,7 +66,7 @@ public class BaClient {
           //FileUtils.deleteDirectory(indexDir);
           indexDir.mkdirs();
           if (path.endsWith(".avro")) {
-            GazelleIndexSegmentImpl indexSegmentImpl =  SegmentCreator.readFromAvroFile(new File(path));
+            GazelleIndexSegmentImpl indexSegmentImpl =  AvroSegmentCreator.readFromAvroFile(new File(path));
             File compressedFile = TestUtil.createCompressedSegment(segmentId, indexSegmentImpl, indexDir);
             zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);
             System.out.println("The segment has been registered");
@@ -88,7 +88,7 @@ public class BaClient {
                 segmentId = avroFile.getName().substring(0, avroFile.getName().length() - ".avro".length());
                 File compressedFile = new File(indexDir, segmentId + ".tar.gz");
                 if (!compressedFile.exists() ) {
-                GazelleIndexSegmentImpl indexSegmentImpl =  SegmentCreator.readFromAvroFile(avroFile);
+                GazelleIndexSegmentImpl indexSegmentImpl =  AvroSegmentCreator.readFromAvroFile(avroFile);
                  compressedFile = TestUtil.createCompressedSegment(segmentId, indexSegmentImpl, indexDir);
                  System.out.println("Registered the segment " + segmentId + " containing " + indexSegmentImpl.getLength());
                 }

@@ -1,4 +1,4 @@
-package com.senseidb.ba.gazelle.creators;
+package com.senseidb.ba.gazelle.creators.prototype;
 
 import it.unimi.dsi.fastutil.Swapper;
 import it.unimi.dsi.fastutil.floats.Float2IntOpenHashMap;
@@ -25,6 +25,7 @@ import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.browseengine.bobo.util.BigNestedIntArray;
 import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.gazelle.creators.DictionaryCreator;
 import com.senseidb.ba.gazelle.utils.BufferedLoader;
 
 public class SinglePassIndexCreator {

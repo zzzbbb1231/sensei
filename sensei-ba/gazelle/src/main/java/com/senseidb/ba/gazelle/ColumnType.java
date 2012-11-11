@@ -9,7 +9,7 @@ import org.springframework.util.Assert;
  */
 
 public enum ColumnType {
-  INT, LONG, STRING, FLOAT,INT_ARRAY, LONG_ARRAY, STRING_ARRAY, FLOAT_ARRAY;
+  INT, LONG, FLOAT, STRING, INT_ARRAY, LONG_ARRAY, FLOAT_ARRAY, STRING_ARRAY;
 
   public static ColumnType valueOfStr(String name) {
     name = name.toUpperCase();
@@ -63,11 +63,67 @@ public enum ColumnType {
     }
     throw new UnsupportedOperationException(type.toString());
   }
+  public static ColumnType valueOfArrayType(ColumnType type) {
+      if (type == ColumnType.INT) {
+      return INT_ARRAY;
+    }
+    if (type == ColumnType.LONG) {
+      return LONG_ARRAY;
+    }
+    if (type == ColumnType.STRING) {
+      return STRING_ARRAY;
+    }
+    if (type == ColumnType.FLOAT) {
+      return FLOAT_ARRAY;
+    }
+    throw new UnsupportedOperationException(type.toString());
+  }
   public boolean isMulti() {
       return name().endsWith("_ARRAY");
   }
   public ColumnType getElementType() {
       Assert.state(isMulti());
       return valueOfStr(name().substring(0, name().indexOf("_ARRAY")));
+  }
+  public static ColumnType getColumnType(Object obj) {
+      if (obj == null) {
+          return null;
+      }
+      if (obj instanceof Object[]) {
+          Object[] arr = (Object[]) obj;
+          if (arr.length == 0) {
+              return null;
+          }
+          ColumnType currentType = null;
+          for (Object element : arr) {
+              ColumnType newType = getColumnType(element);
+              if (isBigger(currentType, newType)) {
+                  currentType = newType;
+              }
+          }
+          return ColumnType.valueOfArrayType(currentType);
+      } else {
+          if (obj instanceof Number) {
+              Number number = (Number) obj;
+              if (obj instanceof Integer || obj instanceof Short || obj instanceof Byte) {
+                  return ColumnType.INT;
+              }
+              if (obj instanceof Long) {
+                  return (number.longValue() > Integer.MAX_VALUE ? ColumnType.LONG : ColumnType.INT);
+              } else {
+                  return ColumnType.FLOAT;
+              }
+          } else if (obj instanceof String){
+              return ColumnType.STRING;
+          }
+      }
+      throw new UnsupportedOperationException(obj.getClass().toString());
+  }
+  public static boolean isBigger(ColumnType currentType, ColumnType newType) {
+      if (newType == null) {
+          return false;
+      }
+      if (currentType == null) return true;
+      return newType.ordinal() - currentType.ordinal() > 0;
   }
 }

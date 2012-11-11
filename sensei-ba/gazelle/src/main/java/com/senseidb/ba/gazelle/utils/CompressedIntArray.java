@@ -8,7 +8,7 @@ public class CompressedIntArray {
   private final ByteBuffer buf;
   private int capacity;
   private final int numOfBitsPerElement;
-private byte[] tempBuf;
+  private byte[] tempBuf;
 
   public CompressedIntArray(int numOfElements, int numOfBitsPerElement) {
     this.numOfBitsPerElement = numOfBitsPerElement;

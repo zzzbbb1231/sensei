@@ -9,14 +9,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 
 import javax.management.StandardMBean;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.LineIterator;
 import org.apache.lucene.analysis.Analyzer;
 
 import proj.zoie.api.Zoie;
@@ -25,15 +22,16 @@ import proj.zoie.api.ZoieIndexReader;
 import proj.zoie.mbean.ZoieAdminMBean;
 
 import com.browseengine.bobo.api.BoboIndexReader;
-import com.senseidb.ba.IndexSegmentCreator;
+import com.senseidb.ba.JsonDataSource;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.ba.gazelle.IndexSegment;
-import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
+import com.senseidb.ba.gazelle.creators.GenericIndexCreator;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
-
+@Deprecated
 public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
   List<ZoieIndexReader<BoboIndexReader>> offlineSegments = new ArrayList<ZoieIndexReader<BoboIndexReader>>();
   private final File idxDir;
@@ -94,21 +92,14 @@ public class ZeusIndexFactory implements Zoie<BoboIndexReader, Object> {
       }
     });
     for (File jsonFile : jsonFiles) {
-      LineIterator lineIterator;
-      lineIterator = FileUtils.lineIterator(jsonFile);
-      ArrayList<String> docs = new ArrayList<String>();
-      while (lineIterator.hasNext()) {
-        String car = lineIterator.next();
-        if (car != null && car.contains("{"))
-          docs.add(car);
-      }
-      IndexSegment offlineSegment = IndexSegmentCreator.convert(docs.toArray(new String[docs.size()]), new HashSet<String>());
-      offlineSegments.add(new SegmentToZoieReaderAdapter(offlineSegment, "", decorator));
+      
+      IndexSegment offlineSegment =  GenericIndexCreator.create(new JsonDataSource(jsonFile));
+      offlineSegments.add(new SegmentToZoieReaderAdapter(offlineSegment, jsonFile.getName(), decorator));
     }
     for (File directory : idxDir.listFiles()) {
       if (directory.getName().endsWith(".avro")) {
           InputStream inputStream = new FileInputStream(directory) ;
-          offlineSegments.add(new SegmentToZoieReaderAdapter(SegmentCreator.readFromAvroFile(directory), directory.getName(), decorator));
+          offlineSegments.add(new SegmentToZoieReaderAdapter(AvroSegmentCreator.readFromAvroFile(directory), directory.getName(), decorator));
           IOUtils.closeQuietly(inputStream);
       }
        if (!directory.isDirectory()) {

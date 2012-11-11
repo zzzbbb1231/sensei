@@ -1,7 +1,7 @@
 package com.senseidb.ba.gazelle.utils;
 
 
-public class HeapCompressedIntArray {
+public class HeapCompressedIntArray  {
     static final int BLOCK_SIZE = 64; // 32 = int, 64 = long
     static final int BLOCK_BITS = 6; // The #bits representing BLOCK_SIZE
     static final int MOD_MASK = BLOCK_SIZE - 1; // x % BLOCK_SIZE

@@ -12,21 +12,14 @@ import org.apache.commons.io.LineIterator;
 import org.junit.Test;
 
 import com.senseidb.ba.gazelle.IndexSegment;
+import com.senseidb.ba.gazelle.creators.GenericIndexCreator;
 
 public class OfflineIndexTest extends TestCase {
 
   @Test
   public void test1() throws Exception {
-    LineIterator lineIterator = FileUtils.lineIterator(new File(OfflineIndexTest.class.getClassLoader().getResource("data/test_data.json").toURI()));
-    ArrayList<String> docs = new ArrayList<String>();
-    while(lineIterator.hasNext()) {
-      String car = lineIterator.next();
-      if (car != null && car.contains("{"))
-      docs.add(car);
-    }
-    Set<String> excludedColumns = new HashSet<String>();
-    excludedColumns.add("tags");
-    IndexSegment offlineSegment = IndexSegmentCreator.convert(docs.toArray(new String[docs.size()]), excludedColumns);
+  
+    IndexSegment offlineSegment =  GenericIndexCreator.create(new JsonDataSource(new File(OfflineIndexTest.class.getClassLoader().getResource("data/test_data.json").toURI())));
     assertEquals(15000, offlineSegment.getLength());
   }
 

@@ -7,7 +7,7 @@ import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 
-import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.ReadMode;
@@ -27,7 +27,7 @@ public class CompressionTest extends TestCase {
       segmentDir = new File(indexDir, "segment1");
       indexDir.mkdir();
       avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
-      GazelleIndexSegmentImpl indexSegmentImpl = SegmentCreator.readFromAvroFile(avroFile);
+      GazelleIndexSegmentImpl indexSegmentImpl = AvroSegmentCreator.readFromAvroFile(avroFile);
       SegmentPersistentManager.flushToDisk(indexSegmentImpl, segmentDir);
 
   }

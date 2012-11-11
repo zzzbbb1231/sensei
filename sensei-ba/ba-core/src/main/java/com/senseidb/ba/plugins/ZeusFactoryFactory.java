@@ -14,6 +14,7 @@ import com.senseidb.plugin.SenseiPluginRegistry;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 import com.senseidb.search.node.SenseiZoieFactory;
 @SuppressWarnings("unchecked")
+@Deprecated
 public class ZeusFactoryFactory implements ZoieFactoryFactory, SenseiPlugin {
 
  

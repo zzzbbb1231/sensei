@@ -25,8 +25,8 @@ import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 
-public class SegmentCreator {
-  private static Logger logger = Logger.getLogger(SegmentCreator.class);
+public class AvroSegmentCreator {
+  private static Logger logger = Logger.getLogger(AvroSegmentCreator.class);
 
 
   private static GazelleIndexSegmentImpl readFromAvroFile(InputStream inputStream1, InputStream inputStream2) throws IOException {

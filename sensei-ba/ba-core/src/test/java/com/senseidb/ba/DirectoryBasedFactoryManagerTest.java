@@ -7,7 +7,7 @@ import junit.framework.TestCase;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 
-import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
@@ -53,7 +53,7 @@ public class DirectoryBasedFactoryManagerTest extends TestCase {
     FileUtils.copyFileToDirectory(avroFile, indexDir);
     File index2Dir = new File(indexDir, "segment2");
     index2Dir.mkdir();
-    SegmentPersistentManager.flushToDisk(SegmentCreator.readFromAvroFile(avroFile), index2Dir);
+    SegmentPersistentManager.flushToDisk(AvroSegmentCreator.readFromAvroFile(avroFile), index2Dir);
     directoryBasedFactoryManager.scanForNewSegments();
     new Wait(){
       public boolean until() {return indexFactory.getIndexReaders().size() == 3;};
@@ -74,7 +74,7 @@ public class DirectoryBasedFactoryManagerTest extends TestCase {
      public boolean until() {return indexFactory.getIndexReaders().size() == 0;};
    }; 
    index2Dir.mkdirs();
-   SegmentPersistentManager.flushToDisk(SegmentCreator.readFromAvroFile(avroFile), index2Dir);
+   SegmentPersistentManager.flushToDisk(AvroSegmentCreator.readFromAvroFile(avroFile), index2Dir);
    directoryBasedFactoryManager.scanForNewSegments();
    new Wait(){
      public boolean until() {return indexFactory.getIndexReaders().size() == 1;};

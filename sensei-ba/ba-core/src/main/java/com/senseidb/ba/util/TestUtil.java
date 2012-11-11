@@ -12,7 +12,7 @@ import java.net.URLConnection;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
-import com.senseidb.ba.gazelle.creators.SegmentCreator;
+import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 
@@ -21,7 +21,7 @@ public class TestUtil {
   
   public static GazelleIndexSegmentImpl createIndexSegment() throws URISyntaxException, Exception {
     File avroFile = new File(TestUtil.class.getClassLoader().getResource("data/sample_data.avro").toURI());
-    GazelleIndexSegmentImpl indexSegmentImpl =  SegmentCreator.readFromAvroFile(avroFile);
+    GazelleIndexSegmentImpl indexSegmentImpl =  AvroSegmentCreator.readFromAvroFile(avroFile);
      return indexSegmentImpl;
   }
 
