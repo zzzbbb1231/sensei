@@ -31,7 +31,7 @@ public class BaClient {
     if (!indexDir.exists()) {
       indexDir.mkdirs();
     }
-    ZkManager zkManager = new ZkManager("localhost:2181", args11[0]);
+    ZkManager zkManager = new ZkManager("localhost:2121", args11[0]);
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     System.out.println(usage);
     while(true) {

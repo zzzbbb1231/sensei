@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.List;
@@ -29,6 +30,7 @@ import org.springframework.util.Assert;
 import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
+import com.senseidb.util.NetUtil;
 
 public class FileManagementServlet extends HttpServlet {
   private static Logger logger = Logger.getLogger(DirectoryBasedFactoryManager.class);  
@@ -40,14 +42,21 @@ public class FileManagementServlet extends HttpServlet {
   
   @Override
   public void init(ServletConfig config) throws ServletException {
-    if (config.getInitParameter("directory") != null) {
-      directory = config.getInitParameter("directory");
+    directory = config.getInitParameter("directory");
+    Assert.notNull(directory, "directory parameter should be present");
+    File dir = new File(directory);
+    if (!dir.exists()) {
+      dir.mkdirs();
     }
     baseUrl = config.getInitParameter("baseUrl");
     if (baseUrl == null) {
       String port = config.getInitParameter("port");
       Assert.notNull(port, "Either baseUrl or port parameter should be present");
-      baseUrl = "http://" + getHostName() + ":" + port + "/files/";
+      try {
+        baseUrl = "http://" + NetUtil.getHostAddress() + ":" + port + "/files/";
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
     }
     if (!baseUrl.endsWith("/")) {
       baseUrl += "/";
@@ -198,11 +207,6 @@ public class FileManagementServlet extends HttpServlet {
       }
     }
   }
-  public String getHostName() {
-    try {
-      return java.net.InetAddress.getLocalHost().getHostName();
-  } catch (UnknownHostException e) {
-      throw new RuntimeException(e);
-  }
-}
+ 
+
 }

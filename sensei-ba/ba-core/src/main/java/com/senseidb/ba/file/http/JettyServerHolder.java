@@ -12,6 +12,7 @@ import org.mortbay.jetty.webapp.WebAppContext;
 import com.senseidb.conf.SenseiConfParams;
 import com.senseidb.plugin.SenseiPlugin;
 import com.senseidb.plugin.SenseiPluginRegistry;
+import com.senseidb.util.NetUtil;
 
 public class JettyServerHolder implements SenseiPlugin {
 
@@ -53,8 +54,8 @@ public class JettyServerHolder implements SenseiPlugin {
   }
   public String getHostName() {
       try {
-        return java.net.InetAddress.getLocalHost().getHostName();
-    } catch (UnknownHostException e) {
+        return NetUtil.getHostAddress();
+    } catch (Exception e) {
         throw new RuntimeException(e);
     }
   }

@@ -23,6 +23,12 @@ import org.apache.http.params.CoreProtocolPNames;
 
 import com.senseidb.ba.file.http.JettyServerHolder;
 
+/**
+ * To upload via command line use 
+ * curl -F segmentId2=@./part-r-0001.tar.gz localhost:8089/files/
+ * @author vzhabiuk
+ *
+ */
 public class FileUploadUtils {
   public static void sendFile(final String host, final String port, final  String fileName, final  InputStream inputStream, final long lengthInBytes) {
     HttpClient client = new HttpClient();
@@ -97,15 +103,16 @@ public class FileUploadUtils {
     }
 }
   public static void main(String[] args) throws Exception {
-    JettyServerHolder jettyServerHolder = new JettyServerHolder();
-    jettyServerHolder.setPort(8088);
-    String directory = "/tmp/fileUpload";
+  /*  JettyServerHolder jettyServerHolder = new JettyServerHolder();
+    jettyServerHolder.setPort(8088);*/
+   /* String directory = "/tmp/fileUpload";
     FileUtils.deleteDirectory(new File(directory));
-    new File(directory).mkdirs();
-    jettyServerHolder.setDirectoryPath(directory);
-    jettyServerHolder.start();
-    FileUploadUtils.sendFile("localhost","8088",  "workspace.tar.gz", new FileInputStream("/tmp/ba-index-standalone/exploded/workspace.tar.gz"), new File("/tmp/ba-index-standalone/exploded/workspace.tar.gz").length());
-    String stringResponse = FileUploadUtils.listFiles("localhost","8088");
+    new File(directory).mkdirs();*/
+   /* jettyServerHolder.setDirectoryPath(directory);
+    jettyServerHolder.start();*/
+    String path = "/tmp/ba-index/node1/shard0/part-r-0001.tar.gz";
+    FileUploadUtils.sendFile("localhost","8089", "part-r-000016", new FileInputStream(path), new File(path).length());
+    String stringResponse = FileUploadUtils.listFiles("localhost","8089");
     System.out.println(stringResponse);
   }
 }

@@ -121,7 +121,7 @@ public class SegmentTracker {
 
   public boolean instantiateSegmentForUri(String segmentId, String uri) {
     try {
-
+      List<File> uncompressedFiles = null;
       if (uri.startsWith("hdfs:")) {
         throw new UnsupportedOperationException("Not implemented yet");
       } else {
@@ -130,22 +130,34 @@ public class SegmentTracker {
           File tempFile = new File(indexDir, segmentId + "tar.gz");
           FileUploadUtils.getFile(uri, tempFile);
           logger.info("Downloaded file from " + uri);
-          TarGzCompressionUtils.unTar(tempFile, indexDir);
+          uncompressedFiles  = TarGzCompressionUtils.unTar(tempFile, indexDir);
           
           FileUtils.deleteQuietly(tempFile);
         } else {
-          TarGzCompressionUtils.unTar(new File(uri), indexDir);
+          uncompressedFiles = TarGzCompressionUtils.unTar(new File(uri), indexDir);
         }
         File file = new File(indexDir, segmentId);
         logger.info("Uncompressed segment into " + file.getAbsolutePath());
         Thread.sleep(100);
         if (!file.exists()) {
-          throw new IllegalStateException("The index directory hasn't been created");
+          if (uncompressedFiles.size() > 0) {
+            File srcDir = uncompressedFiles.get(0);
+            logger.warn("The directory - " + file.getAbsolutePath() + " doesn't exist. Would try to rename the dir - " + srcDir.getAbsolutePath() + " to it. The segment id is - " + segmentId);
+            FileUtils.moveDirectory(srcDir, file);
+            if (!new File(indexDir, segmentId).exists()) {
+              throw new IllegalStateException("The index directory hasn't been created");
+            } else {
+              logger.info("Was able to succesfully rename the dir to match the segmentId - " + segmentId);
+            }
+          }
+          
         }
         new File(file, "finishedLoading").createNewFile();
         GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DirectMemory);
         logger.info("Loaded the new segment " + segmentId + " with " + indexSegment.getLength() + " elements");
         if (indexSegment == null) {
+         
+          
           FileUtils.deleteDirectory(file);
           throw new IllegalStateException("The directory " + file.getAbsolutePath() + " doesn't contain the fully loaded segment");
         }
@@ -167,6 +179,11 @@ public class SegmentTracker {
     referenceCounts.get(segmentId).incrementAndGet();
   }
   public void decrementCount(final String segmentId) {
+    if (!referenceCounts.containsKey(segmentId)) {
+      logger.warn("Received command to delte unexisting segment - " + segmentId);
+      return;
+    }
+    
     AtomicInteger count = referenceCounts.get(segmentId);
     
     if (count.get() == 1) {
