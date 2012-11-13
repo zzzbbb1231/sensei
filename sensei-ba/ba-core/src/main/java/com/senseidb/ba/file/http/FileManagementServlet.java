@@ -33,7 +33,7 @@ import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
 import com.senseidb.util.NetUtil;
 
 public class FileManagementServlet extends HttpServlet {
-  private static Logger logger = Logger.getLogger(DirectoryBasedFactoryManager.class);  
+  private static Logger logger = Logger.getLogger(FileManagementServlet.class);  
   private String directory = "/tmp/uploads";
   private String baseUrl;
   private String clusterName;

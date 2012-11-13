@@ -72,6 +72,16 @@ public class FileUploadUtils {
       throw new RuntimeException(ex);
     }
   }
+  public static String getStringResponse(String url) {
+    try {
+    HttpClient httpClient = new HttpClient();
+    GetMethod httpget = new GetMethod(url);
+    httpClient.executeMethod(httpget);
+    return IOUtils.toString(httpget.getResponseBodyAsStream());
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
   public static long  getFile(String host, String port, String remoteFileName, File file) {
     try {
       HttpClient httpClient = new HttpClient();

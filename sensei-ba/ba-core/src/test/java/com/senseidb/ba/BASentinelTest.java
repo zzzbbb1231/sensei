@@ -7,12 +7,15 @@ import java.net.URL;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.I0Itec.zkclient.ZkClient;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import scala.actors.threadpool.Arrays;
 
 import com.senseidb.ba.file.http.JettyServerHolder;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
@@ -39,6 +42,8 @@ public class BASentinelTest  extends Assert {
   @BeforeClass
   public static void setUp() throws Exception {
     indexDir = new File("testIndex");
+    ZkClient zkClient = new ZkClient("localhost:2181");
+    zkClient.deleteRecursive("/sensei-ba/partitions/testCluster2");    
     SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
     SingleNodeStarter.rmrf(indexDir);
     File ConfDir1 = new File(BASentinelTest.class.getClassLoader().getResource("ba-conf").toURI());
@@ -691,6 +696,16 @@ public class BASentinelTest  extends Assert {
      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
     assertEquals("numhits is wrong", 5616, resp.getInt("numhits"));
   }
- 
+  @Test
+  public void test9ManagementBackend() throws Exception {
+  String stringResponse = FileUploadUtils.getStringResponse("http://localhost:8088/segments/");
+  JSONObject json = new JSONObject(stringResponse);
+  String[] names = JSONObject.getNames(json);
+  Arrays.sort(names);
+  assertEquals("[0, 1]", Arrays.toString(names));
+  names = JSONObject.getNames(json.getJSONObject("0"));
+  Arrays.sort(names);
+  assertEquals("[segment1]", Arrays.toString(names));
+  }
   
 }

@@ -5,6 +5,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import scala.actors.threadpool.Arrays;
 
 public class SegmentInfo {
   private String segmentId;
@@ -13,7 +20,6 @@ public class SegmentInfo {
   private long timeCreated;
   private long timeToLive;
   public SegmentInfo() {
-    // TODO Auto-generated constructor stub
   }
   
   public SegmentInfo(String segmentId, String pathUrl, SegmentType type, long timeCreated, long timeToLive) {
@@ -67,7 +73,10 @@ public class SegmentInfo {
     return pathUrl;
   }
   public String[] getPathUrls() {
-    return pathUrl.split(",");
+    if (pathUrl.contains(",")) {
+      return pathUrl.split(",");
+    }
+    return new String[] {pathUrl};
   }
   public void setPathUrl(String pathUrl) {
     this.pathUrl = pathUrl;
@@ -90,5 +99,17 @@ public class SegmentInfo {
   public void setTimeToLive(long timeToLive) {
     this.timeToLive = timeToLive;
   }
+  public JSONObject toJson() {
+    try {
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put("segmentId", segmentId);
+    jsonObject.put(pathUrl, new JSONArray(Arrays.asList(getPathUrls())));
+    jsonObject.put("timeCreated", new SimpleDateFormat("dd/MM/yyyy hh:mm").format(timeCreated));
+    return jsonObject;
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+  
   
 }

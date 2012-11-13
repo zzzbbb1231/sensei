@@ -70,11 +70,20 @@ public class JettyServerHolder implements SenseiPlugin {
     ServletHandler servletHandler = new ServletHandler();
 
     servletHandler.addServletWithMapping(FileManagementServlet.class, "/files/*");
-    servletHandler.getServlets()[0].setInitParameter("directory", directory);
-    servletHandler.getServlets()[0].setInitParameter("clusterName", clusterName);
-    servletHandler.getServlets()[0].setInitParameter("maxPartitionId", String.valueOf(maxPartitionId));
-    servletHandler.getServlets()[0].setInitParameter("zkUrl", zkUrl);
-    servletHandler.getServlets()[0].setInitParameter("baseUrl", baseUrl);
+    servletHandler.addServletWithMapping(RestSegmentServlet.class, "/segments/*");
+    for (ServletHolder holder : servletHandler.getServlets()) {
+      if (holder.getHeldClass() == FileManagementServlet.class) {
+        holder.setInitParameter("directory", directory);
+        holder.setInitParameter("clusterName", clusterName);
+        holder.setInitParameter("maxPartitionId", String.valueOf(maxPartitionId));
+        holder.setInitParameter("zkUrl", zkUrl);
+        holder.setInitParameter("baseUrl", baseUrl);
+      } else if (holder.getHeldClass() == RestSegmentServlet.class) {
+        holder.setInitParameter("maxPartitionId", String.valueOf(maxPartitionId));
+        holder.setInitParameter("zkUrl", zkUrl);
+        holder.setInitParameter("clusterName", clusterName);
+      }
+    }
     server.setHandler(servletHandler);
     try {
       server.start();
