@@ -1,4 +1,4 @@
-package com.senseidb.ba.gazelle.creators;
+package com.senseidb.ba.format;
 
 import java.util.Iterator;
 import java.util.Map;

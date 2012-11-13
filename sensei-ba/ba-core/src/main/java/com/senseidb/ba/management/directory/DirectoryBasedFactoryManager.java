@@ -25,6 +25,7 @@ import proj.zoie.impl.indexing.ZoieConfig;
 
 import com.browseengine.bobo.facets.FacetHandler;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
+import com.senseidb.ba.format.GenericIndexCreator;
 import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
@@ -143,8 +144,9 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
       GazelleIndexSegmentImpl gazelleIndexSegmentImpl = null;
       try {
       File targetDir = new File(explodeDirectory, segmentId);
-      if (fileType == FileType.AVRO) {
-        gazelleIndexSegmentImpl = AvroSegmentCreator.readFromAvroFile(file);
+      if (GenericIndexCreator.canCreateSegment(file.getName())) {
+        gazelleIndexSegmentImpl = GenericIndexCreator.create(file);
+        Assert.state(gazelleIndexSegmentImpl != null, "Couldn't create the index segment out of " + file.getAbsolutePath());
         SegmentPersistentManager.flushToDisk(gazelleIndexSegmentImpl, targetDir);
         new File(targetDir, "finishedLoading").createNewFile();
       } else if (fileType == FileType.COMPRESSED_GAZELLE) {
@@ -280,7 +282,15 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
           continue;
         }
         if (file.getName().endsWith(".avro")) {
-          ret.put(file.getName().substring(0, file.getName().length() - ".avro".length()), new Pair(FileType.AVRO, file));
+          ret.put(file.getName().replaceAll("\\.", "_"), new Pair(FileType.AVRO, file));
+          continue;
+        }
+        if (file.getName().endsWith(".json")) {
+          ret.put(file.getName().replaceAll("\\.", "_"), new Pair(FileType.JSON, file));
+          continue;
+        }
+        if (file.getName().endsWith(".csv")) {
+          ret.put(file.getName().replaceAll("\\.", "_"), new Pair(FileType.CSV, file));
           continue;
         }
         if (file.getName().endsWith(".tar.gz")) {
@@ -291,7 +301,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
       return ret;
     }
     public static enum FileType{
-      AVRO, COMPRESSED_GAZELLE, GAZELLE;
+      AVRO, JSON, CSV, COMPRESSED_GAZELLE, GAZELLE;
     }
     @Override
     public Zoie getZoieInstance(int nodeId, int partitionId) {

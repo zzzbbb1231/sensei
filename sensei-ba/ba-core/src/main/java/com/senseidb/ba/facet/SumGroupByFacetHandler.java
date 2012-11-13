@@ -12,17 +12,13 @@ import com.browseengine.bobo.api.FacetSpec;
 import com.browseengine.bobo.facets.FacetCountCollector;
 import com.browseengine.bobo.facets.FacetCountCollectorSource;
 import com.browseengine.bobo.facets.FacetHandler;
-import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermNumberList;
-import com.browseengine.bobo.facets.data.TermValueList;
 import com.browseengine.bobo.facets.filter.RandomAccessFilter;
-import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
 import com.browseengine.bobo.sort.DocComparatorSource;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
-import com.senseidb.ba.plugins.ZeusFactoryFactory;
 
 /**
  * @author Praveen Neppalli Naga <pneppalli@linkedin.com>

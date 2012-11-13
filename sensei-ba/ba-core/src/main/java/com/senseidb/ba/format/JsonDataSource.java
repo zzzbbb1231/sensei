@@ -1,20 +1,16 @@
-package com.senseidb.ba;
+package com.senseidb.ba.format;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.LineIterator;
 import org.json.JSONArray;
 import org.json.JSONException;
 
 import com.alibaba.fastjson.JSONObject;
-import com.senseidb.ba.gazelle.creators.GazelleDataSource;
 import com.senseidb.util.JSONUtil;
 import com.senseidb.util.JSONUtil.FastJSONObject;
 
@@ -51,9 +47,9 @@ public class JsonDataSource implements GazelleDataSource {
             }
             
         }
-        private Object transform(JSONArray value) throws JSONException {
-            Object[] ret = new Object[value.length()];
-            for(int i =0; i < value.length(); i++) {
+        private Object transform(com.alibaba.fastjson.JSONArray value) throws JSONException {
+            Object[] ret = new Object[value.size()];
+            for(int i =0; i < value.size(); i++) {
                 ret[i] = value.get(i);
             }
             return ret;
@@ -68,8 +64,8 @@ public class JsonDataSource implements GazelleDataSource {
                     Map map = (Map) mapField.get(innerJSONObject);
                     for (Object key : map.keySet()) {
                         Object value = map.get(key);
-                        if (value instanceof JSONArray) {
-                            map.put(key, transform((JSONArray) value)); 
+                        if (value instanceof com.alibaba.fastjson.JSONArray) {
+                            map.put(key, transform((com.alibaba.fastjson.JSONArray) value)); 
                         }
                     }
                     return map;

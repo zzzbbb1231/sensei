@@ -55,6 +55,7 @@ public class DirectoryBasedFactoryManagerTest extends TestCase {
     index2Dir.mkdir();
     SegmentPersistentManager.flushToDisk(AvroSegmentCreator.readFromAvroFile(avroFile), index2Dir);
     directoryBasedFactoryManager.scanForNewSegments();
+    System.out.println("");
     new Wait(){
       public boolean until() {return indexFactory.getIndexReaders().size() == 3;};
     }; 

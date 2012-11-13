@@ -67,7 +67,15 @@ public class ForwardIndexCreator {
             i++;
         }
         if (compressedMultiArray != null) {
-            compressedMultiArray.add(dictionaryCreator.getIndexes(transform((Array) value), columnType));
+            if (value == null) {
+              value = new Object[0];
+            }
+            if (value instanceof Array) {
+              compressedMultiArray.add(dictionaryCreator.getIndexes(transform((Array) value), columnType));
+            } else {
+              compressedMultiArray.add(dictionaryCreator.getIndexes((Object[]) value, columnType));
+            }
+         
         }
     }
     

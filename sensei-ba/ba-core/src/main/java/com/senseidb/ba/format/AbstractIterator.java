@@ -1,4 +1,4 @@
-package com.senseidb.ba;
+package com.senseidb.ba.format;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -15,7 +15,7 @@ import com.senseidb.util.JSONUtil;
 import com.senseidb.util.JSONUtil.FastJSONObject;
 
 public abstract class AbstractIterator implements  Iterator<Map<String, Object>> {
-    private LineIterator lineIterator;
+    protected LineIterator lineIterator;
     
     Map<String, Object> _next;
     public AbstractIterator(File jsonFile)  {

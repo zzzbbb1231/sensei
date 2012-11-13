@@ -229,6 +229,7 @@ public class DictionaryCreator {
     }
 
     public int[] getIndexes(Object[] values, ColumnType columnType) {
+        
         int[] ret = new int[values.length];
         if (columnType == ColumnType.INT_ARRAY) {
             for (int i = 0; i < values.length; i++) {

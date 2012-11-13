@@ -11,7 +11,6 @@ import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
-import com.senseidb.ba.plugins.ZeusFactoryFactory;
 
 /**
  * @author Praveen Neppalli Naga <pneppalli@linkedin.com>

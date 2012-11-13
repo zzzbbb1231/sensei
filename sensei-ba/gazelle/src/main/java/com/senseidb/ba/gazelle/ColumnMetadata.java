@@ -108,6 +108,13 @@ public void setMulti(boolean multi) {
     this.multi = multi;
 }
 
+@Override
+public String toString() {
+  return "ColumnMetadata [_name=" + _name + ", _columnType=" + _columnType + ", _byteLength=" + _byteLength + ", _numberOfElements="
+      + _numberOfElements + ", _numberOfDictionaryValues=" + _numberOfDictionaryValues + ", _bitsPerElement=" + _bitsPerElement
+      + ", _sorted=" + _sorted + ", multi=" + multi + "]";
+}
+
  
   
 }

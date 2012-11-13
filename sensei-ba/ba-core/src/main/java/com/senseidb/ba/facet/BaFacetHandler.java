@@ -43,8 +43,11 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
     if (reader.getFacetData(columnName) != null) {
       return (ZeusDataCache) reader.getFacetData(columnName);
     }
-    IndexSegment offlineSegment =
-        (IndexSegment) reader.getFacetData(bootsrapFacetHandlerName);
+   
+    IndexSegment offlineSegment =(IndexSegment) reader.getFacetData(bootsrapFacetHandlerName);
+    if (offlineSegment.getForwardIndex(columnName) == null) {
+      return null;
+    }
     return new ZeusDataCache(offlineSegment.getForwardIndex(columnName), offlineSegment.getInvertedIndex(columnName));
 
   }
@@ -199,12 +202,16 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
 
   @Override
   public String[] getFieldValues(BoboIndexReader reader, int id) {
-    ForwardIndex forwardIndex = load(reader).getForwardIndex();
+    ZeusDataCache dataCache = load(reader);
+    if (dataCache == null) {
+      return SumGroupByFacetHandler.EMPTY_STRING;
+    }
+    ForwardIndex forwardIndex = dataCache.getForwardIndex();
     if (forwardIndex instanceof SortedForwardIndex) {
       int dictionaryValueId =
           SortedFacetUtils.getDictionaryValueId((SortedForwardIndex) forwardIndex, id);
       if (dictionaryValueId < 0) {
-        return new String[0];
+        return SumGroupByFacetHandler.EMPTY_STRING;
       } else {
         return new String[] { forwardIndex.getDictionary().get(dictionaryValueId) };
       }

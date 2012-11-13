@@ -1,26 +1,28 @@
 package com.senseidb.ba;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.LineIterator;
 import org.junit.Test;
 
+import com.senseidb.ba.format.JsonDataSource;
 import com.senseidb.ba.gazelle.IndexSegment;
-import com.senseidb.ba.gazelle.creators.GenericIndexCreator;
+import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 
 public class OfflineIndexTest extends TestCase {
 
   @Test
   public void test1() throws Exception {
   
-    IndexSegment offlineSegment =  GenericIndexCreator.create(new JsonDataSource(new File(OfflineIndexTest.class.getClassLoader().getResource("data/test_data.json").toURI())));
+    IndexSegment offlineSegment =  com.senseidb.ba.format.GenericIndexCreator.create(new JsonDataSource(new File(OfflineIndexTest.class.getClassLoader().getResource("data/test_data.json").toURI())));
     assertEquals(15000, offlineSegment.getLength());
   }
-
+  @Test
+  public void test2() throws Exception {
+  
+    IndexSegment offlineSegment =  com.senseidb.ba.format.GenericIndexCreator.create(new File(OfflineIndexTest.class.getClassLoader().getResource("data/sample_data.csv").toURI()));
+    assertEquals(10000, offlineSegment.getLength());
+    System.out.println(((GazelleIndexSegmentImpl)offlineSegment).getColumnMetadataMap());
+  }
 }

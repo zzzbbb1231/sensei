@@ -1,15 +1,38 @@
-package com.senseidb.ba.gazelle.creators;
+package com.senseidb.ba.format;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.springframework.util.Assert;
+
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
+import com.senseidb.ba.gazelle.creators.ForwardIndexCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 
 public class GenericIndexCreator {
-    public static GazelleIndexSegmentImpl create(GazelleDataSource gazelleDataSource) throws Exception {
+  public static boolean canCreateSegment(String filename) {
+    return filename.toLowerCase().endsWith(".json") || filename.toLowerCase().endsWith(".avro") || filename.toLowerCase().endsWith(".csv");
+  }  
+  public static GazelleIndexSegmentImpl create(File file) throws Exception {
+    Assert.state(canCreateSegment(file.getName()));
+    if (file.getName().toLowerCase().endsWith(".json")) {
+      return create(new JsonDataSource(file));
+    }
+    if (file.getName().toLowerCase().endsWith(".csv")) {
+      return create(new CSVDataSource(file));
+    }
+    if (file.getName().toLowerCase().endsWith(".avro")) {
+      return AvroSegmentCreator.readFromAvroFile(file);
+    }
+    throw new UnsupportedOperationException(file.getName());
+  }
+  
+  
+  public static GazelleIndexSegmentImpl create(GazelleDataSource gazelleDataSource) throws Exception {
         try {
         Map<String, ColumnType> columnTypes = getColumnTypes(gazelleDataSource.newIterator());
         gazelleDataSource.closeCurrentIterators();
@@ -47,8 +70,11 @@ public class GenericIndexCreator {
           ForwardIndexCreator indexCreator = indexCreators.get(key);
           indexSegmentImpl.getColumnTypes().put(indexCreator.getColumnName(), indexCreator.getColumnType());
           indexSegmentImpl.getDictionaries().put(indexCreator.getColumnName(), indexCreator.getDictionary());
-          System.out.println(key);
+          
           ForwardIndex forwardIndex = indexCreator.produceForwardIndex();
+          if (key.contains("skil")) {
+            System.out.println("");
+          }
           indexSegmentImpl.getColumnMetadataMap().put(indexCreator.getColumnName(), indexCreator.produceColumnMetadata());
           indexSegmentImpl.getForwardIndexes().put(indexCreator.getColumnName(), forwardIndex);
         }
