@@ -104,6 +104,7 @@ public class BASentinelTest  extends Assert {
       resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
     }
     System.out.println(resp.toString(1));
+    Thread.sleep(1000000);
     assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));
   }
 
