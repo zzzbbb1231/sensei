@@ -122,7 +122,7 @@ public class BAStandaloneIntegrationTest extends TestCase {
         "        }" + 
         "    }" + 
         "   ], " +
-        "\"sort\": [{\"dim_memberRegion\": \"asc\"}]," +
+        "\"sort\": [{\"dim_memberIndustry\": \"asc\"}]," +
         "}";
       
     JSONObject resp = null;

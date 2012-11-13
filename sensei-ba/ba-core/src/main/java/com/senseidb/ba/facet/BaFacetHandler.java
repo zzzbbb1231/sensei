@@ -1,11 +1,19 @@
 package com.senseidb.ba.facet;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.ScoreDoc;
+import org.jboss.netty.util.internal.ConcurrentHashMap;
 
 import com.browseengine.bobo.api.BoboIndexReader;
 import com.browseengine.bobo.api.BrowseSelection;
@@ -20,6 +28,7 @@ import com.browseengine.bobo.facets.filter.FacetRangeFilter;
 import com.browseengine.bobo.facets.filter.RandomAccessFilter;
 import com.browseengine.bobo.sort.DocComparator;
 import com.browseengine.bobo.sort.DocComparatorSource;
+import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
@@ -30,7 +39,12 @@ import com.senseidb.ba.util.QueryUtils;
 public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
   private final String bootsrapFacetHandlerName;
   private final String columnName;
-
+  /**
+   * Needed to detect columnType collisions. Because of the schemaless approach the same column for different segments might have different types
+   */
+  private  Set<ColumnType> currentColumnTypes = Collections.synchronizedSet(new HashSet<ColumnType>());
+ 
+   
   public BaFacetHandler(String name, String columnName, String bootsrapFacetHandlerName) {
     super(name);
     this.columnName = columnName;
@@ -43,12 +57,14 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
     if (reader.getFacetData(columnName) != null) {
       return (ZeusDataCache) reader.getFacetData(columnName);
     }
-   
+    
     IndexSegment offlineSegment =(IndexSegment) reader.getFacetData(bootsrapFacetHandlerName);
-    if (offlineSegment.getForwardIndex(columnName) == null) {
+    ForwardIndex forwardIndex = offlineSegment.getForwardIndex(columnName);
+    if (forwardIndex == null) {
       return null;
     }
-    return new ZeusDataCache(offlineSegment.getForwardIndex(columnName), offlineSegment.getInvertedIndex(columnName));
+    currentColumnTypes.add(forwardIndex.getColumnType());  
+    return new ZeusDataCache(forwardIndex, offlineSegment.getInvertedIndex(columnName));
 
   }
 
@@ -157,7 +173,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
     };
 
   }
-
+  
   @Override
   public RandomAccessFilter buildRandomAccessFilter(final String value, Properties selectionProperty) throws IOException {
     String[] vals = new String[2];
@@ -244,11 +260,42 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         final ZeusDataCache zeusDataCache =
             BaFacetHandler.this.load((BoboIndexReader) reader);
         if (zeusDataCache.getForwardIndex() instanceof SortedForwardIndex) {
+          if (currentColumnTypes.size() > 1) {
+            final DecimalFormat formatter =  SortedFacetUtils.formatter.get();
+            return new DocComparator() {
+              @Override
+              public int compare(ScoreDoc doc1, ScoreDoc doc2) {
+                return doc2.doc - doc1.doc;
+              }
+
+              @Override
+              public Comparable value(ScoreDoc doc) {
+                return formatter.format(doc.doc);
+              }
+
+            };
+          }
           return new SortedFacetUtils.SortedDocComparator();
         }
         if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
           final SingleValueForwardIndex singleValueForwardIndex =
               (SingleValueForwardIndex) zeusDataCache.getForwardIndex();
+          if (currentColumnTypes.size() > 1) {
+            //we should always return Strings as we have type collisions for different segments
+            return new DocComparator() {
+              @Override
+              public Comparable value(ScoreDoc doc) {
+                int index = singleValueForwardIndex.getValueIndex(doc.doc);
+                return zeusDataCache.getForwardIndex().getDictionary().get(index);
+              }
+
+              @Override
+              public int compare(ScoreDoc doc1, ScoreDoc doc2) {
+                return singleValueForwardIndex.getValueIndex(doc2.doc)
+                    - singleValueForwardIndex.getValueIndex(doc1.doc);
+              }
+            };
+          } else 
           return new DocComparator() {
             @Override
             public Comparable value(ScoreDoc doc) {
@@ -262,6 +309,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
                   - singleValueForwardIndex.getValueIndex(doc1.doc);
             }
           };
+          
         }
         if (zeusDataCache.getForwardIndex() instanceof MultiValueForwardIndex) {
           throw new UnsupportedOperationException("Sorts are not supported for multi value columns");

@@ -1,23 +1,27 @@
 package com.senseidb.ba.facet;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.ScoreDoc;
 
-import com.browseengine.bobo.api.BoboIndexReader;
 import com.browseengine.bobo.api.BrowseSelection;
 import com.browseengine.bobo.api.FacetSpec;
 import com.browseengine.bobo.docidset.RandomAccessDocIdSet;
-import com.browseengine.bobo.facets.FacetCountCollector;
-import com.browseengine.bobo.facets.FacetCountCollectorSource;
 import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
 import com.browseengine.bobo.sort.DocComparator;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
 
 public class SortedFacetUtils {
+  public static final ThreadLocal<DecimalFormat> formatter = new ThreadLocal<DecimalFormat>() {
+    protected DecimalFormat initialValue() {
+      return new DecimalFormat("0000000000");
+    }
+  };
+
   public static class SortedForwardDocIdSet extends RandomAccessDocIdSet {
     private final int valueId;
     private final SortedForwardIndex forwardIndex;
@@ -33,8 +37,7 @@ public class SortedFacetUtils {
 
     @Override
     public boolean get(int docId) {
-      return forwardIndex.getMinDocIds()[valueId] <= docId
-          && forwardIndex.getMaxDocIds()[valueId] >= docId;
+      return forwardIndex.getMinDocIds()[valueId] <= docId && forwardIndex.getMaxDocIds()[valueId] >= docId;
     }
 
     @Override
@@ -72,13 +75,13 @@ public class SortedFacetUtils {
   public static class RangeSortedForwardDocIdSet extends RandomAccessDocIdSet {
     private final int startValue;
     private final int endValue;
-    
+
     private final SortedForwardIndex forwardIndex;
     private int[] minDocIds;
     private int[] maxDocIds;
     private int startIndex;
     private int endIndex;
-    
+
     public RangeSortedForwardDocIdSet(SortedForwardIndex forwardIndex, int startValue, int endValue) {
       this.forwardIndex = forwardIndex;
       minDocIds = forwardIndex.getMinDocIds();
@@ -91,8 +94,7 @@ public class SortedFacetUtils {
 
     @Override
     public boolean get(int docId) {
-      return (forwardIndex.getMinDocIds()[startValue] <= docId
-          && forwardIndex.getMaxDocIds()[startValue] >= docId);
+      return (forwardIndex.getMinDocIds()[startValue] <= docId && forwardIndex.getMaxDocIds()[startValue] >= docId);
     }
 
     @Override
@@ -135,7 +137,8 @@ public class SortedFacetUtils {
     private int[] minDocIds;
     private int[] maxDocIds;
 
-    public SortedFacetCountCollector(SortedForwardIndex forwardIndex, String name, FacetDataCache fakeCache, int docBase, BrowseSelection sel, FacetSpec ospec) {
+    public SortedFacetCountCollector(SortedForwardIndex forwardIndex, String name, FacetDataCache fakeCache, int docBase,
+        BrowseSelection sel, FacetSpec ospec) {
       super(name, fakeCache, docBase, sel, ospec);
       this.forwardIndex = forwardIndex;
       this.fakeCache = fakeCache;
@@ -149,8 +152,7 @@ public class SortedFacetUtils {
         if (maxDocIds[1] >= docid) {
           currentValueId = 1;
         } else {
-          int index =
-              Arrays.binarySearch(maxDocIds, 1, maxDocIds.length, docid);
+          int index = Arrays.binarySearch(maxDocIds, 1, maxDocIds.length, docid);
           if (index < 0) {
             index = (index + 1) * -1;
           }
@@ -165,8 +167,7 @@ public class SortedFacetUtils {
           return;
         }
         if (docid > maxDocIds[currentValueId]) {
-          int index =
-              Arrays.binarySearch(maxDocIds, currentValueId, maxDocIds.length, docid);
+          int index = Arrays.binarySearch(maxDocIds, currentValueId, maxDocIds.length, docid);
           if (index < 0) {
             index = (index + 1) * -1;
           }
@@ -206,8 +207,7 @@ public class SortedFacetUtils {
   }
 
   public static int getDictionaryValueId(SortedForwardIndex forwardIndex, int docId) {
-    int index =
-        Arrays.binarySearch(forwardIndex.getMaxDocIds(), 1, forwardIndex.getMaxDocIds().length, docId);
+    int index = Arrays.binarySearch(forwardIndex.getMaxDocIds(), 1, forwardIndex.getMaxDocIds().length, docId);
     if (index < 0) {
       index = (index + 1) * -1;
     }

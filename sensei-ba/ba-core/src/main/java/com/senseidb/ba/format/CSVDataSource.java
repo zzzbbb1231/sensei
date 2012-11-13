@@ -57,8 +57,12 @@ public class CSVDataSource implements GazelleDataSource {
              try {
                 int i = 0; 
                for (String value: line.split(",")) {
-                 
-                    ret.put(fields.get(i), transformValue(value));
+                    
+                    String field = fields.get(i);
+                   /* if ("dim_memberIndustry".equals(field) && ! (transformValue(value) instanceof Number)) {
+                      value = "0";
+                    }*/
+                    ret.put(field, transformValue(value));
                  
                   i++;
                 }

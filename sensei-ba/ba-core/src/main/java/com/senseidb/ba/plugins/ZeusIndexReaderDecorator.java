@@ -3,6 +3,7 @@ package com.senseidb.ba.plugins;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +23,8 @@ import com.senseidb.search.node.SenseiIndexReaderDecorator;
 public class ZeusIndexReaderDecorator extends SenseiIndexReaderDecorator implements SenseiPlugin {
   final static String[] emptyString = new String[0];
   private final List customFacetHandlers;
+  private final Map<String, BaFacetHandler> facetHandlers = new HashMap<String, BaFacetHandler>();
+  
   @SuppressWarnings("rawtypes")
   public ZeusIndexReaderDecorator(List<FacetHandler> customFacetHandlers) {
     this.customFacetHandlers = customFacetHandlers;
@@ -29,6 +32,16 @@ public class ZeusIndexReaderDecorator extends SenseiIndexReaderDecorator impleme
   public ZeusIndexReaderDecorator() {
     this(Collections.EMPTY_LIST);
   }
+  public synchronized BaFacetHandler getFacetHandler(String columnName) {
+    BaFacetHandler ret = facetHandlers.get(columnName);
+    if (ret == null) {
+      ret = new BaFacetHandler(columnName, columnName, IndexSegment.class.getSimpleName());
+      facetHandlers.put(columnName, ret);
+    }
+    return ret;
+  }
+  
+  
   @Override
 public BoboIndexReader decorate(ZoieIndexReader<BoboIndexReader> zoieReader) throws IOException {
   SegmentToZoieReaderAdapter adapter = (SegmentToZoieReaderAdapter<?>)zoieReader;
@@ -37,7 +50,7 @@ public BoboIndexReader decorate(ZoieIndexReader<BoboIndexReader> zoieReader) thr
   
  
   for (String column : offlineSegment.getColumnTypes().keySet()) {
-    facetHandlers.add(new BaFacetHandler(column, column, IndexSegment.class.getSimpleName()));
+    facetHandlers.add(getFacetHandler(column));
   }
   if (customFacetHandlers != null) {
     facetHandlers.addAll((List) customFacetHandlers);

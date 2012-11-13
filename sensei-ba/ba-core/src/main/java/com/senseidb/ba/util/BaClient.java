@@ -31,7 +31,9 @@ public class BaClient {
     if (!indexDir.exists()) {
       indexDir.mkdirs();
     }
-    ZkManager zkManager = new ZkManager("localhost:2121", args11[0]);
+    //eat1-app184.stg.linkedin.com:10000
+    //ZkManager zkManager = new ZkManager("localhost:2121", args11[0]);
+    ZkManager zkManager = new ZkManager("eat1-app266.stg.linkedin.comprint:10000", "adsClickEvents");
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     System.out.println(usage);
     while(true) {

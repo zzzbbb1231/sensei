@@ -149,8 +149,7 @@ public class SegmentTracker {
             } else {
               logger.info("Was able to succesfully rename the dir to match the segmentId - " + segmentId);
             }
-          }
-          
+          }          
         }
         new File(file, "finishedLoading").createNewFile();
         GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DirectMemory);

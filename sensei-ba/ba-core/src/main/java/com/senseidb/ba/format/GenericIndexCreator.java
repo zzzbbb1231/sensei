@@ -35,6 +35,7 @@ public class GenericIndexCreator {
   public static GazelleIndexSegmentImpl create(GazelleDataSource gazelleDataSource) throws Exception {
         try {
         Map<String, ColumnType> columnTypes = getColumnTypes(gazelleDataSource.newIterator());
+        //System.out.println("!!" + gazelleDataSource.toString() + " - " + columnTypes);
         gazelleDataSource.closeCurrentIterators();
         Map<String, ForwardIndexCreator> indexCreators = new HashMap<String, ForwardIndexCreator>(columnTypes.size());
         for (String  key : columnTypes.keySet()) {

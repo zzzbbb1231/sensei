@@ -150,10 +150,19 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
         SegmentPersistentManager.flushToDisk(gazelleIndexSegmentImpl, targetDir);
         new File(targetDir, "finishedLoading").createNewFile();
       } else if (fileType == FileType.COMPRESSED_GAZELLE) {
-        TarGzCompressionUtils.unTar(file, explodeDirectory);       
+        List<File> uncompressedFiles = TarGzCompressionUtils.unTar(file, explodeDirectory);       
         Thread.sleep(100);
         if (!targetDir.exists()) {
-          throw new IllegalStateException("The index directory hasn't been created");
+          if (uncompressedFiles.size() > 0) {
+            File srcDir = uncompressedFiles.get(0);
+            logger.warn("The directory - " + file.getAbsolutePath() + " doesn't exist. Would try to rename the dir - " + srcDir.getAbsolutePath() + " to it. The segment id is - " + segmentId);
+            FileUtils.moveDirectory(srcDir, targetDir);
+            if (!new File(explodeDirectory, segmentId).exists()) {
+              throw new IllegalStateException("The index directory hasn't been created");
+            } else {
+              logger.info("Was able to succesfully rename the dir to match the segmentId - " + segmentId);
+            }
+          }
         }
         new File(targetDir, "finishedLoading").createNewFile();
         gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, ReadMode.DirectMemory);
