@@ -27,6 +27,8 @@ import com.browseengine.bobo.facets.impl.PathFacetHandler;
 
 import com.senseidb.indexing.DefaultSenseiInterpreter;
 import com.senseidb.indexing.MetaType;
+import com.senseidb.search.query.filters.FacetSelectionFilterConstructor;
+import com.senseidb.search.query.filters.FilterConstructor;
 import com.senseidb.search.req.SenseiJSONQuery;
 import com.senseidb.search.req.SenseiRequest;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
@@ -513,6 +515,7 @@ public class RequestConverter2 {
   {
     // we process "term", "terms", "range", "path", "custom" selection types;
 
+    BrowseSelection sel = null;
     if(RequestConverter2.SELECTIONS_TERM.equals(type))
     {
       Iterator<String> iter = jsonSel.keys();
@@ -522,10 +525,11 @@ public class RequestConverter2 {
         String value = jsonParams.optString(RequestConverter2.SELECTIONS_TERM_VALUE, null);
         if(facet!= null && value != null)
         {
-          BrowseSelection sel = new BrowseSelection(facet);
+          sel = new BrowseSelection(facet);
           String[] vals = new String[1];
           vals[0] = value;
           sel.setValues(formatValues(facet, vals, facetInfoMap));
+          updateProperties(sel, jsonParams.optJSONObject(FilterConstructor.PARAMS_PARAM));
           req.addSelection(sel);
         }
       }
@@ -541,7 +545,7 @@ public class RequestConverter2 {
         String operator = jsonParams.optString(RequestConverter2.SELECTIONS_TERMS_OPERATOR,  RequestConverter2.SELECTIONS_TERMS_OPERATOR_OR);
         if(facet!= null && (values != null || excludes != null))
         {
-          BrowseSelection sel = new BrowseSelection(facet);
+          sel = new BrowseSelection(facet);
           ValueOperation op = ValueOperation.ValueOperationOr;
           if(RequestConverter2.SELECTIONS_TERMS_OPERATOR_AND.equals(operator))
             op = ValueOperation.ValueOperationAnd;
@@ -556,6 +560,7 @@ public class RequestConverter2 {
 
           sel.setSelectionOperation(op);
           req.addSelection(sel);
+          updateProperties(sel, jsonParams.optJSONObject(FilterConstructor.PARAMS_PARAM));
         }
       }
     }
@@ -579,11 +584,12 @@ public class RequestConverter2 {
         String range = left + lower + " TO " + upper + right;
         if(facet!= null )
         {
-          BrowseSelection sel = new BrowseSelection(facet);
+          sel = new BrowseSelection(facet);
           String[] vals = new String[1];
           vals[0] = range;
           sel.setValues(vals);
           req.addSelection(sel);
+          updateProperties(sel, jsonParams.optJSONObject(FilterConstructor.PARAMS_PARAM));
         }
       }
     }
@@ -597,7 +603,7 @@ public class RequestConverter2 {
         String value = jsonParams.optString(RequestConverter2.SELECTIONS_PATH_VALUE, null);
 
         if(facet != null && value != null){
-          BrowseSelection sel = new BrowseSelection(facet);
+          sel = new BrowseSelection(facet);
           String[] vals = new String[1];
           vals[0] = value;
           sel.setValues(vals);
@@ -613,6 +619,7 @@ public class RequestConverter2 {
           }
 
           req.addSelection(sel);
+          updateProperties(sel, jsonParams.optJSONObject(FilterConstructor.PARAMS_PARAM));
         }
       }
     }
@@ -624,6 +631,14 @@ public class RequestConverter2 {
     {
       ;
     }
+   
+  }
+
+  private static void updateProperties(BrowseSelection sel, JSONObject params) {
+   if (params != null) {
+     sel.getSelectionProperties().putAll(FilterConstructor.convertParams(params));
+   }
+    
   }
 
   private static Map<String, String> createFacetProperties(JSONObject facetJson) {
@@ -633,7 +648,7 @@ public class RequestConverter2 {
       return ret;
     }
     Iterator<String> iter = params.keys();
-    if(iter.hasNext()){
+    while(iter.hasNext()){
       String key = iter.next();
       Object val = params.opt(key);
       if (val != null) {
