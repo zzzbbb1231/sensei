@@ -256,7 +256,10 @@ public class TestSensei extends TestCase {
     assertEquals("numhits is wrong", 0, res5.getInt("numhits"));
   }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> fc3f4988cf750fcbf33523db3b336915b6198611
   public void testBqlRelevance1() throws Exception
   {
     logger.info("Executing test case testBqlRelevance1");
@@ -781,6 +784,16 @@ public class TestSensei extends TestCase {
     JSONObject firstHit = hits.getJSONObject(0);
     assertTrue("groupfield is wrong", "color".equals(firstHit.getString("groupfield")) || "virtual_groupid_fixedlengthlongarray".equals(firstHit.getString("groupfield")));
     assertTrue("no group hits", firstHit.getJSONArray("grouphits") != null);
+  }
+  public void testFallbackGroupByWithDistinct() throws Exception
+  {
+    logger.info("executing test case testFallbackGroupByWithDistinct");
+    String req = "{\"bql\": \"SELECT * FROM sensei DISTINCT category GROUP BY virtual_groupid_fixedlengthlongarray OR color TOP 2 ORDER BY color ASC LIMIT 0, 10\"}";
+    JSONObject res = search(new JSONObject(req));
+    JSONArray hits = res.getJSONArray("hits");
+    JSONObject firstHit = hits.getJSONObject(0);
+    assertTrue("groupfield is wrong", "color".equals(firstHit.getString("groupfield")) || "virtual_groupid_fixedlengthlongarray".equals(firstHit.getString("groupfield")));
+    assertTrue("should be 1 group hit", firstHit.getJSONArray("grouphits").length() == 1);
   }
   public void testGetStoreRequest() throws Exception
   {
