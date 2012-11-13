@@ -1,6 +1,7 @@
 package com.senseidb.ba.management;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.I0Itec.zkclient.ZkClient;
@@ -59,11 +60,41 @@ public class ZkManager {
       }
       return ret;
     }
-    public void removeSegment(int partition, String segmentId) {
+    public List<String> getPartitions() {
+      List<String> ret = new ArrayList<String>();
+      if (!zkClient.exists(ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName)) {
+        return Collections.EMPTY_LIST;
+      }
+      List<String> children = zkClient.getChildren(ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName);
+      for (String partition : children) {
+        ret.add(partition);
+      }
+      return ret;
+    }
+    public List<String> getSegments(String partition) {
+        String segmentPath =ZookeeperTracker.ZK_BASE_PATH + "/"  + clusterName + "/" + partition;
+        if (!zkClient.exists(segmentPath)) {
+          return Collections.EMPTY_LIST;
+        }
+        List<String> children = zkClient.getChildren(segmentPath);
+        return children;
+    }
+    public SegmentInfo getSegmentInfo(String partition, String segmentId) {
+      String segmentPath =ZookeeperTracker.ZK_BASE_PATH + "/"  + clusterName + "/" + partition  + "/" + segmentId;
+      if (zkClient.exists(segmentPath)) {
+        SegmentInfo segmentInfo = SegmentInfo.fromBytes((byte[])zkClient.readData(segmentPath));
+        return segmentInfo;
+      }
+      return null;
+    }
+    
+    
+    public boolean removeSegment(int partition, String segmentId) {
       String segmentPath =ZookeeperTracker.ZK_BASE_PATH + "/"  + clusterName + "/" + partition  + "/" + segmentId;
       if (zkClient.exists(segmentPath)) {
         zkClient.deleteRecursive(segmentPath);
+        return true;
       }
-    
+    return false;
     }
 }
