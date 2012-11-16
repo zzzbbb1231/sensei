@@ -120,47 +120,11 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         final ZeusDataCache zeusDataCache = BaFacetHandler.this.load(reader);
         final int startIndex;
         final int endIndex;
-        int sIndex;
-        int eIndex;
         
-        if (values[0].equals("*")) {
-          sIndex = 0;
-        } else {
-          sIndex= zeusDataCache.getDictionary().indexOf(values[0]);
-        }
-        if (values[1].equals("*")) {
-          eIndex = zeusDataCache.getDictionary().size() - 1;
-        } else {
-          eIndex = zeusDataCache.getDictionary().indexOf(values[1]);
-        }
+        int [] rangeIndex = QueryUtils.getRangeIndexes(zeusDataCache, value, values);
+        startIndex = rangeIndex[0];
+        endIndex = rangeIndex[1];
         
-        if (sIndex < 0) {
-          sIndex = -(sIndex + 1);
-        } else {
-          switch(QueryUtils.getStarIndexRangeType(value)) {
-            case EXCLUSIVE:
-              if (!values[0].equals("*")) {
-                sIndex += 1;
-              }
-            break;
-          }
-        }
-        
-        if (eIndex < 0) {
-          eIndex = -(eIndex + 1);
-          eIndex = Math.max(0, eIndex - 1);
-        } else {
-          switch(QueryUtils.getEndIndexRangeType(value)) {
-            case EXCLUSIVE:
-              if (!values[1].equals("*")) {
-                eIndex -= 1;
-              }
-            break;  
-          }
-        }
-        
-        startIndex = sIndex;
-        endIndex = eIndex;
         if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
           return new FacetUtils.RangeForwardDocIdSet(((SingleValueForwardIndex) zeusDataCache.getForwardIndex()), startIndex, endIndex);
         } else if (zeusDataCache.getForwardIndex() instanceof MultiValueForwardIndex) {
