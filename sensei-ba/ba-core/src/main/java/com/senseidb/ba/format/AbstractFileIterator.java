@@ -14,11 +14,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.senseidb.util.JSONUtil;
 import com.senseidb.util.JSONUtil.FastJSONObject;
 
-public abstract class AbstractIterator implements  Iterator<Map<String, Object>> {
+public abstract class AbstractFileIterator extends AbstractGazelleIterator  {
     protected LineIterator lineIterator;
     
     Map<String, Object> _next;
-    public AbstractIterator(File jsonFile)  {
+    public AbstractFileIterator(File jsonFile)  {
         try { 
         lineIterator = FileUtils.lineIterator(jsonFile);
              
@@ -39,7 +39,11 @@ public abstract class AbstractIterator implements  Iterator<Map<String, Object>>
     }
 
     protected abstract Map<String, Object> processLine(String line);
+    @Override
+    public void close() {
+      lineIterator.close();
     
+    }
 
     @Override
     public boolean hasNext() {
@@ -58,15 +62,6 @@ public abstract class AbstractIterator implements  Iterator<Map<String, Object>>
         ret = _next;
         _next = null;
         return ret;
-    }
-
-    @Override
-    public void remove() {
-        // TODO Auto-generated method stub
-        
-    }
-    public void close() {
-        lineIterator.close();
     }
 }
 

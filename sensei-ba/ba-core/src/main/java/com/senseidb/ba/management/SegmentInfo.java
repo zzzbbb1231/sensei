@@ -103,7 +103,7 @@ public class SegmentInfo {
     try {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put("segmentId", segmentId);
-    jsonObject.put(pathUrl, new JSONArray(Arrays.asList(getPathUrls())));
+    jsonObject.put("pathUrl", new JSONArray(Arrays.asList(getPathUrls())));
     jsonObject.put("timeCreated", new SimpleDateFormat("dd/MM/yyyy hh:mm").format(timeCreated));
     return jsonObject;
     } catch (Exception ex) {

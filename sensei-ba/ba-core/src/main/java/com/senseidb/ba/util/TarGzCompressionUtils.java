@@ -137,6 +137,10 @@ public class TarGzCompressionUtils {
               }
           } else {
             logger.debug(String.format("Creating output file %s.", outputFile.getAbsolutePath()));
+            File directory = outputFile.getParentFile();
+            if (!directory.exists()) {
+              directory.mkdirs();
+            }
             OutputStream outputFileStream = null;  
             try {
               outputFileStream = new FileOutputStream(outputFile); 

@@ -32,7 +32,7 @@ public class CSVDataSource implements GazelleDataSource {
       }
       
   }
-  public static class CSVIterator extends AbstractIterator {
+  public static class CSVIterator extends AbstractFileIterator {
       private List<String> fields = new ArrayList<String>();
     
       public CSVIterator(File csvFile)  {
@@ -51,6 +51,7 @@ public class CSVDataSource implements GazelleDataSource {
            }
          }
       }     
+      
       protected Map<String, Object> processLine(String line) {
           if (line != null && !StringUtils.isEmpty(line)) {
             Map<String, Object> ret = new HashMap<String, Object>(fields.size());

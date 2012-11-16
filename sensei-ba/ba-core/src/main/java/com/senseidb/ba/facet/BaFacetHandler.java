@@ -32,8 +32,10 @@ import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
+import com.senseidb.ba.gazelle.SecondarySortedForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
+import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl;
 import com.senseidb.ba.util.QueryUtils;
 
 public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
@@ -87,32 +89,38 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         if (index < 0) {
           return EmptyDocIdSet.getInstance();
         }
-        if (zeusDataCache.getForwardIndex() instanceof SortedForwardIndex) {
-          return new SortedFacetUtils.SortedForwardDocIdSet((SortedForwardIndex) zeusDataCache.getForwardIndex(), index);
-        }
-        // Go by inverted index path
-        if (zeusDataCache.invertedIndexPresent(index)) {
-          final DocIdSet invertedIndex =
-              zeusDataCache.getInvertedIndexes()[index];
-          return new FacetUtils.InvertedIndexDocIdSet(zeusDataCache, invertedIndex, index);
-        } else if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
-          return new FacetUtils.ForwardDocIdSet(((SingleValueForwardIndex) zeusDataCache.getForwardIndex()), index);
-        } else if (zeusDataCache.getForwardIndex() instanceof MultiValueForwardIndex) {
-          return new MultiFacetUtils.MultiForwardDocIdSet(((MultiValueForwardIndex) zeusDataCache.getForwardIndex()), index);
-        }
-
-        throw new UnsupportedOperationException();
+        return BaFacetHandler.this.getDocIdSet(zeusDataCache, index);
       }
+
+     
     };
   }
+  public RandomAccessDocIdSet getDocIdSet(final ZeusDataCache zeusDataCache, final int index) {
+    if (zeusDataCache.getForwardIndex() instanceof SortedForwardIndex) {
+      return new SortedFacetUtils.SortedForwardDocIdSet((SortedForwardIndex) zeusDataCache.getForwardIndex(), index);
+    }
+    // Go by inverted index path
+    if (zeusDataCache.invertedIndexPresent(index)) {
+      final DocIdSet invertedIndex =
+          zeusDataCache.getInvertedIndexes()[index];
+      return new FacetUtils.InvertedIndexDocIdSet(zeusDataCache, invertedIndex, index);
+    } else if (zeusDataCache.getForwardIndex() instanceof SecondarySortedForwardIndexImpl) {
+      SecondarySortedForwardIndexImpl secondarySortedForwardIndexImpl = (SecondarySortedForwardIndexImpl) zeusDataCache.getForwardIndex();
+      return new SortedFacetUtils.SecondarySortedForwardDocIdSet(secondarySortedForwardIndexImpl.getSortedRegions(), index);
+    } else if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
+      return new FacetUtils.ForwardDocIdSet(((SingleValueForwardIndex) zeusDataCache.getForwardIndex()), index);
+    } else if (zeusDataCache.getForwardIndex() instanceof MultiValueForwardIndex) {
+      return new MultiFacetUtils.MultiForwardDocIdSet(((MultiValueForwardIndex) zeusDataCache.getForwardIndex()), index);
+    }
 
+    throw new UnsupportedOperationException();
+  }
   private RandomAccessFilter getRangeRandomAccessFilter(final String value, final String[] values, Properties selectionProperty) {
     return new RandomAccessFilter() {
       @Override
       public double getFacetSelectivity(BoboIndexReader reader) {
         final ZeusDataCache zeusDataCache = BaFacetHandler.this.load(reader);
-        return ((double) zeusDataCache.getForwardIndex().getDictionary().size())
-            / zeusDataCache.getForwardIndex().getLength();
+        return 0.3;
       }
 
       @Override
@@ -161,12 +169,20 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         
         startIndex = sIndex;
         endIndex = eIndex;
-        if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
-          return new FacetUtils.RangeForwardDocIdSet(((SingleValueForwardIndex) zeusDataCache.getForwardIndex()), startIndex, endIndex);
-        } else if (zeusDataCache.getForwardIndex() instanceof MultiValueForwardIndex) {
-          return new MultiFacetUtils.RangeMultiForwardDocIdSet(((MultiValueForwardIndex) zeusDataCache.getForwardIndex()), startIndex, endIndex);
+        if (startIndex > eIndex) {
+          return EmptyDocIdSet.getInstance();
+        }
+        if (startIndex == eIndex) {
+          return BaFacetHandler.this.getDocIdSet(zeusDataCache, startIndex);
         } else if (zeusDataCache.getForwardIndex() instanceof SortedForwardIndex) {
           return new SortedFacetUtils.RangeSortedForwardDocIdSet((SortedForwardIndex) zeusDataCache.getForwardIndex(), startIndex, endIndex);
+        } else    if (zeusDataCache.getForwardIndex() instanceof SecondarySortedForwardIndex) {
+          SecondarySortedForwardIndex secondarySortedForwardIndex = (SecondarySortedForwardIndex) zeusDataCache.getForwardIndex();
+          return new SortedFacetUtils.SecondarySortedRangeForwardDocIdSet(secondarySortedForwardIndex.getSortedRegions(), startIndex, endIndex);
+        } else if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
+          return new FacetUtils.RangeForwardDocIdSet(((SingleValueForwardIndex) zeusDataCache.getForwardIndex()), startIndex, endIndex);
+        }  else if (zeusDataCache.getForwardIndex() instanceof MultiValueForwardIndex) {
+          return new MultiFacetUtils.RangeMultiForwardDocIdSet(((MultiValueForwardIndex) zeusDataCache.getForwardIndex()), startIndex, endIndex);
         }
         return null;
       }
@@ -204,6 +220,10 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         final FacetDataCache fakeCache = dataCache.getFakeCache();
         if (forwardIndex instanceof SortedForwardIndex) {
           return new SortedFacetUtils.SortedFacetCountCollector((SortedForwardIndex) forwardIndex, getName(), fakeCache, docBase, sel, fspec);
+        }
+        if (forwardIndex instanceof SecondarySortedForwardIndex) {
+          SecondarySortedForwardIndex secondarySortedForwardIndex = (SecondarySortedForwardIndex) forwardIndex;
+          return new SortedFacetUtils.SecondarySortFacetCountCollector(secondarySortedForwardIndex.getSortedRegions(), getName(), fakeCache, docBase, sel, fspec);
         }
         if (forwardIndex instanceof SingleValueForwardIndex) {
           return new FacetUtils.ForwardIndexCountCollector(getName(), dataCache.getFakeCache(), (SingleValueForwardIndex) forwardIndex, docBase, sel, fspec);

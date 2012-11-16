@@ -13,6 +13,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 import org.json.JSONObject;
 
+import com.senseidb.ba.format.GenericIndexCreator;
 import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
@@ -27,7 +28,7 @@ public class ZkSegmentCreator {
 
   public static void main(String[] args) throws Exception {
     //zkManager = new ZkManager("localhost:2181", "ba-server");
-    GazelleIndexSegmentImpl indexSegmentImpl = new AvroSegmentCreator().readFromAvroFile(new File("/tmp/ba-index-standalone/part-1.avro"));
+    GazelleIndexSegmentImpl indexSegmentImpl = GenericIndexCreator.create(new File("/tmp/ba-index-standalone/part-1.avro"), "dim_memberIndustry");
    
     File indexDir = new File("testIndex");
     SingleNodeStarter.rmrf(indexDir);

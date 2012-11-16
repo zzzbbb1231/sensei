@@ -107,7 +107,6 @@ public class AvroSegmentCreator {
         
        }
       dataFileReader.close();
-      System.out.println("Created the segment");
       GazelleIndexSegmentImpl indexSegmentImpl = new GazelleIndexSegmentImpl();
       for (int j = 0; j < creators.length; j++) {
         indexSegmentImpl.getColumnTypes().put(creators[j].getColumnName(), creators[j].getColumnType());

@@ -26,7 +26,8 @@ public class MetadataPersistentManager {
     PropertiesConfiguration config = new PropertiesConfiguration();
     try {
       for (String column : metadataMap.keySet()) {
-        metadataMap.get(column).addToConfig(config);
+        ColumnMetadata columnMetadata = metadataMap.get(column);       
+        columnMetadata.addToConfig(config);
       }
     } finally {
       config.save(ds);
@@ -51,6 +52,7 @@ public class MetadataPersistentManager {
       metadata.setColumnType(ColumnType.valueOfStr(config.getString("column." + columnName + ".columnType")));
       metadata.setSorted(config.getBoolean("column." + columnName + ".sorted"));
       metadata.setMulti(config.getBoolean("column." + columnName + ".multi"));
+      metadata.setSecondarySorted(config.getBoolean("column." + columnName + ".secondarySorted", false));
       metadata.setName(columnName);
       if (!columnMetadataMap.containsKey(columnName)) {
         columnMetadataMap.put(columnName, metadata);

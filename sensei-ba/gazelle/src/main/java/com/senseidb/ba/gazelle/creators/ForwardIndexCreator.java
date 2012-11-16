@@ -15,6 +15,7 @@ import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;
+import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 import com.senseidb.ba.gazelle.utils.multi.CompressedMultiArray;
@@ -27,6 +28,7 @@ public class ForwardIndexCreator {
     private int count;
     private CompressedIntArray compressedIntArray;
     private SortedForwardIndexImpl sortedForwardIndexImpl;
+    private SecondarySortedForwardIndexImpl secondarySortedForwardIndexImpl;
     private CompressedMultiArray compressedMultiArray;
     private int i = 0;
     private ColumnMetadata metadata;
@@ -48,12 +50,14 @@ public class ForwardIndexCreator {
     public TermValueList produceDictionary(int count) {
         this.count = count;
         dictionary = dictionaryCreator.produceDictionary();
-        if (!dictionaryCreator.isSorted() && !columnType.isMulti()) {
-            compressedIntArray = new CompressedIntArray(count, CompressedIntArray.getNumOfBits(dictionary.size()), getByteBuffer(count, dictionary.size()));
+        if (dictionaryCreator.isSecondarySorted(dictionary.size())) {
+            secondarySortedForwardIndexImpl = new SecondarySortedForwardIndexImpl(dictionary);
         } else if (dictionaryCreator.isSorted()) {
             sortedForwardIndexImpl = new SortedForwardIndexImpl(dictionary, new int[dictionary.size()], new int[dictionary.size()], count, MetadataCreator.createMetadata(columnName, dictionary, columnType, count, true));
         } else if (columnType.isMulti()) {
             compressedMultiArray = new CompressedMultiArray(CompressedIntArray.getNumOfBits(dictionary.size()), count * 2);
+        } else {
+          compressedIntArray = new CompressedIntArray(count, CompressedIntArray.getNumOfBits(dictionary.size()), getByteBuffer(count, dictionary.size()));
         }
         return dictionary;
     }
@@ -66,6 +70,10 @@ public class ForwardIndexCreator {
             sortedForwardIndexImpl.add(i, dictionaryCreator.getIndex(value, columnType));
             i++;
         }
+        if (secondarySortedForwardIndexImpl != null) {
+          secondarySortedForwardIndexImpl.add(i, dictionaryCreator.getIndex(value, columnType));
+          i++;
+      }
         if (compressedMultiArray != null) {
             if (value == null) {
               value = new Object[0];
@@ -109,6 +117,11 @@ public class ForwardIndexCreator {
             sortedForwardIndexImpl.seal();
             return sortedForwardIndexImpl;
         }
+        if (secondarySortedForwardIndexImpl != null) {
+          metadata = MetadataCreator.createSecondarySortMetadata(columnName, dictionary, columnType, count);
+          secondarySortedForwardIndexImpl.seal(metadata);
+          return secondarySortedForwardIndexImpl;
+      }
         if (compressedMultiArray != null) {
             compressedMultiArray.initSkipLists();
             metadata = MetadataCreator.createMultiMetadata(columnName, dictionary, columnType, count);

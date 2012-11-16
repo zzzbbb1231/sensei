@@ -146,6 +146,10 @@ public class FileManagementServlet extends HttpServlet {
         }
 
         File file = new File(directory, item.getFieldName());
+        if (file.exists()) {
+          logger.warn("The file " + file.getAbsolutePath() + " already exists. Replcaing it with the new one");
+          FileUtils.deleteQuietly(file);
+        }
         item.write(file);
         notifyZookeeperNewFileCreated(file);
         logger.info("Finished uploading file - " + item.getFieldName());

@@ -82,7 +82,8 @@ public class MultiChunkIterator implements MultiFacetIterator {
           offset++;
           next = openBitSet.nextSetBit(index + 1);
         }
-       if (compressedIntArray.readInt(index) >= startIndex && compressedIntArray.readInt(index) <= endIndex) {
+       int valueId = compressedIntArray.readInt(index);
+      if (valueId >= startIndex && valueId <= endIndex) {
          return fromIndex + offset;
         } 
        index++;
