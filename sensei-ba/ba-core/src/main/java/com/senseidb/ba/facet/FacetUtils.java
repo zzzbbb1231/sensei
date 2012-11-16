@@ -140,9 +140,9 @@ public class FacetUtils {
 
     @Override
     public boolean get(int docId) {
-      int valueIndex = forwardIndex.getValueIndex(docId);
-      return valueIndex >= startIndex
-          || valueIndex <= endIndex;
+      int docIdfromIndex = forwardIndex.getValueIndex(docId);
+      return docIdfromIndex >= startIndex
+          || docIdfromIndex <= endIndex;
     }
   }
 

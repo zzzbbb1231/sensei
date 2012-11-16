@@ -351,7 +351,8 @@ public class SortedFacetUtils {
 
     @Override
     public boolean get(int docId) {
-      return (forwardIndex.getMinDocIds()[startValue] <= docId && forwardIndex.getMaxDocIds()[startValue] >= docId);
+      int nextDocId = forwardIndex.getMinDocIds()[startValue];
+      return (nextDocId <= docId && nextDocId >= docId);
     }
 
     @Override
