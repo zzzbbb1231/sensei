@@ -18,6 +18,7 @@ public class ColumnMetadata {
   private int _bitsPerElement;
   private boolean _sorted;
   private boolean multi;
+  private boolean secondarySorted;
  
   
   public ColumnMetadata(String name, ColumnType type) {
@@ -34,8 +35,9 @@ public class ColumnMetadata {
     configuration.setProperty("column." + _name + ".numberOfDictionaryValues", _numberOfDictionaryValues);
     configuration.setProperty("column." + _name + ".bitsPerElement", _bitsPerElement);
     configuration.setProperty("column." + _name + ".sorted", _sorted);
+    configuration.setProperty("column." + _name + ".columnType", _columnType);
     configuration.setProperty("column." + _name + ".multi", multi);
-    configuration.setProperty("column." + _name + ".columnType", _columnType.toString());
+    configuration.setProperty("column." + _name + ".secondarySorted", secondarySorted);
   }
 
   public String getName() {
@@ -108,11 +110,21 @@ public void setMulti(boolean multi) {
     this.multi = multi;
 }
 
+public boolean isSecondarySorted() {
+  return secondarySorted;
+}
+
 @Override
 public String toString() {
   return "ColumnMetadata [_name=" + _name + ", _columnType=" + _columnType + ", _byteLength=" + _byteLength + ", _numberOfElements="
       + _numberOfElements + ", _numberOfDictionaryValues=" + _numberOfDictionaryValues + ", _bitsPerElement=" + _bitsPerElement
-      + ", _sorted=" + _sorted + ", multi=" + multi + "]";
+      + ", _sorted=" + _sorted + ", multi=" + multi +  ", secondarySorted=" + secondarySorted + "]";
+}
+
+public void setSecondarySorted(boolean secondarySorted) {
+  this.secondarySorted = secondarySorted;
+
+  
 }
 
  

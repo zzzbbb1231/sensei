@@ -153,8 +153,8 @@ public class SinglePassIndexCreator {
         }
         @Override
         public int compare(int k1, int k2) {
-          if (arr[k1] > arr[k2]) return 1;
-          if (arr[k2] > arr[k1]) return -1;
+          if (arr[permutationArray[k1]] > arr[permutationArray[k2]]) return 1;
+          if (arr[permutationArray[k2]] > arr[permutationArray[k1]]) return -1;
           return 0;
         }
       }, new Swapper() {

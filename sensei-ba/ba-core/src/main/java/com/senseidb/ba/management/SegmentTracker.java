@@ -86,8 +86,11 @@ public class SegmentTracker {
     executorService.submit(new Runnable() {
       @Override
       public void run() {
-        instantiateSegment(segmentId, segmentInfo);
-       
+        try {
+          instantiateSegment(segmentId, segmentInfo);
+        } catch (Exception ex) {
+          logger.error("Couldn't instantiate the segment", ex);
+        }
       }
     });
   }
@@ -95,10 +98,9 @@ public class SegmentTracker {
   public void instantiateSegment(String segmentId, SegmentInfo segmentInfo) {
     String uri = segmentInfo.getPathUrl();
     if (uri.contains(",")) {
-      String[] uris =uri.split(",");
-      uri = uris[uris.length - 1].trim();
+      String[] uris =uri.split(",");     
       boolean success = false;
-      for (int index= uris.length - 1; index >= 0; index ++) {
+      for (int index= uris.length - 1; index >= 0; index--) {
         String currentUri = uris[index].trim();
         logger.info("trying to load segment  + " + segmentId + ", by uri - " + currentUri);
         success = instantiateSegmentForUri(segmentId, currentUri);

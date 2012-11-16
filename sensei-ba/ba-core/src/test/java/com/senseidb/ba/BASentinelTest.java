@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.net.URL;
 
 import junit.framework.Assert;
-import junit.framework.TestCase;
 
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.commons.io.FileUtils;
@@ -17,9 +16,7 @@ import org.junit.Test;
 
 import scala.actors.threadpool.Arrays;
 
-import com.senseidb.ba.file.http.JettyServerHolder;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
-import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.util.FileUploadUtils;
 import com.senseidb.ba.util.TestUtil;
@@ -71,7 +68,7 @@ public class BASentinelTest  extends Assert {
 
   @Test
   public void test1FilterAndFacetCountOnNotSortedColumn() throws Exception {
-
+    
     String req = "{" + 
         "  " + 
         "    \"from\": 0," + 
@@ -104,7 +101,6 @@ public class BASentinelTest  extends Assert {
       resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
     }
     System.out.println(resp.toString(1));
-    Thread.sleep(1000000);
     assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));
   }
 
@@ -459,7 +455,7 @@ public class BASentinelTest  extends Assert {
     }
     System.out.println(resp.toString(1));
     // since creative id is only 1, not running an inclusive query results in 0 responses, which is correct
-    assertEquals("all documents are a part of the hit",19998 , resp.getInt("numhits"));
+    assertEquals("all documents are a part of the hit",19996 , resp.getInt("numhits"));
   }
   
   @Test
@@ -699,14 +695,14 @@ public class BASentinelTest  extends Assert {
   }
   @Test
   public void test9ManagementBackend() throws Exception {
-  String stringResponse = FileUploadUtils.getStringResponse("http://localhost:8088/segments/");
-  JSONObject json = new JSONObject(stringResponse);
-  String[] names = JSONObject.getNames(json);
-  Arrays.sort(names);
-  assertEquals("[0, 1]", Arrays.toString(names));
-  names = JSONObject.getNames(json.getJSONObject("0"));
-  Arrays.sort(names);
-  assertEquals("[segment1]", Arrays.toString(names));
+    String stringResponse = FileUploadUtils.getStringResponse("http://localhost:8088/segments/");
+    JSONObject json = new JSONObject(stringResponse);
+    String[] names = JSONObject.getNames(json);
+    Arrays.sort(names);
+    assertEquals("[0, 1]", Arrays.toString(names));
+    names = JSONObject.getNames(json.getJSONObject("0"));
+    Arrays.sort(names);
+    assertEquals("[segment1]", Arrays.toString(names));
   }
   
 }

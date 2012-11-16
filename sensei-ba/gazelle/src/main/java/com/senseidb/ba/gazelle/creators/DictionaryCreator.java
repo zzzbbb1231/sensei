@@ -56,6 +56,7 @@ public class DictionaryCreator {
 
     private Object previousValue = null;
     private boolean isSorted = true;
+    private int prevBiggerThanNextCount = 0;
     private boolean containsNulls = false;
 
     public DictionaryCreator() {
@@ -82,8 +83,12 @@ public class DictionaryCreator {
     }
 
     public void addValue(Object original, ColumnType type) {
-
+      original = adjustValue(original, type);
         if (original == null) {
+           count++;
+           if ( previousValue != null) {
+              prevBiggerThanNextCount++;
+            }
             if (isSorted && previousValue != null && containsNulls) {
                 isSorted = false;
             }
@@ -94,14 +99,20 @@ public class DictionaryCreator {
             isSorted = false;
 
         }
+        if (!type.isMulti() && previousValue != null) {
+          if (((Comparable) original).compareTo(previousValue) < 0) {
+            prevBiggerThanNextCount++;
+          }
+        }       
         if (isSorted) {
             if (!original.equals(previousValue) && contains(original, type)) {
                 isSorted = false;
 
             }
-            previousValue = original;
+            
 
         }
+        previousValue = original;
         switch (type) {
         case LONG:
             
@@ -140,6 +151,38 @@ public class DictionaryCreator {
             throw new UnsupportedOperationException(original.toString());
         }
     }
+    private Object adjustValue(Object original, ColumnType type) {
+      if (type.isMulti() || original == null) {
+        return original;
+      }
+      
+      if (type != ColumnType.STRING && original instanceof String) {
+       String str = (String) original;
+        if (type == ColumnType.LONG) return Long.parseLong(str);
+        if (type == ColumnType.INT) return Integer.parseInt(str);
+        if (type == ColumnType.FLOAT) return Float.parseFloat(str);
+      }
+      if (type != ColumnType.LONG && original instanceof Long) {
+        Long str = (Long) original;         
+         if (type == ColumnType.INT) return str.intValue();
+         if (type == ColumnType.FLOAT) return str.floatValue();
+         if (type == ColumnType.STRING) return str.toString();
+       }
+      if (type != ColumnType.INT && original instanceof Integer) {
+        Integer str = (Integer) original;         
+         if (type == ColumnType.LONG) return str.longValue();
+         if (type == ColumnType.FLOAT) return str.floatValue();
+         if (type == ColumnType.STRING) return str.toString();
+       }
+      if (type != ColumnType.FLOAT && original instanceof Float) {
+        Float str = (Float) original;         
+         if (type == ColumnType.LONG) return str.longValue();
+         if (type == ColumnType.INT) return str.intValue();
+         if (type == ColumnType.STRING) return str.toString();
+       }
+      return original;
+    }
+
     public void addIntValue(Object obj) {
         
         int value = -1;
@@ -216,7 +259,10 @@ public class DictionaryCreator {
             return 0;
         }
         if (columnType == ColumnType.INT) {
-            return getIntIndex((Integer) value);
+            if (value instanceof Long) {
+              return getIntIndex(((Number) value).intValue());
+            }
+          return getIntIndex((Integer) value);
         } else if (columnType == ColumnType.LONG) {
             return getLongIndex((Long) value);
         } else if (columnType == ColumnType.STRING) {
@@ -371,5 +417,12 @@ public class DictionaryCreator {
 
     public int getCount() {
         return count;
+    }
+    
+    
+    public boolean isSecondarySorted(int dictionaryCount) {
+      //that means that the memory overhead should be less than two bytes per entry
+      boolean result = (!isSorted) && prevBiggerThanNextCount > 0 && (((double)count) / dictionaryCount / prevBiggerThanNextCount > 4);
+      return result;
     }
 }

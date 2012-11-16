@@ -94,8 +94,8 @@ public class AvroSinglePassCreator {
         @Override
         public int compare(int k1, int k2) {
           for (int index : sortedFieldIndexes) {
-            int val1 = creators[index].getValueIndex(k1);
-            int val2 = creators[index].getValueIndex(k2);
+            int val1 = creators[permutationArrayCopy[index]].getValueIndex(k1);
+            int val2 = creators[permutationArrayCopy[index]].getValueIndex(k2);
             if (val1 > val2) return 1;
             if (val2 > val1) return -1;
            

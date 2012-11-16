@@ -33,7 +33,15 @@ public class ZkManager {
       
       if (zkClient.exists(partitionPath + "/" + segmentId)) {
         SegmentInfo oldSegmentInfo = SegmentInfo.fromBytes((byte[])zkClient.readData(partitionPath + "/" + segmentId));
-        pathUrl = oldSegmentInfo.getPathUrl() + "," + pathUrl;
+        
+        if (oldSegmentInfo.getPathUrl().contains(pathUrl)) {
+          logger.info("The url - " + pathUrl + " is already registered for the segment - " + segmentId);
+          //but still we need to recreate the segment
+          pathUrl = oldSegmentInfo.getPathUrl();
+        } else {
+          pathUrl = oldSegmentInfo.getPathUrl() + "," + pathUrl;
+        }
+        
         timeCreated = oldSegmentInfo.getTimeCreated();
         removeSegment(partition, segmentId);
       }
@@ -96,5 +104,9 @@ public class ZkManager {
         return true;
       }
     return false;
+    }
+    public static void main(String[] args) {
+      ZkClient zkClient = new ZkClient("localhost:2181");
+      zkClient.deleteRecursive("/sensei-ba/partitions/testCluster2");
     }
 }

@@ -3,17 +3,23 @@ package com.senseidb.ba.util;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.io.FileUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.gazelle.utils.ReadMode;
+import com.senseidb.ba.management.SegmentInfo;
 import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;
 
@@ -34,6 +40,7 @@ public class BaClient {
     //eat1-app184.stg.linkedin.com:10000
     //ZkManager zkManager = new ZkManager("localhost:2121", args11[0]);
     ZkManager zkManager = new ZkManager("eat1-app266.stg.linkedin.com:10000", "adsClickEvents");
+    //ZkManager zkManager = new ZkManager("localhost:2121", args11[0]);
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     System.out.println(usage);
     while(true) {
@@ -43,12 +50,8 @@ public class BaClient {
         if (arguments[0].equalsIgnoreCase("exit")) {
           System.out.println("Client has been shutdown. \nBye!");
           break;
-        } else if (arguments[0].equalsIgnoreCase("print")) { 
-          ArrayList<String> children = new ArrayList<String>(zkManager.getChildren());
-          Collections.sort(children);
-          for (String child : children) {
-            System.out.println(child);
-          }
+        } else if (arguments[0].equalsIgnoreCase("print")) {          
+            System.out.println(printSegments(zkManager).toString(1));
         } else if (arguments[0].equalsIgnoreCase("clean")) {
           int partition = Integer.parseInt(arguments[1]);
           if (arguments.length == 3) {
@@ -111,4 +114,23 @@ public class BaClient {
     }
     //FileUtils.deleteDirectory(indexDir);
   }
+  public static JSONObject printSegments(ZkManager zkManager) throws JSONException, IOException {
+   
+      JSONObject obj = new JSONObject();
+      for (String partitionIt : zkManager.getPartitions()) {        
+        obj.put(partitionIt, getPartitionJson(zkManager, partitionIt));
+      }
+      return obj;
+    }
+  public static JSONObject getPartitionJson(ZkManager zkManager, String partitionIt) throws JSONException {
+    JSONObject partitionJson = new JSONObject();
+    for (String segmentId : zkManager.getSegments(partitionIt)) {
+      SegmentInfo segmentInfo = zkManager.getSegmentInfo(partitionIt, segmentId);
+      if (segmentInfo != null) {
+        partitionJson.put(segmentId, segmentInfo.toJson());
+      }
+    }
+    return partitionJson;
+  }
+  
 }

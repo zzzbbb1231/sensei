@@ -12,10 +12,12 @@ import org.apache.hadoop.fs.FileSystem;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.SecondarySortedForwardIndex;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;
+import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
@@ -47,7 +49,11 @@ public class SegmentPersistentManager {
         SortedForwardIndexImpl sortedIndex = (SortedForwardIndexImpl) forwardIndex;
         String fileName = baseDir +"/" +sortedIndex.getColumnMetadata().getName() + ".ranges";
        SortedIndexPersistentManager.flush(fileName, sortedIndex, mode, fs);
-      }  else if (forwardIndex instanceof MultiValueForwardIndexImpl1){
+      } else if (forwardIndex instanceof SecondarySortedForwardIndex){
+        SecondarySortedForwardIndex sortedIndex = (SecondarySortedForwardIndex) forwardIndex;
+        String fileName = baseDir +"/" +sortedIndex.getColumnMetadata().getName() + ".srtranges";
+       SecondarySortedIndexPersistentManager.flush(fileName, sortedIndex, mode, fs);
+      } else if (forwardIndex instanceof MultiValueForwardIndexImpl1){
           MultiValueForwardIndexImpl1 multiValueForwardIndex = (MultiValueForwardIndexImpl1) forwardIndex;
          
           multiValueForwardIndex.getCompressedMultiArray().flushToFile(baseDir, multiValueForwardIndex.getColumnMetadata().getName(), mode, fs);
@@ -75,6 +81,8 @@ public class SegmentPersistentManager {
           SortedForwardIndexImpl sortedForwardIndexImpl = new SortedForwardIndexImpl(dictionaries.get(columnMetadata.getName()), new int[columnMetadata.getNumberOfDictionaryValues()], new int[columnMetadata.getNumberOfDictionaryValues()], columnMetadata.getNumberOfElements(), columnMetadata);
           SortedIndexPersistentManager.readMinMaxRanges(new File(indexDir, columnMetadata.getName() + ".ranges"), sortedForwardIndexImpl);
           ret.put(columnMetadata.getName(), sortedForwardIndexImpl);
+        } else if (columnMetadata.isSecondarySorted()){
+          ret.put(columnMetadata.getName(), new SecondarySortedForwardIndexImpl(dictionaries.get(columnMetadata.getName()), SecondarySortedIndexPersistentManager.readMinMaxRanges(new File(indexDir, columnMetadata.getName() + ".srtranges"), columnMetadata.getNumberOfDictionaryValues()), columnMetadata.getNumberOfElements(), columnMetadata));
         } else if (!columnMetadata.isMulti()){
           GazelleForwardIndexImpl gazelleForwardIndexImpl = new GazelleForwardIndexImpl(columnMetadata.getName(), ForwardIndexPersistentManager.readForwardIndex(columnMetadata, new File(indexDir, columnMetadata.getName() + ".fwd"), mode), dictionary, columnMetadata);
           ret.put(columnMetadata.getName(), gazelleForwardIndexImpl);

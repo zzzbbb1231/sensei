@@ -35,7 +35,7 @@ public class JsonDataSource implements GazelleDataSource {
         }
         
     }
-    public static class JsonIterator extends AbstractIterator {
+    public static class JsonIterator extends AbstractFileIterator {
         public JsonIterator(File jsonFile)  {
             super(jsonFile);
             Field mapField;

@@ -32,6 +32,19 @@ public class MetadataCreator {
     metadata.setNumberOfElements(numOfElements);
     return metadata;
   }
+  public  static ColumnMetadata createSecondarySortMetadata(String column, TermValueList list, ColumnType type, int numOfElements) {
+    ColumnMetadata metadata = new ColumnMetadata();
+   
+      metadata.setBitsPerElement(-1);
+      metadata.setByteLength(-1);
+
+    metadata.setSecondarySorted(true);
+    metadata.setName(column);
+    metadata.setColumnType(type);
+    metadata.setNumberOfDictionaryValues(list.size());
+    metadata.setNumberOfElements(numOfElements);
+    return metadata;
+  }
   public  static ColumnMetadata createMultiMetadata(String column, TermValueList list, ColumnType type, int numOfElements) {
       ColumnMetadata metadata = new ColumnMetadata();
       int numOfBits = CompressedIntArray.getNumOfBits(list.size());
