@@ -16,6 +16,7 @@ import com.senseidb.ba.facet.MultiFacetUtils;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
+import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 
 public class RangeQueryFacetHandlerTest {
@@ -57,7 +58,7 @@ public class RangeQueryFacetHandlerTest {
     int startIndex = segmentImpl.getDictionary(colName).indexOf(someStartVal);
     int endIndex = segmentImpl.getDictionary(colName).indexOf(someEndVal);
     
-    FacetUtils.RangeForwardDocIdSet docIdSet = new FacetUtils.RangeForwardDocIdSet(forwardIndex, startIndex, endIndex);
+    FacetUtils.RangeForwardDocIdSet docIdSet = new FacetUtils.RangeForwardDocIdSet((GazelleForwardIndexImpl)forwardIndex, startIndex, endIndex);
     DocIdSetIterator iterator = docIdSet.iterator();
     
     int countFromDocIdSetIterator = 0;

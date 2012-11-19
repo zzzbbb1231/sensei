@@ -65,7 +65,6 @@ public class BASentinelTest  extends Assert {
   }
 
   
-
   @Test
   public void test1FilterAndFacetCountOnNotSortedColumn() throws Exception {
     

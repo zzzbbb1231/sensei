@@ -11,20 +11,24 @@ import com.browseengine.bobo.docidset.RandomAccessDocIdSet;
 import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
+import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
+import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 
 public class FacetUtils {
   // CountCollector: static class I
   public static final class ForwardIndexCountCollector extends DefaultFacetCountCollector {
     private final SingleValueForwardIndex forwardIndex;
+    private CompressedIntArray compressedIntArray;
 
-    public ForwardIndexCountCollector(String name, FacetDataCache dataCache, SingleValueForwardIndex forwardIndex, int docBase, BrowseSelection sel, FacetSpec ospec) {
+    public ForwardIndexCountCollector(String name, FacetDataCache dataCache, GazelleForwardIndexImpl forwardIndex, int docBase, BrowseSelection sel, FacetSpec ospec) {
       super(name, dataCache, docBase, sel, ospec);
       this.forwardIndex = forwardIndex;
+      compressedIntArray = forwardIndex.getCompressedIntArray();
     }
 
     @Override
     public void collect(int docid) {
-      int valueIndex = forwardIndex.getValueIndex(docid);
+      int valueIndex = compressedIntArray.readInt(docid);
       _count.add(valueIndex, _count.get(valueIndex) + 1);
 
     }
@@ -57,20 +61,22 @@ public class FacetUtils {
 
     @Override
     public boolean get(int docId) {
-      return ((SingleValueForwardIndex) zeusDataCache.getForwardIndex()).getValueIndex(docId) == index;
+     throw new UnsupportedOperationException();
     }
   }
 
   // Iterator: static class III
   public static class ForwardIndexIterator extends DocIdSetIterator {
-    int doc = -1;
-    private final SingleValueForwardIndex forwardIndex;
+    int doc = -1;   
     private final int index;
     private final int length;
-    public ForwardIndexIterator(SingleValueForwardIndex forwardIndex, int index) {
-      this.forwardIndex = forwardIndex;
+    private final CompressedIntArray compressedIntArray;
+    
+
+    public ForwardIndexIterator(CompressedIntArray compressedIntArray, int length, int index) {
+      this.compressedIntArray = compressedIntArray;
+      this.length = length;
       this.index = index;
-      this.length = this.forwardIndex.getLength();
     }
 
     @Override
@@ -80,7 +86,7 @@ public class FacetUtils {
         doc++;
         if (length <= doc)
           return NO_MORE_DOCS;
-        nextValueIndexed = forwardIndex.getValueIndex(doc);
+        nextValueIndexed = compressedIntArray.readInt(doc);
         if (nextValueIndexed == index) {
           return doc;
         }
@@ -101,17 +107,17 @@ public class FacetUtils {
 
   // DocIdSet: static class IV
   public static class ForwardDocIdSet extends RandomAccessDocIdSet {
-    private SingleValueForwardIndex forwardIndex;
+    private GazelleForwardIndexImpl forwardIndex;
     private int index;
 
-    public ForwardDocIdSet(SingleValueForwardIndex forwardIndex, int index) {
+    public ForwardDocIdSet(GazelleForwardIndexImpl forwardIndex, int index) {
       this.forwardIndex = forwardIndex;
       this.index = index;
     }
 
     @Override
     public DocIdSetIterator iterator() throws IOException {
-      return new ForwardIndexIterator(forwardIndex, index);
+      return new ForwardIndexIterator(forwardIndex.getCompressedIntArray(), forwardIndex.getLength(), index);
     }
 
     @Override
@@ -126,21 +132,23 @@ public class FacetUtils {
     private SingleValueForwardIndex forwardIndex;
     private int startIndex;
     private int endIndex;
+    private CompressedIntArray compressedIntArray;
 
-    public RangeForwardDocIdSet(SingleValueForwardIndex forwardIndex, int startIndex, int endIndex) {
+    public RangeForwardDocIdSet(GazelleForwardIndexImpl forwardIndex, int startIndex, int endIndex) {
       this.forwardIndex = forwardIndex;
+      compressedIntArray = forwardIndex.getCompressedIntArray();
       this.startIndex = startIndex;
       this.endIndex = endIndex;
     }
 
     @Override
     public DocIdSetIterator iterator() throws IOException {
-      return new RangeForwardIndexIterator(forwardIndex, startIndex, endIndex);
+      return new RangeForwardIndexIterator(compressedIntArray, forwardIndex.getLength(), startIndex, endIndex);
     }
 
     @Override
     public boolean get(int docId) {
-      int docIdfromIndex = forwardIndex.getValueIndex(docId);
+      int docIdfromIndex = compressedIntArray.readInt(docId);
       return docIdfromIndex >= startIndex
           || docIdfromIndex <= endIndex;
     }
@@ -148,16 +156,16 @@ public class FacetUtils {
 
   public static class RangeForwardIndexIterator extends DocIdSetIterator {
     int doc = -1;
-    private final SingleValueForwardIndex forwardIndex;
+    private final CompressedIntArray compressedIntArray;
     private final int startIndex;
     private final int endIndex;
     private final int forwardIndexLength;
     
-    public RangeForwardIndexIterator(final SingleValueForwardIndex forwardIndex, final int startIndex, final int endIndex) {
-      this.forwardIndex = forwardIndex;
+    public RangeForwardIndexIterator(final CompressedIntArray compressedIntArray, int length, final int startIndex, final int endIndex) {
+      this.compressedIntArray = compressedIntArray;
+      forwardIndexLength = length;
       this.startIndex = startIndex;
       this.endIndex = endIndex;
-      this.forwardIndexLength = forwardIndex.getLength();
     }
 
     @Override
@@ -169,7 +177,7 @@ public class FacetUtils {
           return NO_MORE_DOCS;
         }
           
-        nextValueIndexed = forwardIndex.getValueIndex(doc);
+        nextValueIndexed = compressedIntArray.readInt(doc);
         if (nextValueIndexed >= startIndex && nextValueIndexed <= endIndex) {
           return doc;
         }

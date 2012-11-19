@@ -107,10 +107,7 @@ public class SortedFacetUtils {
       if (!advance(docid)) {
         return;
       }
-      int found = countFinder.find(docid);
-      if (found == 6) {
-        System.out.println("!!!docId = " + docid);
-      }
+      int found = countFinder.find(docid);      
       _count.add(found, _count.get(found) + 1);
       return;
     }
@@ -352,7 +349,7 @@ public class SortedFacetUtils {
     @Override
     public boolean get(int docId) {
       int nextDocId = forwardIndex.getMinDocIds()[startValue];
-      return (nextDocId <= docId && nextDocId >= docId);
+      return (forwardIndex.getMinDocIds()[startValue] <= docId && forwardIndex.getMaxDocIds()[endValue] >= docId);
     }
 
     @Override
@@ -367,7 +364,7 @@ public class SortedFacetUtils {
           } else {
             doc++;
           }
-          if (doc >= endIndex) {
+          if (doc > endIndex) {
             return NO_MORE_DOCS;
           }
           return doc;
