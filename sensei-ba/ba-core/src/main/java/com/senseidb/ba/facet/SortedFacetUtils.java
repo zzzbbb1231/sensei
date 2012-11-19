@@ -179,16 +179,28 @@ public class SortedFacetUtils {
             doc++;
           }
           if (doc > currentMaxDoc) {
-            while (++currentRegionId < actualLength) {
-              if (doc <= maxDocIds[currentRegionId]) {
-                currentMaxDoc = maxDocIds[currentRegionId];
-                if (doc < minDocIds[currentRegionId]) {
-                  doc = minDocIds[currentRegionId];
-                }
-                return doc;
+            if (doc <= maxDocIds[currentRegionId + 1]) {
+              currentRegionId += 1;
+              currentMaxDoc = maxDocIds[currentRegionId];
+              if (doc < minDocIds[currentRegionId]) {
+                doc = minDocIds[currentRegionId];
               }
-            }
-            return NO_MORE_DOCS;
+              return doc;
+            } else {
+              int index = Arrays.binarySearch(maxDocIds, currentRegionId + 2, maxDocIds.length, doc);
+              if (index < 0) {
+                index = (index + 1) * -1;
+              }
+              currentRegionId = index;
+              if (currentRegionId >= actualLength) {
+                return NO_MORE_DOCS;
+              }
+              currentMaxDoc = maxDocIds[currentRegionId];
+              if (doc < minDocIds[currentRegionId]) {
+                doc = minDocIds[currentRegionId];
+              }
+              return doc;
+            }           
           }
           return doc;          
         }
