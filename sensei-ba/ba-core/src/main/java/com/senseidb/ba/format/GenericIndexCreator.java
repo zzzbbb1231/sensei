@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import javax.management.RuntimeErrorException;
+
 import org.springframework.util.Assert;
 
 import com.browseengine.bobo.facets.data.TermLongList;
@@ -193,7 +195,11 @@ public class GenericIndexCreator {
           int docId = permutationArray[counter];
           ForwardIndex forwardIndex = nonSortedSegment.getForwardIndex(column);
           if (forwardIndex instanceof SingleValueForwardIndex) {              
-            ret.put(column, forwardIndex.getDictionary().getRawValue(((SingleValueForwardIndex) forwardIndex).getValueIndex(docId)));
+            int valueIndex = ((SingleValueForwardIndex) forwardIndex).getValueIndex(docId);
+             if (valueIndex < 0) {
+               System.out.println("!!!");
+             } 
+             ret.put(column, forwardIndex.getDictionary().getRawValue(valueIndex));
           } else {
             MultiValueForwardIndex multiValueForwardIndex = (MultiValueForwardIndex)  forwardIndex;
             int count = multiValueForwardIndex.randomRead(buffer, docId);

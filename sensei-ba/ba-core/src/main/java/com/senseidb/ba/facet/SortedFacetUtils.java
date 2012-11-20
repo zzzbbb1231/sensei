@@ -25,31 +25,39 @@ public class SortedFacetUtils {
   };
   public static class SortedRangeCountFinder  {
     
+    private int currentIndex = -1;
     private int currentValueId = -1;
     private int[] minDocIds;
     private int[] maxDocIds;
+    private int[] dictionaryIds;
 
     public SortedRangeCountFinder(SortedRegion sortedRegion) {
     
       minDocIds = sortedRegion.getMinDocIds();
       maxDocIds = sortedRegion.getMaxDocIds();
+      dictionaryIds = sortedRegion.dictionaryIds;
     }
    
-    public int find(int docid) {
-      if (currentValueId == -1) {
+    public int find(int docid) {  
+      if (currentIndex == -1) {
         if (maxDocIds[0] >= docid) {
-          currentValueId = 0;
+          currentIndex = 0;
+          currentValueId = dictionaryIds[0];
         } else {
-          while (++currentValueId < maxDocIds.length) {
-            if (maxDocIds[currentValueId] >= docid) {
-              return currentValueId;
-            }
+          currentIndex = Arrays.binarySearch(maxDocIds, docid);
+          if (currentIndex < 0) {
+            currentIndex = (currentIndex + 1) * -1;
           }
-          return -1;
+          if (currentIndex >= maxDocIds.length) {
+            return -1;
+          }          
+          currentValueId = dictionaryIds[currentIndex];
+          return currentValueId;
         }
-      } else if (docid > maxDocIds[currentValueId]) {
-        while (++currentValueId < maxDocIds.length) {
-          if (maxDocIds[currentValueId] >= docid) {
+      } else if (docid > maxDocIds[currentIndex]) {
+        while (++currentIndex < maxDocIds.length) {
+          if (maxDocIds[currentIndex] >= docid) {
+            currentValueId = dictionaryIds[currentIndex];
             return currentValueId;
           }
         }
@@ -130,26 +138,19 @@ public class SortedFacetUtils {
        maxDocIds = new int[regions.length];
       int actualLength = 0;
       for (SortedRegion region : regions) {
-        int minDoc = Integer.MAX_VALUE;
-        int maxDoc = Integer.MIN_VALUE;
-        for (int index = startValueId; index <= endValueId; index++) {
-          int currentMin = region.minDocIds[index];
-          int currentMax = region.maxDocIds[index];
-          if (currentMin < 0 || currentMax < 0) {
-            continue;
-          }
-          if (minDoc > currentMin) {
-            minDoc = currentMin;
-          }
-          if (maxDoc < currentMax) {
-            maxDoc = currentMax;
-          }
+        int startIndex = Arrays.binarySearch(region.dictionaryIds, startValueId);
+        if (startIndex < 0) {
+          startIndex = (startIndex + 1) * -1;
         }
-        if (minDoc == Integer.MAX_VALUE ||  maxDoc == Integer.MIN_VALUE) {
+        int endIndex = Arrays.binarySearch(region.dictionaryIds, endValueId);
+        if (endIndex < 0) {
+          endIndex = (endIndex + 2) * -1;
+        }
+        if (startIndex > endIndex || endIndex >= region.dictionaryIds.length) {
           continue;
         }
-        minDocIds[actualLength] = minDoc;
-        maxDocIds[actualLength] = maxDoc;
+        minDocIds[actualLength] = region.minDocIds[startIndex];
+        maxDocIds[actualLength] = region.maxDocIds[endIndex];        
         actualLength++;
       }
       this.actualLength = actualLength;
@@ -236,8 +237,10 @@ public class SortedFacetUtils {
     @Override
     public DocIdSetIterator iterator() throws IOException {
       int region = -1;
+      int index = -1;
       for (int i = 0; i < regions.length; i++) {
-        if (regions[i].getMinDocIds()[valueId] >= 0) {
+        index = Arrays.binarySearch(regions[i].dictionaryIds, valueId);
+        if (index >= 0) {
           region = i;
           break;
         }
@@ -246,22 +249,28 @@ public class SortedFacetUtils {
         return EmptyDocIdSet.getInstance().iterator();
       }
       final int minRegion = region;
+      final int minIndex = index;
+      
       return new DocIdSetIterator() {
         int doc = -1;
         int currentRegionId = minRegion;
         SortedRegion currentRegion = regions[minRegion];
+        int currentValueIndex = minIndex;
+        int maxDocId = currentRegion.maxDocIds[currentValueIndex];
         @Override
         public int nextDoc() throws IOException {
           if (doc == -1) {
-            doc = currentRegion.minDocIds[valueId];          
+            doc = currentRegion.minDocIds[currentValueIndex];
           } else {
             doc++;
           }
-          if (doc > currentRegion.maxDocIds[valueId]) {
+          if (doc > maxDocId) {
             while (++currentRegionId < regions.length) {
-              if (regions[currentRegionId].minDocIds[valueId] >= 0) {
+              currentValueIndex = Arrays.binarySearch(regions[currentRegionId].dictionaryIds, valueId);
+              if (currentValueIndex >= 0) {
                 currentRegion = regions[currentRegionId];
-                doc = currentRegion.minDocIds[valueId];
+                doc = currentRegion.minDocIds[currentValueIndex];
+                maxDocId = currentRegion.maxDocIds[currentValueIndex];
                 return doc;
               }
             }

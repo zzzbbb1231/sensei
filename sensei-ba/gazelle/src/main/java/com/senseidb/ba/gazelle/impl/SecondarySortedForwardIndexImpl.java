@@ -50,7 +50,7 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
       SortedRegion region = sortedRegions[index];
       for (int k = 0; k < region.maxDocIds.length; k++) {
         if (docId <= region.maxDocIds[k]) {          
-          return k;
+          return region.dictionaryIds[k];
         }
       }     
       
@@ -76,18 +76,12 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
        currentRegion = createNewRegion();
        regions.add(currentRegion);
      }
+     currentRegion.add(dictionaryValueId, docId);
      prevDictionaryId = dictionaryValueId;
-     if (currentRegion.minDocIds[dictionaryValueId] == -1 || currentRegion.minDocIds[dictionaryValueId] > docId) {
-       currentRegion.minDocIds[dictionaryValueId] = docId;
-     }
-     if (currentRegion.maxDocIds[dictionaryValueId] == -1 || currentRegion.maxDocIds[dictionaryValueId] < docId) {
-       currentRegion.maxDocIds[dictionaryValueId] = docId;
-     }
+    
   }
   public SortedRegion createNewRegion() {
-    SortedRegion currentRegion = new SortedRegion(new int[dictionary.size()], new int[dictionary.size()]);
-     Arrays.fill(currentRegion.minDocIds, -1);
-     Arrays.fill(currentRegion.maxDocIds, -1);
+    SortedRegion currentRegion = new SortedRegion(dictionary.size());
      return currentRegion;
   }
 
@@ -113,7 +107,7 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
      currentRegion = null;
      prevDictionaryId = -1;
      for (SortedRegion region : sortedRegions) {
-       region.init();
+       region.seal();
     }
   }
   @Override

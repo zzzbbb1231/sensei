@@ -11,6 +11,7 @@ import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.MetadataAware;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
+import com.senseidb.ba.gazelle.utils.SortUtil;
 
 public class SortedForwardIndexImpl implements SingleValueForwardIndex, SortedForwardIndex, MetadataAware {
     private int[] minDocIds;
@@ -107,6 +108,8 @@ public SortedForwardIndexImpl() {
                 maxDocIds[i] = -1;
             }
         }
+        Assert.state(SortUtil.isSorted(minDocIds));
+        Assert.state(SortUtil.isSorted(maxDocIds));
     }
     @Override
     public ColumnType getColumnType() {

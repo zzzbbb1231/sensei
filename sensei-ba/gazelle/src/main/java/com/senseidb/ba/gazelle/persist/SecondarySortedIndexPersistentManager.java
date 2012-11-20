@@ -13,6 +13,7 @@ import java.util.Arrays;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.springframework.util.Assert;
 
 import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.SecondarySortedForwardIndex;
@@ -20,6 +21,7 @@ import com.senseidb.ba.gazelle.SecondarySortedForwardIndex.SortedRegion;
 import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
+import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.gazelle.utils.StreamUtils;
 
 public class SecondarySortedIndexPersistentManager {
@@ -30,7 +32,9 @@ public class SecondarySortedIndexPersistentManager {
       dataOutputStream = StreamUtils.getOutputStream(filePath, mode, fs);
       dataOutputStream.writeInt(secondarySortedForwardIndex.getSortedRegions().length);
       for (SortedRegion region : secondarySortedForwardIndex.getSortedRegions()) {
-      for (int i = 0; i < secondarySortedForwardIndex.getColumnMetadata().getNumberOfDictionaryValues(); i++) {
+        dataOutputStream.writeInt(region.dictionaryIds.length);
+        for (int i = 0; i < region.dictionaryIds.length; i++) {
+        dataOutputStream.writeInt(region.dictionaryIds[i]);
         dataOutputStream.writeInt(region.getMinDocIds()[i]);
         dataOutputStream.writeInt(region.getMaxDocIds()[i]);
       }
@@ -71,13 +75,21 @@ public class SecondarySortedIndexPersistentManager {
       int count = dataInputStream.readInt();
       SortedRegion[] regions = new SortedRegion[count];
       for (int i = 0; i < count; i++) {
-        SortedRegion sortedRegion = new SortedRegion(new int[dictionarySize], new int[dictionarySize]);
+        SortedRegion sortedRegion = new SortedRegion();
         regions[i] = sortedRegion;
-        for (int j = 0; j < dictionarySize; j++) {
+        int regionSize = dataInputStream.readInt();
+        sortedRegion.dictionaryIds = new int[regionSize];
+        sortedRegion.minDocIds = new int[regionSize];
+        sortedRegion.maxDocIds = new int[regionSize];
+        for (int j = 0; j < regionSize; j++) {
+          sortedRegion.dictionaryIds[j] = dataInputStream.readInt();
           sortedRegion.minDocIds[j] = dataInputStream.readInt();
           sortedRegion.maxDocIds[j] = dataInputStream.readInt();
         }
-        sortedRegion.init();
+        sortedRegion.maxDocId = sortedRegion.maxDocIds[sortedRegion.maxDocIds.length - 1];
+        Assert.state(SortUtil.isSorted(sortedRegion.minDocIds));
+        Assert.state(SortUtil.isSorted(sortedRegion.maxDocIds));
+        Assert.state(SortUtil.isSorted(sortedRegion.dictionaryIds));
       }
       return regions;
     } finally {

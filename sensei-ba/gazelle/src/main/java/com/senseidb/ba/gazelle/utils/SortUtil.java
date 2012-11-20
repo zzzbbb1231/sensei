@@ -7,6 +7,15 @@ import com.senseidb.ba.gazelle.SecondarySortedForwardIndex.SortedRegion;
 
 
 public class SortUtil {
+  public static boolean isSorted(int[] arr) {
+    for (int i = 1; i < arr.length; i++) {
+      if (arr[i] < arr[i - 1]) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
   private static final int SMALL = 7;
   private static final int MEDIUM = 40;
   

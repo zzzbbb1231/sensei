@@ -57,8 +57,9 @@ public class DictionaryCreator {
     private Object previousValue = null;
     private boolean isSorted = true;
     private int prevBiggerThanNextCount = 0;
+    private int numberOfChanges = 0;
     private boolean containsNulls = false;
-
+    private boolean isMulti = false;
     public DictionaryCreator() {
         intAVLTreeSet = new IntAVLTreeSet();
         longAVLTreeSet = new LongAVLTreeSet();
@@ -84,10 +85,14 @@ public class DictionaryCreator {
 
     public void addValue(Object original, ColumnType type) {
       original = adjustValue(original, type);
-        if (original == null) {
+      if (type.isMulti()) {
+        isMulti = true;
+      }
+      if (original == null) {
            count++;
            if ( previousValue != null) {
               prevBiggerThanNextCount++;
+              numberOfChanges++;
             }
             if (isSorted && previousValue != null && containsNulls) {
                 isSorted = false;
@@ -99,18 +104,26 @@ public class DictionaryCreator {
             isSorted = false;
 
         }
+        if (previousValue == null) {
+          numberOfChanges++;;
+        }
         if (!type.isMulti() && previousValue != null) {
+          if (((Comparable) original).compareTo(previousValue) != 0) {
+            numberOfChanges++;
+          }
           if (((Comparable) original).compareTo(previousValue) < 0) {
             prevBiggerThanNextCount++;
           }
         }       
         if (isSorted) {
-            if (!original.equals(previousValue) && contains(original, type)) {
+           
+            if (!original.equals(previousValue) && previousValue != null) {
+              Comparable prevValue = (Comparable) previousValue;
+              Comparable origin = (Comparable) original;
+              if ( origin.compareTo(prevValue) < 0) {
                 isSorted = false;
-
+              }
             }
-            
-
         }
         previousValue = original;
         switch (type) {
@@ -422,7 +435,7 @@ public class DictionaryCreator {
     
     public boolean isSecondarySorted(int dictionaryCount) {
       //that means that the memory overhead should be less than two bytes per entry
-      boolean result = (!isSorted) && prevBiggerThanNextCount > 0 && (((double)count) / dictionaryCount / prevBiggerThanNextCount > 4);
+      boolean result = (!isSorted) && (!isMulti)&& (numberOfChanges * 12 + prevBiggerThanNextCount * 40) / 2 < count;
       return result;
     }
 }

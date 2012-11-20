@@ -73,7 +73,7 @@ public class BAStandaloneIntegrationTest extends TestCase {
         "}";
       
      JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
- 
+     
      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
      System.out.println(resp.toString(1));
      assertEquals("numhits is wrong", 19833, resp.getInt("numhits"));

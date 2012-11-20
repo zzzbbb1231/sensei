@@ -38,8 +38,8 @@ public class BaClient {
       indexDir.mkdirs();
     }
     //eat1-app184.stg.linkedin.com:10000
-    //ZkManager zkManager = new ZkManager("localhost:2121", args11[0]);
-    ZkManager zkManager = new ZkManager("eat1-app266.stg.linkedin.com:10000", "adsClickEvents");
+    ZkManager zkManager = new ZkManager("localhost:2181", args11[0]);
+    //ZkManager zkManager = new ZkManager("eat1-app266.stg.linkedin.com:10000", "adsClickEvents");
     //ZkManager zkManager = new ZkManager("localhost:2121", args11[0]);
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     System.out.println(usage);
@@ -101,6 +101,20 @@ public class BaClient {
                 zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);
               }
               System.out.println("Done registering segments");
+              File[] tarGzFiles =  filePath.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                  return pathname.getName().endsWith(".tar.gz");
+                }
+              });
+              for (File tarGzFile : tarGzFiles) {                
+                File compressedFile = tarGzFile;
+                segmentId = tarGzFile.getName().substring(0, tarGzFile.getName().indexOf(".tar.gz"));               
+                System.out.println("Registered the segment " + segmentId);
+                zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);
+              }
+              System.out.println("Done registering segments");
+              
             }
           } else {
             throw new IllegalStateException("Only gazelle files and gazelle directories are supported");

@@ -129,6 +129,10 @@ public class DictionaryPersistentManager {
                 public int size() {
                   return longArr.length;
                 }
+                @Override
+                public Long getRawValue(int index) {
+                  return super.getPrimitiveValue(index);
+                }
               };
           Field longField = TermLongList.class.getDeclaredField("_elements");
           longField.setAccessible(true);
@@ -142,6 +146,11 @@ public class DictionaryPersistentManager {
           }
           TermFloatList termFloatList =
               new TermFloatList(dictionarySize, DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(type)) {
+                @Override
+                public Float getRawValue(int index) {
+                  return   super.getPrimitiveValue(index);
+                }
+            
                 public int size() {
                   return floatArr.length;
                 }
@@ -159,6 +168,11 @@ public class DictionaryPersistentManager {
           }
           TermIntList termIntList =
               new TermIntList(dictionarySize, DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(type)) {
+                @Override
+                public Integer getRawValue(int index) {
+                  // TODO Auto-generated method stub
+                  return super.getPrimitiveValue(index);
+                }
                 public int size() {
                   return intArr.length;
                 }

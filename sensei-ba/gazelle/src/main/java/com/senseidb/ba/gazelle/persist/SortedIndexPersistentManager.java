@@ -13,10 +13,12 @@ import java.util.Arrays;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.springframework.util.Assert;
 
 import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
+import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.gazelle.utils.StreamUtils;
 
 public class SortedIndexPersistentManager {
@@ -66,6 +68,8 @@ public class SortedIndexPersistentManager {
         sortedForwardIndexImpl.getMinDocIds()[i] = dataInputStream.readInt();
         sortedForwardIndexImpl.getMaxDocIds()[i] = dataInputStream.readInt();
       }
+      Assert.state(SortUtil.isSorted(sortedForwardIndexImpl.getMinDocIds()));
+      Assert.state(SortUtil.isSorted(sortedForwardIndexImpl.getMaxDocIds()));
     } finally {
       IOUtils.closeQuietly(dataInputStream);
     }

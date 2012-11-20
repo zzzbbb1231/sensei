@@ -95,6 +95,7 @@ public class SecondarySortIntegrationTest  extends Assert {
     
       resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
     System.out.println(resp.toString(1));
+   
     assertEquals("numhits is wrong", 20, resp.getInt("numhits"));
   }
   @Test
@@ -120,10 +121,11 @@ public class SecondarySortIntegrationTest  extends Assert {
     JSONObject resp = null;
     
       resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
-   
+     // Thread.sleep(10000000);
     System.out.println(resp.toString(1));
     assertEquals("numhits is wrong", 42, resp.getInt("numhits"));
   }
+  
   @Test
   public void test3FacetCountSecondarySortedColumn() throws Exception {
     

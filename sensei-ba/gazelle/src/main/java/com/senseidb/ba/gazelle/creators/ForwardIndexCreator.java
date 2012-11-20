@@ -43,13 +43,16 @@ public class ForwardIndexCreator {
             value = ((Utf8) value).toString();
           } else if (value  instanceof Array) {
               value = transform((Array) value);
-          }
+          }      
         dictionaryCreator.addValue(value, columnType);
     }
     @SuppressWarnings("rawtypes")
     public TermValueList produceDictionary(int count) {
         this.count = count;
         dictionary = dictionaryCreator.produceDictionary();
+        if (columnName.equals("creativeId")) {
+          System.out.println("");
+        }
         if (dictionaryCreator.isSecondarySorted(dictionary.size())) {
             secondarySortedForwardIndexImpl = new SecondarySortedForwardIndexImpl(dictionary);
         } else if (dictionaryCreator.isSorted()) {
