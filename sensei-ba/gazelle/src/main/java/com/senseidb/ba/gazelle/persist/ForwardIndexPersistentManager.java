@@ -56,10 +56,12 @@ public class ForwardIndexPersistentManager {
   public static void flush(GazelleForwardIndexImpl forwardIndex, String basePath, FileSystemMode mode, FileSystem fs) throws IOException {
     String filePath = basePath + "/" + forwardIndex.getColumnMetadata().getName() + ".fwd";
     DataOutputStream ds = StreamUtils.getOutputStream(filePath, mode, fs);
-    List<Long> sortedOffsetList = new ArrayList<Long>();
     try {
           forwardIndex.getCompressedIntArray().getStorage().rewind();
-            ds.write(forwardIndex.getCompressedIntArray().getStorage().array());
+          byte[] bytes = new byte[(int)forwardIndex.getColumnMetadata().getByteLength()];
+          forwardIndex.getCompressedIntArray().getStorage().get(bytes);
+          ds.write(bytes);
+         
     } finally {
       ds.close();
     }

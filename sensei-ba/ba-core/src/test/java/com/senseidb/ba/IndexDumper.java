@@ -13,8 +13,8 @@ import com.senseidb.ba.gazelle.utils.ReadMode;
 
 public class IndexDumper {
 public static void main(String[] args) throws Exception {
-  //GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(new File("/home/vzhabiuk/work/tmp/AdsClick19/segment0"), ReadMode.DirectMemory);
-  GazelleIndexSegmentImpl segment = GenericIndexCreator.create(new File("/tmp/avroFilesAdsClickYearrly/part-1.avro"));
+  GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(new File("/home/vzhabiuk/Downloads/segment0"), ReadMode.DirectMemory);
+  //GazelleIndexSegmentImpl segment = GenericIndexCreator.create(new File("/tmp/avroFilesAdsClickYearrly/part-1.avro"));
   System.out.println(segment.getForwardIndex("campaignId"));
   FileUtils.deleteDirectory(new File("nonSortedSegment"));
   FileUtils.deleteDirectory(new File("segment"));
