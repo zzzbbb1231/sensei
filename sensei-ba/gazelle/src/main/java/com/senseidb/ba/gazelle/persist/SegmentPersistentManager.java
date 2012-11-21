@@ -8,6 +8,7 @@ import java.util.Map;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnMetadata;
@@ -25,7 +26,8 @@ import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.ba.gazelle.utils.multi.CompressedMultiArray;
 
 public class SegmentPersistentManager {
-    public static void flushToDisk(GazelleIndexSegmentImpl segment, File baseDir) throws IOException, ConfigurationException {
+  private static Logger logger = Logger.getLogger(SegmentPersistentManager.class);  
+  public static void flushToDisk(GazelleIndexSegmentImpl segment, File baseDir) throws IOException, ConfigurationException {
         if (!baseDir.exists()) {
             baseDir.mkdirs();
         }
@@ -65,11 +67,16 @@ public class SegmentPersistentManager {
   }
   
   public static GazelleIndexSegmentImpl read(File indexDir, ReadMode mode) throws ConfigurationException, IOException {
+    try {
     File file = new File(indexDir, GazelleUtils.METADATA_FILENAME);
     HashMap<String, ColumnMetadata> metadataMap = MetadataPersistentManager.readFromFile(new PropertiesConfiguration(file));
     Map<String, TermValueList> dictionaries = getTermValueListMap(metadataMap, indexDir);
     return new GazelleIndexSegmentImpl(metadataMap, getForwardIndexesMap(metadataMap, dictionaries, indexDir, mode),
         dictionaries, metadataMap.values().iterator().next().getNumberOfElements());
+    } catch (Exception ex) {
+      logger.error("Couldn't read the segment", ex);
+      return null;
+    }
   }
 
   private static Map<String, ForwardIndex> getForwardIndexesMap(Map<String, ColumnMetadata> metadataMap,  Map<String, TermValueList> dictionaries, File indexDir, ReadMode mode) {

@@ -25,9 +25,24 @@ import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.ba.util.FileUploadUtils;
 import com.senseidb.ba.util.TarGzCompressionUtils;
+import com.senseidb.metrics.MetricsConstants;
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.Counter;
+import com.yammer.metrics.core.MetricName;
+import com.yammer.metrics.core.Timer;
 
 public class SegmentTracker {
   private static Logger logger = Logger.getLogger(SegmentTracker.class);
+  private static final Timer segmentBootstrapTime = Metrics.newTimer(new MetricName(SegmentTracker.class ,"segmentBootstrapOnStartUpTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
+  private static final Timer segmentSuccesfulInstantiateTime = Metrics.newTimer(new MetricName(SegmentTracker.class ,"segmentTotalSuccesfulInstantiateTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
+  private static final Timer segmentFailedInstantiateTime = Metrics.newTimer(new MetricName(SegmentTracker.class ,"segmentTotalFailedInstantiateTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
+  private static final Timer segmentLoadIntoMemoryTime = Metrics.newTimer(new MetricName(SegmentTracker.class ,"segmentLoadIntoMemoryTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
+  private static final Timer segmentDownloadTime = Metrics.newTimer(new MetricName(SegmentTracker.class ,"segmentDownloadTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
+  private static final Counter currentNumberOfSegments = Metrics.newCounter(SegmentTracker.class, "currentNumberOfSegments");
+  private static final Counter currentNumberOfDocuments = Metrics.newCounter(SegmentTracker.class, "currentNumberOfDocuments");
+  private static final Counter segmentsFailedToLoad = Metrics.newCounter(SegmentTracker.class, "segmentsFailedToLoad");
+  private static final Counter numDeletedSegments = Metrics.newCounter(SegmentTracker.class, "numDeletedSegments");
+  private static final Timer bootstrapTimePerPartition = Metrics.newTimer(new MetricName(SegmentTracker.class ,"bootstrapTimePerPartition"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
   private File indexDir;
   private List<String> activeSegments = new ArrayList<String>();
   private Map<String, SegmentToZoieReaderAdapter> segmentsMap = new HashMap<String, SegmentToZoieReaderAdapter>();
@@ -59,13 +74,18 @@ public class SegmentTracker {
             FileUtils.deleteDirectory(file);
             continue;
           }
+          long elapsedTime = System.currentTimeMillis();
           GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DirectMemory);
+          segmentBootstrapTime.update(System.currentTimeMillis() - elapsedTime, TimeUnit.MILLISECONDS);
           if (indexSegment == null) {
             logger.warn("The directory " + file.getAbsolutePath() + " doesn't contain the fully loaded segment");
             FileUtils.deleteDirectory(file);
+            segmentsFailedToLoad.inc();
             continue;
           }
           segmentsMap.put(file.getName(), new SegmentToZoieReaderAdapter(indexSegment, file.getName(), senseiDecorator));
+          currentNumberOfSegments.inc();
+          currentNumberOfDocuments.inc(indexSegment.getLength());
           activeSegments.add(file.getName());
           referenceCounts.put(file.getName(), new AtomicInteger(1));
           logger.info("Bootstrapped the  segment " + file.getName() + " with " + indexSegment.getLength() + " elements");
@@ -74,6 +94,7 @@ public class SegmentTracker {
         }
       }
     }
+    bootstrapTimePerPartition.update(System.currentTimeMillis() - time, TimeUnit.MILLISECONDS);
     logger.info("Finished index boostrap. Total time = " + (System.currentTimeMillis() - time) / 1000 + "secs");
   }
 
@@ -96,29 +117,36 @@ public class SegmentTracker {
   }
 
   public void instantiateSegment(String segmentId, SegmentInfo segmentInfo) {
+    long time = System.currentTimeMillis();
     String uri = segmentInfo.getPathUrl();
+    boolean success = false;
     if (uri.contains(",")) {
+      
       String[] uris =uri.split(",");     
-      boolean success = false;
       for (int index= uris.length - 1; index >= 0; index--) {
         String currentUri = uris[index].trim();
         logger.info("trying to load segment  + " + segmentId + ", by uri - " + currentUri);
         success = instantiateSegmentForUri(segmentId, currentUri);
         if (success) {
+          logger.info("Succesfully loaded  segment - " + segmentId + " by the uri " + currentUri);
           break;
         } else {
-          logger.info("Couldn't load the segment by the uri " + currentUri);
+          logger.warn("Couldn't load the segment by the uri " + currentUri);
         }
-      }
-      if (!success) {
-        logger.info("[final]Failed to load the segment - " + segmentId + ", by the collection of uris" + segmentInfo.getPathUrl());
-      }
+      }    
     } else {
-      if (!instantiateSegmentForUri(segmentId, uri)) {
-        logger.info("[final]Failed to load the segment - " + segmentId + ", by the uri -" + segmentInfo.getPathUrl());
-      }
+      success = instantiateSegmentForUri(segmentId, uri);
+      
     }
-   
+    if (!success) {
+      logger.warn("[final]Failed to load the segment - " + segmentId + ", by the collection of uris" + segmentInfo.getPathUrl());
+      segmentsFailedToLoad.inc();
+      segmentFailedInstantiateTime.update(System.currentTimeMillis() - time, TimeUnit.MILLISECONDS);
+      logger.error("[final]Failed to load the segment - " + segmentId + ", by the uri -" + segmentInfo.getPathUrl());
+    } else {
+      currentNumberOfSegments.inc();
+      segmentSuccesfulInstantiateTime.update(System.currentTimeMillis() - time, TimeUnit.MILLISECONDS);
+    }
   }
 
   public boolean instantiateSegmentForUri(String segmentId, String uri) {
@@ -130,7 +158,9 @@ public class SegmentTracker {
         if (uri.startsWith("http:")) {
           
           File tempFile = new File(indexDir, segmentId + "tar.gz");
+          long downloadTime = System.currentTimeMillis();
           FileUploadUtils.getFile(uri, tempFile);
+          segmentDownloadTime.update(System.currentTimeMillis() - downloadTime, TimeUnit.MILLISECONDS);
           logger.info("Downloaded file from " + uri);
           uncompressedFiles  = TarGzCompressionUtils.unTar(tempFile, indexDir);
           
@@ -154,14 +184,16 @@ public class SegmentTracker {
           }          
         }
         new File(file, "finishedLoading").createNewFile();
+        long loadTime = System.currentTimeMillis();
         GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DirectMemory);
+        
         logger.info("Loaded the new segment " + segmentId + " with " + indexSegment.getLength() + " elements");
         if (indexSegment == null) {
-         
-          
           FileUtils.deleteDirectory(file);
           throw new IllegalStateException("The directory " + file.getAbsolutePath() + " doesn't contain the fully loaded segment");
         }
+        segmentLoadIntoMemoryTime.update(System.currentTimeMillis() - loadTime, TimeUnit.MILLISECONDS);
+        currentNumberOfDocuments.inc(indexSegment.getLength());
         synchronized (globalLock) {
           
           segmentsMap.put(segmentId, new SegmentToZoieReaderAdapter(indexSegment, segmentId, senseiDecorator));
@@ -188,13 +220,19 @@ public class SegmentTracker {
     AtomicInteger count = referenceCounts.get(segmentId);
     
     if (count.get() == 1) {
+      SegmentToZoieReaderAdapter adapter = null;
       synchronized (globalLock) {
         if (count.get() == 1) {
-          segmentsMap.remove(segmentId);
+          adapter = segmentsMap.remove(segmentId);
           activeSegments.remove(segmentId);
           referenceCounts.remove(segmentId);
         }
       }  
+      if (adapter != null) {
+        currentNumberOfSegments.dec();
+        currentNumberOfDocuments.dec(adapter.getOfflineSegment().getLength());
+        numDeletedSegments.inc();
+      }
       logger.info("Segment " + segmentId + " has been deleted");
       executorService.execute(new Runnable() {
         @Override
