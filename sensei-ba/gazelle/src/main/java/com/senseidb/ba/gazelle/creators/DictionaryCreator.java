@@ -32,6 +32,7 @@ import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 
 /**
  * @author dpatel
@@ -435,7 +436,7 @@ public class DictionaryCreator {
     
     public boolean isSecondarySorted(int dictionaryCount) {
       //that means that the memory overhead should be less than two bytes per entry
-      boolean result = (!isSorted) && (!isMulti)&& (numberOfChanges * 12 + prevBiggerThanNextCount * 40) / 2 < count;
+      boolean result = (!isSorted) && (!isMulti)&& (numberOfChanges * 12 + prevBiggerThanNextCount * 40) / 2 <  count / 8  * CompressedIntArray.getNumOfBits(dictionaryCount) ;
       return result;
     }
 }
