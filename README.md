@@ -1,8 +1,8 @@
-What is Sensei
+What is SenseiBA
 ===============
-([http://www.senseidb.com/](http://www.senseidb.com/))
+([https://github.com/sensei-ba/sensei/wiki/Introduction](https://github.com/sensei-ba/sensei/wiki/Introduction))
 
-Sensei is a distributed, elastic realtime searchable database.
+SenseiBA is a distributed, elastic OLAP datastore campable of storing hundred billions documents and providing the real time seach.
 
 ------------------------------------
 
