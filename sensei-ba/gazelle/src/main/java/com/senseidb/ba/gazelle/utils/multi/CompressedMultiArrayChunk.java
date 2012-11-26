@@ -21,13 +21,16 @@ import org.apache.lucene.util.OpenBitSet;
 import org.springframework.util.Assert;
 
 import com.senseidb.ba.gazelle.persist.DictionaryPersistentManager;
-import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.Bits;
+import com.senseidb.ba.gazelle.utils.OffHeapCompressedIntArray;
+import com.senseidb.ba.gazelle.utils.HeapCompressedIntArray;
+import com.senseidb.ba.gazelle.utils.IntArray;
 import com.senseidb.ba.gazelle.utils.ReadMode;
 
 public class CompressedMultiArrayChunk {
   public static Logger logger =  Logger.getLogger(CompressedMultiArrayChunk.class);
   private OpenBitSet openBitSet;
-  private CompressedIntArray compressedIntArray;
+  private IntArray compressedIntArray;
   private int startElement;
   private int currentSize = 0;
   private final int numBitsPerElement;
@@ -42,7 +45,7 @@ private int maxNumValuesPerDoc;
   public CompressedMultiArrayChunk(int startElement, int numBitsPerElement, int initialSize) {
     this.startElement = startElement;
     this.numBitsPerElement = numBitsPerElement;
-    compressedIntArray = new CompressedIntArray(initialSize, numBitsPerElement);
+    compressedIntArray = new OffHeapCompressedIntArray(initialSize, numBitsPerElement);
     openBitSet = new OpenBitSet(initialSize);
   }
   public void add(int[] values, int length) {
@@ -54,7 +57,7 @@ private int maxNumValuesPerDoc;
     ensureCapacity(currentSize + length);
     openBitSet.set(currentSize);
     for (int i = 0; i < length; i++) {
-      compressedIntArray.addInt(currentSize + i, values[i]);
+      compressedIntArray.setInt(currentSize + i, values[i]);
     }
     currentSize += length;
     
@@ -64,14 +67,24 @@ private int maxNumValuesPerDoc;
   }
 
   private void ensureCapacity(int newCapacity) {
-    if (compressedIntArray.getCapacity() < newCapacity) {
-      long capacityToSet = Math.max((long) compressedIntArray.getCapacity() * 2, newCapacity);
-      Assert.state(CompressedIntArray.getRequiredBufferSize(capacityToSet, numBitsPerElement) <= Integer.MAX_VALUE);
-      CompressedIntArray newCompressedArray = new CompressedIntArray((int) capacityToSet, compressedIntArray.getNumOfBitsPerElement());
-      compressedIntArray.getStorage().rewind();
-      newCompressedArray.getStorage().rewind();
-      newCompressedArray.getStorage().put(compressedIntArray.getStorage());
-      compressedIntArray = newCompressedArray;
+    if (compressedIntArray.size() < newCapacity) {
+      long capacityToSet = Math.max((long) compressedIntArray.size() * 2, newCapacity);
+      Assert.state(OffHeapCompressedIntArray.getRequiredBufferSize(capacityToSet, numBitsPerElement) <= Integer.MAX_VALUE);
+      if (compressedIntArray instanceof OffHeapCompressedIntArray) {
+        OffHeapCompressedIntArray newCompressedArray = new OffHeapCompressedIntArray((int) capacityToSet, ((OffHeapCompressedIntArray) compressedIntArray).getNumOfBitsPerElement());
+        ByteBuffer storage = ((OffHeapCompressedIntArray) compressedIntArray).getStorage();
+        storage.rewind();
+        storage.rewind();
+        newCompressedArray.getStorage().put(storage);
+        compressedIntArray = newCompressedArray;
+      } else {
+        HeapCompressedIntArray heapCompressedIntArray = (HeapCompressedIntArray) compressedIntArray;
+        HeapCompressedIntArray newCompressedArray = new HeapCompressedIntArray((int) capacityToSet, heapCompressedIntArray.getBitsPerValue());
+        for (int i = 0; i < heapCompressedIntArray.getBlocks().length; i++) {
+          newCompressedArray.getBlocks()[i] = heapCompressedIntArray.getBlocks()[i];
+          compressedIntArray = newCompressedArray;
+        }
+      }
       openBitSet.ensureCapacity(capacityToSet);
     }
   }
@@ -141,10 +154,11 @@ public void flush(DataOutputStream dataOutputStream) {
       for (int i = 0; i < openBitSet.getNumWords(); i++) {
         dataOutputStream.writeLong(bits[i]);
       }
-      compressedIntArray.getStorage().rewind();
-      int sizeInBytes = (int) CompressedIntArray.getRequiredBufferSize(currentSize, numBitsPerElement);
+      OffHeapCompressedIntArray directMemoryArray = (OffHeapCompressedIntArray) compressedIntArray;
+      directMemoryArray.getStorage().rewind();
+      int sizeInBytes = (int) OffHeapCompressedIntArray.getRequiredBufferSize(currentSize, numBitsPerElement);
       byte[] bytes = new byte[sizeInBytes];
-      compressedIntArray.getStorage().get(bytes);
+      directMemoryArray.getStorage().get(bytes);
       dataOutputStream.write(bytes);
     } catch (Exception ex) {
       throw new RuntimeException(ex);
@@ -178,18 +192,28 @@ public void flush(DataOutputStream dataOutputStream) {
       fileInputStream = new FileInputStream(file);
       channel = fileInputStream.getChannel();
       int offset = 4 + 4 + 4 + numWords * 8;
-      int sizeInBytes = (int) CompressedIntArray.getRequiredBufferSize(arrayChunk.currentSize, numBitsPerElement);
+      int sizeInBytes = (int) OffHeapCompressedIntArray.getRequiredBufferSize(arrayChunk.currentSize, numBitsPerElement);
       ByteBuffer byteBuffer = null;
       if (readMode == ReadMode.MemoryMapped) {
-        byteBuffer = channel.map(MapMode.READ_ONLY, offset, sizeInBytes);        
+        byteBuffer = channel.map(MapMode.READ_ONLY, offset, sizeInBytes);    
+        OffHeapCompressedIntArray compressedIntArray = new OffHeapCompressedIntArray(arrayChunk.currentSize, numBitsPerElement, byteBuffer);
+        arrayChunk.compressedIntArray = compressedIntArray;
       } else if (readMode == ReadMode.DirectMemory) {
         byteBuffer = ByteBuffer.allocateDirect(sizeInBytes);
         channel.read(byteBuffer, offset);
+        OffHeapCompressedIntArray compressedIntArray = new OffHeapCompressedIntArray(arrayChunk.currentSize, numBitsPerElement, byteBuffer);
+        arrayChunk.compressedIntArray = compressedIntArray;
+      } else if (readMode == ReadMode.Heap) {
+        byteBuffer = channel.map(MapMode.READ_ONLY, offset, sizeInBytes);    
+            HeapCompressedIntArray heapCompressedIntArray = new HeapCompressedIntArray(arrayChunk.currentSize, numBitsPerElement);
+            for (int i = 0; i < heapCompressedIntArray.getBlocks().length; i++) {
+              heapCompressedIntArray.getBlocks()[i] = Bits.getLong(byteBuffer, i);
+            }
+            arrayChunk.compressedIntArray = heapCompressedIntArray;
       } else {
         throw new UnsupportedOperationException();
       }
-      CompressedIntArray compressedIntArray = new CompressedIntArray(arrayChunk.currentSize, numBitsPerElement, byteBuffer);
-      arrayChunk.compressedIntArray = compressedIntArray;
+     
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     } finally {
@@ -231,7 +255,7 @@ public void flush(DataOutputStream dataOutputStream) {
       int ret = 0;
       int tmp;
       while(bitSetIndex < next) {
-        tmp = compressedIntArray.readInt(bitSetIndex);
+        tmp = compressedIntArray.getInt(bitSetIndex);
         if (tmp != 0) {
           buffer[ret] = tmp;        
           ret++;

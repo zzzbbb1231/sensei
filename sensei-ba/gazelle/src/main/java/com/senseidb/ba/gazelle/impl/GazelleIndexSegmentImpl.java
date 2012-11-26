@@ -10,8 +10,6 @@ import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.IndexSegment;
-import com.senseidb.ba.gazelle.creators.MetadataCreator;
-import com.senseidb.ba.gazelle.utils.CompressedIntArray;
 
 public class GazelleIndexSegmentImpl implements IndexSegment {
   private Map<String, ColumnMetadata> columnMetatdaMap = new HashMap<String, ColumnMetadata>();

@@ -6,7 +6,7 @@ import java.util.Random;
 import org.apache.lucene.util.packed.PackedInts;
 import org.apache.lucene.util.packed.PackedInts.Mutable;
 
-import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.OffHeapCompressedIntArray;
 
 public class CompressionTest {
   public static void main(String[] args) {
@@ -19,12 +19,12 @@ public class CompressionTest {
       arr[i] = i ;
     }
     shuffleArray(arr);
-    Mutable mutable = PackedInts.getMutable(size, CompressedIntArray.getNumOfBits(dictSize)); 
-    CompressedIntArray intArray = new CompressedIntArray(size, CompressedIntArray.getNumOfBits(dictSize));
+    Mutable mutable = PackedInts.getMutable(size, OffHeapCompressedIntArray.getNumOfBits(dictSize)); 
+    OffHeapCompressedIntArray intArray = new OffHeapCompressedIntArray(size, OffHeapCompressedIntArray.getNumOfBits(dictSize));
     ByteBuffer byteBuffer =  ByteBuffer.allocateDirect(size);
     for (int i = 0; i < size; i++) {
       mutable.set(i, i % dictSize );
-      intArray.addInt(i, i % dictSize);
+      intArray.setInt(i, i % dictSize);
     }
     long time = 0;
     long count = 0;
@@ -40,7 +40,7 @@ public class CompressionTest {
       count = 0;
      for (int i = 0; i < size; i++) {
        //count += intArray.readInt(arr[i]);
-       count += intArray.readInt(i);
+       count += intArray.getInt(i);
      }
      System.out.println("CompressedInt Time = " + (System.currentTimeMillis() - time) + ", count = " + count);
     

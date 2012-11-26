@@ -54,12 +54,14 @@ public class SegmentTracker {
   private IndexReaderDecorator senseiDecorator;
   private volatile boolean isStopped;
   private FileSystem fileSystem;
+  private ReadMode readMode;
   @SuppressWarnings("rawtypes")
-  public void start(File indexDir, FileSystem fileSystem, IndexReaderDecorator senseiDecorator, ExecutorService executorService) {
+  public void start(File indexDir, FileSystem fileSystem, IndexReaderDecorator senseiDecorator, ReadMode readMode, ExecutorService executorService) {
    
     this.indexDir = indexDir;
     this.fileSystem = fileSystem;
     this.senseiDecorator = senseiDecorator;
+    this.readMode = readMode;
     this.executorService = executorService;
     logger.info("Bootstrapping indexes on the startup");
     long time = System.currentTimeMillis();
@@ -75,7 +77,7 @@ public class SegmentTracker {
             continue;
           }
           long elapsedTime = System.currentTimeMillis();
-          GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DirectMemory);
+          GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, readMode);
           segmentBootstrapTime.update(System.currentTimeMillis() - elapsedTime, TimeUnit.MILLISECONDS);
           if (indexSegment == null) {
             logger.warn("The directory " + file.getAbsolutePath() + " doesn't contain the fully loaded segment");
@@ -185,7 +187,7 @@ public class SegmentTracker {
         }
         new File(file, "finishedLoading").createNewFile();
         long loadTime = System.currentTimeMillis();
-        GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, ReadMode.DirectMemory);
+        GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, readMode);
         
         logger.info("Loaded the new segment " + segmentId + " with " + indexSegment.getLength() + " elements");
         if (indexSegment == null) {

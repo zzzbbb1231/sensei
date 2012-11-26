@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -26,7 +27,9 @@ import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
+import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.ReadMode;
@@ -92,9 +95,31 @@ public class SegmentReaderTest {
   }
 
   @Test
-  public void testgetLength() throws ConfigurationException, IOException {
+  public void testHeapAndDMMemoryEqual() throws ConfigurationException, IOException {
     GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(_indexDir, ReadMode.DirectMemory);
-    assertTrue(segment.getLength() > 0);
+    GazelleIndexSegmentImpl heapSegment = SegmentPersistentManager.read(_indexDir, ReadMode.Heap);
+    for (String column : heapSegment.getForwardIndexes().keySet()) {
+      if (segment.getForwardIndex(column) instanceof GazelleForwardIndexImpl) {
+        GazelleForwardIndexImpl dmIndex = (GazelleForwardIndexImpl) segment.getForwardIndex(column);
+        GazelleForwardIndexImpl heapIndex = (GazelleForwardIndexImpl) heapSegment.getForwardIndex(column);
+        for (int i = 0; i < dmIndex.getLength(); i++) {
+          
+          assertEquals("" + i, dmIndex.getCompressedIntArray().getInt(i), heapIndex.getCompressedIntArray().getInt(i));
+        }
+      }
+      if (segment.getForwardIndex(column) instanceof MultiValueForwardIndexImpl1) {
+        MultiValueForwardIndexImpl1 dmIndex = (MultiValueForwardIndexImpl1) segment.getForwardIndex(column);
+        MultiValueForwardIndexImpl1 heapIndex = (MultiValueForwardIndexImpl1) heapSegment.getForwardIndex(column);
+        int[] buffer1 = new int[dmIndex.getCompressedMultiArray().getMaxNumValuesPerDoc()];
+        int[] buffer2 = new int[heapIndex.getCompressedMultiArray().getMaxNumValuesPerDoc()];
+        for (int i = 0; i < dmIndex.getLength(); i++) {
+          int count1 = dmIndex.getCompressedMultiArray().randomRead(buffer1, i);
+          int count2 = heapIndex.getCompressedMultiArray().randomRead(buffer2, i);
+          assertEquals(count1, count2);
+          assertEquals(Arrays.toString(buffer1), Arrays.toString(buffer2));
+        }
+      }
+    }
   }
 
   @Test
@@ -139,7 +164,10 @@ public class SegmentReaderTest {
   public void testRandomScanPerfForDBBufferMode() throws ConfigurationException, IOException {
     testrandomScanPerfFor(ReadMode.DirectMemory);
   }
-
+  @Test
+  public void testRandomScanPerfForHeap() throws ConfigurationException, IOException {
+    testrandomScanPerfFor(ReadMode.Heap);
+  }
   public void testrandomScanPerfFor(ReadMode mode) throws ConfigurationException, IOException {
     GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(_indexDir, mode);
     Map<String, ColumnMetadata> metadataMap = segment.getColumnMetadataMap();
@@ -167,7 +195,10 @@ public class SegmentReaderTest {
   public void testSequentialScanPerfForDBBufferMode() throws ConfigurationException, IOException {
     testSequentialScanPerfFor(ReadMode.DirectMemory);
   }
-
+  @Test
+  public void testSequentialScanPerfForHeap() throws ConfigurationException, IOException {
+    testSequentialScanPerfFor(ReadMode.Heap);
+  }
   public void testSequentialScanPerfFor(ReadMode mode) throws ConfigurationException, IOException {
     GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(_indexDir, mode);
     Map<String, ColumnMetadata> metadataMap = segment.getColumnMetadataMap();

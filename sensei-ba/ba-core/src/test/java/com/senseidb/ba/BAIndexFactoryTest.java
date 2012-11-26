@@ -7,6 +7,7 @@ import junit.framework.TestCase;
 import org.I0Itec.zkclient.ZkClient;
 
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.ba.management.BaIndexFactory;
 import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;
@@ -29,7 +30,7 @@ public class BAIndexFactoryTest extends TestCase {
      zkClient = new ZkClient("localhost:2181");
      zkManager = new ZkManager(zkClient, "testCluster2");
      zkManager.removePartition(0);
-     baIndexFactory = new BaIndexFactory(indexDir, "testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, 0, null);
+     baIndexFactory = new BaIndexFactory(indexDir, "testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, ReadMode.Heap, 0, null);
      baIndexFactory.start();
      indexSegment = TestUtil.createIndexSegment();
   }
@@ -58,7 +59,7 @@ public class BAIndexFactoryTest extends TestCase {
   public void test2RegisteringTwoSegmentsAndRestartingFactory() throws Exception {
     test1RegisteringTwoSegments();
     baIndexFactory.shutdown();
-    baIndexFactory = new BaIndexFactory(indexDir,"testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, 0, null);
+    baIndexFactory = new BaIndexFactory(indexDir,"testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, ReadMode.DirectMemory, 0, null);
     baIndexFactory.start();
     new Wait(){
       public boolean until() {return baIndexFactory.getIndexReaders().size() == 2;};
@@ -67,7 +68,7 @@ public class BAIndexFactoryTest extends TestCase {
   public void test3Delete() throws Exception {
     test1RegisteringTwoSegments();
     baIndexFactory.shutdown();
-    baIndexFactory = new BaIndexFactory(indexDir, "testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, 0, null);
+    baIndexFactory = new BaIndexFactory(indexDir, "testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, ReadMode.DirectMemory, 0, null);
     baIndexFactory.start();
     zkManager.removeSegment(0, "segment2");
     new Wait() {

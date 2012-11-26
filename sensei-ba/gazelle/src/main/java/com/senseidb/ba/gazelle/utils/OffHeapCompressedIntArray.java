@@ -4,13 +4,13 @@ import java.nio.ByteBuffer;
 
 import org.springframework.util.Assert;
 
-public class CompressedIntArray {
+public class OffHeapCompressedIntArray  extends IntArray {
   private final ByteBuffer buf;
   private int capacity;
   private final int numOfBitsPerElement;
   private byte[] tempBuf;
 
-  public CompressedIntArray(int numOfElements, int numOfBitsPerElement) {
+  public OffHeapCompressedIntArray(int numOfElements, int numOfBitsPerElement) {
     this.numOfBitsPerElement = numOfBitsPerElement;
     capacity = numOfElements;
     long requiredBufferSize = getRequiredBufferSize(numOfElements, numOfBitsPerElement);
@@ -26,7 +26,7 @@ public class CompressedIntArray {
       return  (int) Math.ceil(Math.log(dictionarySize)/Math.log(2));
     }
 
-  public CompressedIntArray(int numOfElements, int numOfBitsPerElement, ByteBuffer byteBuffer) {
+  public OffHeapCompressedIntArray(int numOfElements, int numOfBitsPerElement, ByteBuffer byteBuffer) {
     this.numOfBitsPerElement = numOfBitsPerElement;
     capacity = numOfElements;
     buf = byteBuffer;
@@ -44,7 +44,7 @@ public class CompressedIntArray {
  * @param position
  * @param number
  */
-public void addInt(int position, int number) {
+public void setInt(int position, int number) {
   addInt(position, number, tempBuf);
   }
   public void addInt(int position, int number, byte[] tempBuf) {
@@ -74,7 +74,7 @@ public void addInt(int position, int number) {
     buf.put(tempBuf, 0, numberOfBytesUsed);
   }
 
-  public int readInt(int position) {
+  public int getInt(int position) {
 
     /*
      * int bytePosition = position * numOfBitsPerElement / 8; int startBitOffset
@@ -110,7 +110,7 @@ public void addInt(int position, int number) {
     return (int) number;
   }
 
-public int getCapacity() {
+public int size() {
   return capacity;
 }
 

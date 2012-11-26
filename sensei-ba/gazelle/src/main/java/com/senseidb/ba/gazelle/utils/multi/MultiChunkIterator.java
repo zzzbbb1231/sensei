@@ -5,13 +5,14 @@ import java.util.Arrays;
 import org.apache.lucene.util.OpenBitSet;
 
 import com.browseengine.bobo.util.BigSegmentedArray;
-import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.OffHeapCompressedIntArray;
+import com.senseidb.ba.gazelle.utils.IntArray;
 
 public class MultiChunkIterator implements MultiFacetIterator {
   private final int[] skipList;
   private final int[] offsets;
   private final OpenBitSet openBitSet;
-  private final CompressedIntArray compressedIntArray;
+  private final IntArray compressedIntArray;
   private final int startElement;
   private final int bitSetSize;
   
@@ -19,7 +20,7 @@ public class MultiChunkIterator implements MultiFacetIterator {
   private int previousBitSetIndex = -1;
   private int previousIndex;
   
-  public MultiChunkIterator(int[] skipList, int[] offsets, OpenBitSet openBitSet, CompressedIntArray compressedIntArray, int startElement,
+  public MultiChunkIterator(int[] skipList, int[] offsets, OpenBitSet openBitSet, IntArray compressedIntArray, int startElement,
       int currentSize) {
     super();
     this.skipList = skipList;
@@ -82,7 +83,7 @@ public class MultiChunkIterator implements MultiFacetIterator {
           offset++;
           next = openBitSet.nextSetBit(index + 1);
         }
-       int valueId = compressedIntArray.readInt(index);
+       int valueId = compressedIntArray.getInt(index);
       if (valueId >= startIndex && valueId <= endIndex) {
          return fromIndex + offset;
         } 
@@ -105,7 +106,7 @@ public class MultiChunkIterator implements MultiFacetIterator {
           offset++;
           next = openBitSet.nextSetBit(index + 1);
         }
-       if (compressedIntArray.readInt(index) == value) {
+       if (compressedIntArray.getInt(index) == value) {
          return fromIndex + offset;
         } 
        index++;
@@ -125,7 +126,7 @@ public class MultiChunkIterator implements MultiFacetIterator {
     int ret = 0;
     int tmp;
     while(i < next) {
-      tmp = compressedIntArray.readInt(i);
+      tmp = compressedIntArray.getInt(i);
       if (tmp != 0) {
         buffer[ret] = tmp;        
         ret++;
@@ -181,7 +182,7 @@ public class MultiChunkIterator implements MultiFacetIterator {
          return;
         }
         
-        int valueIndex = compressedIntArray.readInt(index);
+        int valueIndex = compressedIntArray.getInt(index);
         counts.add(valueIndex, counts.get(valueIndex) + 1);
        index++;
       }

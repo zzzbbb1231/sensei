@@ -10,6 +10,7 @@ import com.senseidb.ba.format.JsonDataSource;
 import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
+import com.senseidb.ba.util.TestUtil;
 
 public class OfflineIndexTest extends TestCase {
 
@@ -24,7 +25,6 @@ public class OfflineIndexTest extends TestCase {
   
     IndexSegment offlineSegment =  com.senseidb.ba.format.GenericIndexCreator.create(new File(OfflineIndexTest.class.getClassLoader().getResource("data/sample_data.csv").toURI()));
     assertEquals(10000, offlineSegment.getLength());
-    System.out.println(((GazelleIndexSegmentImpl)offlineSegment).getColumnMetadataMap());
   }
   @Test
   public void test3SortAfterCreation() throws Exception {
@@ -33,4 +33,5 @@ public class OfflineIndexTest extends TestCase {
     assertEquals(10000, offlineSegment.getLength());
     assertTrue(offlineSegment.getForwardIndex("dim_memberIndustry") instanceof SortedForwardIndex);
   }
+ 
 }

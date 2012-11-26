@@ -10,15 +10,15 @@ import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.util.BigIntArray;
 import com.browseengine.bobo.util.BigSegmentedArray;
 import com.kamikaze.docidset.impl.AndDocIdSet;
-import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.OffHeapCompressedIntArray;
 
 public class PerfTest {
     public static class ForwardIndexIterator extends DocIdSetIterator {
         int doc = -1;
-        private final CompressedIntArray forwardIndex;
+        private final OffHeapCompressedIntArray forwardIndex;
         private final int index;
         private final int length;
-        public ForwardIndexIterator(CompressedIntArray forwardIndex, int index, int length) {
+        public ForwardIndexIterator(OffHeapCompressedIntArray forwardIndex, int index, int length) {
           this.forwardIndex = forwardIndex;
           this.index = index;
         this.length = length;
@@ -28,7 +28,7 @@ public class PerfTest {
           while (true) {
             doc++;
             if (length <= doc) return NO_MORE_DOCS;
-            if (forwardIndex.readInt(doc) == index) {
+            if (forwardIndex.getInt(doc) == index) {
                 return doc;
               }
             }
@@ -152,12 +152,12 @@ public int iterate() throws IOException {
         int numDocs = 100000000;
         int dictSize = 2000;
         int step = 10;
-        CompressedIntArray _orderArray1 = new CompressedIntArray(numDocs, CompressedIntArray.getNumOfBits(dictSize));
-        CompressedIntArray _orderArray2 = new CompressedIntArray(numDocs, CompressedIntArray.getNumOfBits(dictSize));
+        OffHeapCompressedIntArray _orderArray1 = new OffHeapCompressedIntArray(numDocs, OffHeapCompressedIntArray.getNumOfBits(dictSize));
+        OffHeapCompressedIntArray _orderArray2 = new OffHeapCompressedIntArray(numDocs, OffHeapCompressedIntArray.getNumOfBits(dictSize));
         for (int i = 0; i < numDocs; i++) {
-            _orderArray1.addInt(i, dictSize/2);
+            _orderArray1.setInt(i, dictSize/2);
             if (i % step == 0)
-            _orderArray2.addInt(i, dictSize/2);
+            _orderArray2.setInt(i, dictSize/2);
         }
         
         while (true) {

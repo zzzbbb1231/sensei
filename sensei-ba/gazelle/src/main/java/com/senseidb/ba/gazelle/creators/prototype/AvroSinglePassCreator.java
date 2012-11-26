@@ -25,7 +25,7 @@ import com.senseidb.ba.gazelle.creators.MetadataCreator;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
-import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.OffHeapCompressedIntArray;
 import com.senseidb.ba.gazelle.utils.multi.CompressedMultiArray;
 
 public class AvroSinglePassCreator {
@@ -151,7 +151,7 @@ public class AvroSinglePassCreator {
   }
   private ForwardIndex createForwardIndex(SinglePassIndexCreator singlePassIndexCreator, String columnName, boolean isSorted, TermValueList termValueList, int[] permutationArray, int length) {
    if (singlePassIndexCreator.isMulti()) {
-     CompressedMultiArray compressedMultiArray = new CompressedMultiArray(CompressedIntArray.getNumOfBits(termValueList.size()), length);
+     CompressedMultiArray compressedMultiArray = new CompressedMultiArray(OffHeapCompressedIntArray.getNumOfBits(termValueList.size()), length);
      int index;
      int[] buffer = new int[singlePassIndexCreator.getMaxValuesCount()];
      for (int i = 0; i < length; i++) {
@@ -167,7 +167,7 @@ public class AvroSinglePassCreator {
      return new com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1(columnName, compressedMultiArray, termValueList, MetadataCreator.createMultiMetadata(columnName, termValueList, getType(termValueList), length));
    }
    if (!isSorted) {
-     CompressedIntArray compressedIntArray = new CompressedIntArray(CompressedIntArray.getNumOfBits(termValueList.size()), length);
+     OffHeapCompressedIntArray compressedIntArray = new OffHeapCompressedIntArray(OffHeapCompressedIntArray.getNumOfBits(termValueList.size()), length);
      int index;    
      for (int i = 0; i < length; i++) {
        if (permutationArray == null) {
@@ -175,7 +175,7 @@ public class AvroSinglePassCreator {
        } else {
          index = permutationArray[i];
        }
-       compressedIntArray.addInt(i, singlePassIndexCreator.getValueIndex(index));
+       compressedIntArray.setInt(i, singlePassIndexCreator.getValueIndex(index));
      }
     
      return new GazelleForwardIndexImpl(columnName, compressedIntArray, termValueList, MetadataCreator.createMetadata(columnName, termValueList, getType(termValueList), length, false));

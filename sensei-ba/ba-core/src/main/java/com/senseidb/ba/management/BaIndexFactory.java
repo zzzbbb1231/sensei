@@ -19,6 +19,7 @@ import proj.zoie.api.ZoieIndexReader;
 import proj.zoie.mbean.ZoieAdminMBean;
 
 import com.browseengine.bobo.api.BoboIndexReader;
+import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
 public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
@@ -31,13 +32,15 @@ public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
   private SegmentTracker segmentTracker;
   private final ExecutorService executorService;
   private final String clusterName;
+  private final ReadMode readMode;
 
-  public BaIndexFactory(File idxDir, String clusterName, SenseiIndexReaderDecorator decorator, ZkClient zkClient, FileSystem fileSystem, int partitionId, ExecutorService executorService) {
+  public BaIndexFactory(File idxDir, String clusterName, SenseiIndexReaderDecorator decorator, ZkClient zkClient, FileSystem fileSystem, ReadMode readMode, int partitionId, ExecutorService executorService) {
     this.idxDir = idxDir;
     this.clusterName = clusterName;
     this.decorator = decorator;
     this.zkClient = zkClient;
     this.fileSystem = fileSystem;
+    this.readMode = readMode;
     this.partitionId = partitionId;
     this.executorService = executorService != null ? executorService : Executors.newSingleThreadExecutor();
    
@@ -88,7 +91,7 @@ public class BaIndexFactory implements Zoie<BoboIndexReader, Object> {
       idxDir.mkdirs();
     }
     segmentTracker = new SegmentTracker();
-    segmentTracker.start(idxDir, fileSystem, decorator, executorService);
+    segmentTracker.start(idxDir, fileSystem, decorator, readMode, executorService);
     zookeeperTracker = new ZookeeperTracker(zkClient, clusterName, partitionId, segmentTracker);
     zookeeperTracker.start();
     

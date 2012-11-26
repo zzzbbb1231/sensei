@@ -17,7 +17,7 @@ import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;
 import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
-import com.senseidb.ba.gazelle.utils.CompressedIntArray;
+import com.senseidb.ba.gazelle.utils.OffHeapCompressedIntArray;
 import com.senseidb.ba.gazelle.utils.multi.CompressedMultiArray;
 
 public class ForwardIndexCreator {
@@ -26,7 +26,7 @@ public class ForwardIndexCreator {
     private DictionaryCreator dictionaryCreator;
     private TermValueList<?> dictionary;
     private int count;
-    private CompressedIntArray compressedIntArray;
+    private OffHeapCompressedIntArray compressedIntArray;
     private SortedForwardIndexImpl sortedForwardIndexImpl;
     private SecondarySortedForwardIndexImpl secondarySortedForwardIndexImpl;
     private CompressedMultiArray compressedMultiArray;
@@ -58,15 +58,15 @@ public class ForwardIndexCreator {
         } else if (dictionaryCreator.isSorted()) {
             sortedForwardIndexImpl = new SortedForwardIndexImpl(dictionary, new int[dictionary.size()], new int[dictionary.size()], count, MetadataCreator.createMetadata(columnName, dictionary, columnType, count, true));
         } else if (columnType.isMulti()) {
-            compressedMultiArray = new CompressedMultiArray(CompressedIntArray.getNumOfBits(dictionary.size()), count * 2);
+            compressedMultiArray = new CompressedMultiArray(OffHeapCompressedIntArray.getNumOfBits(dictionary.size()), count * 2);
         } else {
-          compressedIntArray = new CompressedIntArray(count, CompressedIntArray.getNumOfBits(dictionary.size()), getByteBuffer(count, dictionary.size()));
+          compressedIntArray = new OffHeapCompressedIntArray(count, OffHeapCompressedIntArray.getNumOfBits(dictionary.size()), getByteBuffer(count, dictionary.size()));
         }
         return dictionary;
     }
     public void addValueToForwardIndex(Object value) {
         if (compressedIntArray != null) {
-            compressedIntArray.addInt(i, dictionaryCreator.getIndex(value, columnType));
+            compressedIntArray.setInt(i, dictionaryCreator.getIndex(value, columnType));
             i++;
         }
         if (sortedForwardIndexImpl != null) {
@@ -151,7 +151,7 @@ public TermValueList<?> getDictionary() {
 }
 
 private static ByteBuffer getByteBuffer(int numOfElements, int dictionarySize) {
-    return ByteBuffer.allocate((int) CompressedIntArray.getRequiredBufferSize(numOfElements, CompressedIntArray.getNumOfBits(dictionarySize)));
+    return ByteBuffer.allocate((int) OffHeapCompressedIntArray.getRequiredBufferSize(numOfElements, OffHeapCompressedIntArray.getNumOfBits(dictionarySize)));
   }
     
 }

@@ -1,7 +1,7 @@
 package com.senseidb.ba.gazelle.utils;
 
 
-public class HeapCompressedIntArray  {
+public class HeapCompressedIntArray extends IntArray {
     static final int BLOCK_SIZE = 64; // 32 = int, 64 = long
     static final int BLOCK_BITS = 6; // The #bits representing BLOCK_SIZE
     static final int MOD_MASK = BLOCK_SIZE - 1; // x % BLOCK_SIZE
@@ -19,6 +19,7 @@ public class HeapCompressedIntArray  {
      */
     private final int bpvMinusBlockSize;
     private final int bitsPerValue;
+    private final int valueCount;
 
     /**
      * Creates an array with the internal structures adjusted for the given limits
@@ -52,12 +53,15 @@ public class HeapCompressedIntArray  {
      */
     public HeapCompressedIntArray(long[] blocks, int valueCount, int bitsPerValue) {
       this.blocks = blocks;
+      this.valueCount = valueCount;
     this.bitsPerValue = bitsPerValue;
       maskRight = ~0L << (BLOCK_SIZE - bitsPerValue) >>> (BLOCK_SIZE - bitsPerValue);
       bpvMinusBlockSize = bitsPerValue - BLOCK_SIZE;
     }
 
-    
+    public int size() {
+      return valueCount;
+    }
 
     private static int size(int valueCount, int bitsPerValue) {
       final long totBitCount = (long) valueCount * bitsPerValue;
@@ -69,7 +73,7 @@ public class HeapCompressedIntArray  {
      *          the position of the value.
      * @return the value at the given index.
      */
-    public int readInt(final int index) {
+    public int getInt(final int index) {
       // The abstract index in a bit stream
       final long majorBitPos = (long) index * bitsPerValue;
       // The index in the backing long-array
@@ -87,7 +91,7 @@ public class HeapCompressedIntArray  {
 
     
 
-    public void addInt(final int index, final int value) {
+    public void setInt(final int index, final int value) {
       // The abstract index in a contiguous bit stream
       final long majorBitPos = (long) index * bitsPerValue;
       // The index in the backing long-array
@@ -106,10 +110,13 @@ public class HeapCompressedIntArray  {
       blocks[elementPos + 1] = blocks[elementPos + 1] & (~0L >>> endBits)
           | (value << (BLOCK_SIZE - endBits));
     }
+   public long[] getBlocks() {
+    return blocks;
+  }
 
-    
-   
-
+  public int getBitsPerValue() {
+    return bitsPerValue;
+  }
    
 }
 

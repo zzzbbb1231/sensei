@@ -45,4 +45,13 @@ public class CompressionTest extends TestCase {
     GazelleIndexSegmentImpl read = SegmentPersistentManager.read(segmentDir, ReadMode.DirectMemory);
     assertNotNull(read);
   }
+  public void test2ReadOnHeap() throws Exception {
+    File compressedFile = new File(indexDir, "compressedIndex.tar.gz");
+    TarGzCompressionUtils.createTarGzOfDirectory(segmentDir.getAbsolutePath() + "/", compressedFile.getAbsolutePath());
+    SingleNodeStarter.rmrf(segmentDir);
+    TarGzCompressionUtils.unTar(compressedFile, indexDir);
+    
+    GazelleIndexSegmentImpl read = SegmentPersistentManager.read(segmentDir, ReadMode.Heap);
+    assertNotNull(read);
+  }
 }
