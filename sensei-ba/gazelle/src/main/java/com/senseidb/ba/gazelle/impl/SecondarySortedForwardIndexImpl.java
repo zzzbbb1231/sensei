@@ -2,7 +2,6 @@ package com.senseidb.ba.gazelle.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.util.Assert;
@@ -13,8 +12,7 @@ import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.MetadataAware;
 import com.senseidb.ba.gazelle.SecondarySortedForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
-import com.senseidb.ba.gazelle.SortedForwardIndex;
-import com.senseidb.ba.gazelle.utils.SortUtil;
+import com.senseidb.ba.gazelle.SingleValueRandomReader;
 
 public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex, SecondarySortedForwardIndex , MetadataAware {
   private TermValueList<?> dictionary;
@@ -37,25 +35,56 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
   public int getLength() {
       return length;
   }
-
-  @Override
-  public int getValueIndex(int docId) {
-      int index = SortUtil.binarySearch(sortedRegions, 0, sortedRegions.length, docId);
-      if (index < 0) {
-          index = (index + 1) * -1;
-      }
-      if (index < 0 || index >= sortedRegions.length) {
-          return -1;
-      }
-      SortedRegion region = sortedRegions[index];
-      for (int k = 0; k < region.maxDocIds.length; k++) {
-        if (docId <= region.maxDocIds[k]) {          
-          return region.dictionaryIds[k];
+@Override
+public SingleValueRandomReader getReader() {
+ 
+  return new SingleValueRandomReader() {
+    private int currentRegionIndex = -1;
+    private final SortedRegion[] regions = sortedRegions;
+    private SortedRangeCountFinder countFinder = new SortedRangeCountFinder(regions[0]);
+    private SortedRegion currentRegion = null;
+    public boolean advance(int docid) {
+      if (currentRegionIndex == -1) {
+        if (regions[0].maxDocId >= docid) {
+          currentRegionIndex = 0;
+          currentRegion = regions[currentRegionIndex];
+          //countFinder.reset(regions[currentRegionIndex]);
+          return true;
+        } else {
+          while (++currentRegionIndex < regions.length) {
+            if (regions[currentRegionIndex].maxDocId >= docid) {
+              currentRegion = regions[currentRegionIndex];
+              countFinder.reset(regions[currentRegionIndex]);
+              return true;
+            }
+          }
+          return false;
         }
-      }     
-      
-      return -1;
-  }
+      } 
+      if (docid <= currentRegion.maxDocId) {
+        return true;
+      } else {
+        while (++currentRegionIndex < regions.length) {
+          if (docid <= regions[currentRegionIndex].maxDocId) {
+            currentRegion = regions[currentRegionIndex];
+            countFinder.reset(regions[currentRegionIndex]);
+            return true;
+          }
+        }
+        return false;
+      }
+     
+    }
+    @Override
+    public int getValueIndex(int docId) {
+      if (!advance(docId)) {
+        return -1;
+      }
+      return countFinder.find(docId);
+    }
+  };
+}
+
 
   
 
@@ -121,5 +150,58 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
   @Override
   public SortedRegion[] getSortedRegions() {
     return sortedRegions;
+  }
+  
+ public static class SortedRangeCountFinder  {
+    
+    private int currentIndex = -1;
+    private int currentValueId = -1;
+    private int[] minDocIds;
+    private int[] maxDocIds;
+    private int[] dictionaryIds;
+
+    public SortedRangeCountFinder(SortedRegion sortedRegion) {
+    
+      minDocIds = sortedRegion.getMinDocIds();
+      maxDocIds = sortedRegion.getMaxDocIds();
+      dictionaryIds = sortedRegion.dictionaryIds;
+    }
+    public void reset(SortedRegion sortedRegion) {
+      minDocIds = sortedRegion.getMinDocIds();
+      maxDocIds = sortedRegion.getMaxDocIds();
+      dictionaryIds = sortedRegion.dictionaryIds;
+      currentIndex = -1;
+      currentValueId = -1;
+    }
+    
+    
+    
+    public int find(int docid) {  
+      if (currentIndex == -1) {
+        if (maxDocIds[0] >= docid) {
+          currentIndex = 0;
+          currentValueId = dictionaryIds[0];
+        } else {
+          currentIndex = Arrays.binarySearch(maxDocIds, docid);
+          if (currentIndex < 0) {
+            currentIndex = (currentIndex + 1) * -1;
+          }
+          if (currentIndex >= maxDocIds.length) {
+            return -1;
+          }          
+          currentValueId = dictionaryIds[currentIndex];
+          return currentValueId;
+        }
+      } else if (docid > maxDocIds[currentIndex]) {
+        while (++currentIndex < maxDocIds.length) {
+          if (maxDocIds[currentIndex] >= docid) {
+            currentValueId = dictionaryIds[currentIndex];
+            return currentValueId;
+          }
+        }
+        return -1;
+      }
+      return currentValueId;
+    }
   }
 }

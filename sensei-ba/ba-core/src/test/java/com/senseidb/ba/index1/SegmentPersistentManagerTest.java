@@ -121,7 +121,7 @@ private void compareWithJsonFile(GazelleIndexSegmentImpl indexSegmentImpl) throw
             TermValueList<?> dictionary = indexSegmentImpl.getDictionary(column);
             
                 String jsonValue = json.get(column).toString();
-                int valueIndex = forwardIndex.getValueIndex(i);
+                int valueIndex = forwardIndex.getReader().getValueIndex(i);
                
                 String value = dictionary.get(valueIndex);
                 value = prepareValue(value);

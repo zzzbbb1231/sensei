@@ -19,9 +19,6 @@ import com.senseidb.util.SingleNodeStarter;
 
 public class BAStandaloneIntegrationTest extends TestCase {
   
-   
-  
-  
   @Before
   public void setUp() throws Exception {
     File indexDir = new File("/tmp/static-ba"); 

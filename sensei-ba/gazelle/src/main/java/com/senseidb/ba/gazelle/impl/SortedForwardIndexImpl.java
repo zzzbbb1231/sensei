@@ -10,6 +10,7 @@ import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.MetadataAware;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
+import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
 import com.senseidb.ba.gazelle.utils.SortUtil;
 
@@ -53,18 +54,50 @@ public SortedForwardIndexImpl() {
     public int getLength() {
         return length;
     }
-
     @Override
-    public int getValueIndex(int docId) {
-        int index = Arrays.binarySearch(maxDocIds, 1, maxDocIds.length, docId);
-        if (index < 0) {
-            index = (index + 1) * -1;
+    public SingleValueRandomReader getReader() {
+   
+    return new SingleValueRandomReader() {
+      private int currentValueId = -1;
+      private int[] minDocIds = SortedForwardIndexImpl.this.minDocIds;
+      private int[] maxDocIds = SortedForwardIndexImpl.this.maxDocIds;
+      @Override
+      public int getValueIndex(int docId) {
+        if (currentValueId == -1) {
+          if (maxDocIds[1] >= docId) {
+            currentValueId = 1;
+          } else {
+            int index = Arrays.binarySearch(maxDocIds, 1, maxDocIds.length, docId);
+            if (index < 0) {
+              index = (index + 1) * -1;
+            }
+            currentValueId = index;
+            if (index >= maxDocIds.length) {
+              return - 1;
+            }
+          }
+        } else if (docId > maxDocIds[currentValueId]) {
+          currentValueId++;
+          if (currentValueId == maxDocIds.length) {
+            return - 1;
+          }
+          if (docId > maxDocIds[currentValueId]) {
+            int index = Arrays.binarySearch(maxDocIds, currentValueId, maxDocIds.length, docId);
+            if (index < 0) {
+              index = (index + 1) * -1;
+            }
+            currentValueId = index;
+            if (index >= maxDocIds.length) {
+              return - 1;
+            }
+          }
+
         }
-        if (index < 0 || index >= maxDocIds.length) {
-            return -1;
-        }
-        return index;
+        return currentValueId;
+      }
+    };
     }
+   
 
     
 

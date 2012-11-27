@@ -138,8 +138,8 @@ public class GenericIndexCreator {
         @Override
         public int compare(int k1, int k2) {
           for (SingleValueForwardIndex index :  forwardIndexes) {
-            int val1 = index.getValueIndex(permutationArray[k1]);
-            int val2 = index.getValueIndex(permutationArray[k2]);
+            int val1 = index.getReader().getValueIndex(permutationArray[k1]);
+            int val2 = index.getReader().getValueIndex(permutationArray[k2]);
             if (val1 > val2) return 1;
             if (val2 > val1) return -1;
            
@@ -195,7 +195,7 @@ public class GenericIndexCreator {
           int docId = permutationArray[counter];
           ForwardIndex forwardIndex = nonSortedSegment.getForwardIndex(column);
           if (forwardIndex instanceof SingleValueForwardIndex) {              
-            int valueIndex = ((SingleValueForwardIndex) forwardIndex).getValueIndex(docId);
+            int valueIndex = ((SingleValueForwardIndex) forwardIndex).getReader().getValueIndex(docId);
              if (valueIndex < 0) {
                System.out.println("!!!");
              } 

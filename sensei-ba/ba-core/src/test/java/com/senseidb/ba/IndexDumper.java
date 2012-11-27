@@ -33,7 +33,7 @@ public static void main(String[] args) throws Exception {
     for (String column : segment.getColumnTypes().keySet()) {
       ForwardIndex forwardIndex = segment.getForwardIndex(column);
       if (forwardIndex instanceof SingleValueForwardIndex) {
-        System.out.print(", " + forwardIndex.getDictionary().get(((SingleValueForwardIndex)forwardIndex).getValueIndex(i)));
+        System.out.print(", " + forwardIndex.getDictionary().get(((SingleValueForwardIndex)forwardIndex).getReader().getValueIndex(i)));
       }
     }
     System.out.println();

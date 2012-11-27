@@ -11,6 +11,7 @@ import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
+import com.senseidb.ba.gazelle.SingleValueRandomReader;
 
 /**
  * @author Praveen Neppalli Naga <pneppalli@linkedin.com>
@@ -22,6 +23,7 @@ public class SumFacetCollector extends DefaultFacetCountCollector {
   private final ZeusDataCache dataCache;
   private TermNumberList<?> valArray;
   private SingleValueForwardIndex forwardIndex;
+  private SingleValueRandomReader reader;
 
   public SumFacetCollector(String name,ZeusDataCache dataCache,int docBase,
                            BrowseSelection sel,FacetSpec ospec) {
@@ -29,6 +31,7 @@ public class SumFacetCollector extends DefaultFacetCountCollector {
     this.dataCache = dataCache;
     valArray =  (TermNumberList<?>) dataCache.getDictionary();
      forwardIndex = (SingleValueForwardIndex) dataCache.getForwardIndex();
+     reader = forwardIndex.getReader();
   }
   public static TermValueList<String> createFakeTermValueList() {
     TermStringList list = new TermStringList();
@@ -49,14 +52,14 @@ public class SumFacetCollector extends DefaultFacetCountCollector {
   @Override
   public void collect(int docid) {
     if (valArray instanceof TermIntList) {
-      _count.add(1, _count.get(1) + ((TermIntList) valArray).getPrimitiveValue(forwardIndex.getValueIndex(docid)));
+      _count.add(1, _count.get(1) + ((TermIntList) valArray).getPrimitiveValue(reader.getValueIndex(docid)));
     } else if (valArray instanceof TermShortList) {
-      _count.add(1, _count.get(1) + ((TermShortList) valArray).getPrimitiveValue(forwardIndex.getValueIndex(docid)));
+      _count.add(1, _count.get(1) + ((TermShortList) valArray).getPrimitiveValue(reader.getValueIndex(docid)));
     } else if (valArray instanceof TermLongList) {
-      _count.add(1, _count.get(1) + (int)((TermLongList) valArray).getPrimitiveValue(forwardIndex.getValueIndex(docid)));
+      _count.add(1, _count.get(1) + (int)((TermLongList) valArray).getPrimitiveValue(reader.getValueIndex(docid)));
     }
     else {
-      _count.add(1, _count.get(1) + (int)((TermNumberList) valArray).getDoubleValue(forwardIndex.getValueIndex(docid)));
+      _count.add(1, _count.get(1) + (int)((TermNumberList) valArray).getDoubleValue(reader.getValueIndex(docid)));
     }
   }
 

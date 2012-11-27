@@ -57,6 +57,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
     private Map<Integer, MapBasedIndexFactory> readers = new HashMap<Integer, MapBasedIndexFactory>();
     private int maxPartition;
     private AtomicInteger counter = new AtomicInteger();
+    private ReadMode readMode;
     public DirectoryBasedFactoryManager() {
       super(null, null, null, null, null);
     }
@@ -149,6 +150,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
         Assert.state(gazelleIndexSegmentImpl != null, "Couldn't create the index segment out of " + file.getAbsolutePath());
         SegmentPersistentManager.flushToDisk(gazelleIndexSegmentImpl, targetDir);
         new File(targetDir, "finishedLoading").createNewFile();
+        gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, readMode);
       } else if (fileType == FileType.COMPRESSED_GAZELLE) {
         List<File> uncompressedFiles = TarGzCompressionUtils.unTar(file, explodeDirectory);       
         Thread.sleep(100);
@@ -165,10 +167,10 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
           }
         }
         new File(targetDir, "finishedLoading").createNewFile();
-        gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, ReadMode.DirectMemory);
+        gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, readMode);
       } else if (fileType == FileType.GAZELLE){
         targetDir = file;
-        gazelleIndexSegmentImpl = SegmentPersistentManager.read(file, ReadMode.DirectMemory);
+        gazelleIndexSegmentImpl = SegmentPersistentManager.read(file, readMode);
       }
       int hash = Math.abs(counter.incrementAndGet()) % maxPartition;
       MapBasedIndexFactory mapBasedIndexFactory = readers.get(hash);
@@ -246,6 +248,14 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
        throw new RuntimeException();
       }
       decorator = new ZeusIndexReaderDecorator(pluginRegistry.resolveBeansByListKey(SenseiPluginRegistry.FACET_CONF_PREFIX, FacetHandler.class));
+      String readModeStr = config.get("readMode");
+      if (readModeStr != null && ReadMode.valueOf(readModeStr) != null) {
+        readMode = ReadMode.valueOf(readModeStr);
+        logger.info("Initialized the readmode from the configuration - " + readMode);
+      } else {
+        readMode = ReadMode.DirectMemory;
+        logger.info("Initialized the default readmode - " + readMode);
+      }
     }
     @Override
     public void stop() {

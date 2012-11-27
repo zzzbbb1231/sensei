@@ -75,7 +75,7 @@ public class RangeQueryFacetHandlerTest {
     int countFromForwardIndexScan = 0;
     
     for (int i = 0 ; i < forwardIndex.getLength(); i++) {
-      if (forwardIndex.getValueIndex(i) >= startIndex && forwardIndex.getValueIndex(i) <= endIndex) {
+      if (forwardIndex.getReader().getValueIndex(i) >= startIndex && forwardIndex.getReader().getValueIndex(i) <= endIndex) {
         countFromForwardIndexScan++;
       }
     }

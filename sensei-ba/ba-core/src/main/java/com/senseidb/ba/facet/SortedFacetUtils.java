@@ -16,6 +16,7 @@ import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
 import com.browseengine.bobo.sort.DocComparator;
 import com.senseidb.ba.gazelle.SecondarySortedForwardIndex.SortedRegion;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
+import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl.SortedRangeCountFinder;
 
 public class SortedFacetUtils {
   public static final ThreadLocal<DecimalFormat> formatter = new ThreadLocal<DecimalFormat>() {
@@ -23,73 +24,32 @@ public class SortedFacetUtils {
       return new DecimalFormat("0000000000");
     }
   };
-  public static class SortedRangeCountFinder  {
-    
-    private int currentIndex = -1;
-    private int currentValueId = -1;
-    private int[] minDocIds;
-    private int[] maxDocIds;
-    private int[] dictionaryIds;
-
-    public SortedRangeCountFinder(SortedRegion sortedRegion) {
-    
-      minDocIds = sortedRegion.getMinDocIds();
-      maxDocIds = sortedRegion.getMaxDocIds();
-      dictionaryIds = sortedRegion.dictionaryIds;
-    }
-   
-    public int find(int docid) {  
-      if (currentIndex == -1) {
-        if (maxDocIds[0] >= docid) {
-          currentIndex = 0;
-          currentValueId = dictionaryIds[0];
-        } else {
-          currentIndex = Arrays.binarySearch(maxDocIds, docid);
-          if (currentIndex < 0) {
-            currentIndex = (currentIndex + 1) * -1;
-          }
-          if (currentIndex >= maxDocIds.length) {
-            return -1;
-          }          
-          currentValueId = dictionaryIds[currentIndex];
-          return currentValueId;
-        }
-      } else if (docid > maxDocIds[currentIndex]) {
-        while (++currentIndex < maxDocIds.length) {
-          if (maxDocIds[currentIndex] >= docid) {
-            currentValueId = dictionaryIds[currentIndex];
-            return currentValueId;
-          }
-        }
-        return -1;
-      }
-      return currentValueId;
-    }
-  }
+ 
   
   
   public static class SecondarySortFacetCountCollector extends DefaultFacetCountCollector {
     private int currentRegionIndex = -1;
-    private SortedRangeCountFinder countFinder = null;
+    private SortedRangeCountFinder countFinder;
     private final SortedRegion[] regions;
     private SortedRegion currentRegion = null;
     public SecondarySortFacetCountCollector(SortedRegion[] regions, String name, FacetDataCache fakeCache, int docBase,
         BrowseSelection sel, FacetSpec ospec) {
       super(name, fakeCache, docBase, sel, ospec);
       this.regions = regions;
+      countFinder = new SortedRangeCountFinder(regions[0]);
     }
    public boolean advance(int docid) {
      if (currentRegionIndex == -1) {
        if (regions[0].maxDocId >= docid) {
          currentRegionIndex = 0;
          currentRegion = regions[currentRegionIndex];
-         countFinder = new SortedRangeCountFinder(regions[currentRegionIndex]);
+         //countFinder.reset(regions[currentRegionIndex]);
          return true;
        } else {
          while (++currentRegionIndex < regions.length) {
            if (regions[currentRegionIndex].maxDocId >= docid) {
              currentRegion = regions[currentRegionIndex];
-             countFinder = new SortedRangeCountFinder(regions[currentRegionIndex]);
+             countFinder.reset(regions[currentRegionIndex]);
              return true;
            }
          }
@@ -102,7 +62,7 @@ public class SortedFacetUtils {
        while (++currentRegionIndex < regions.length) {
          if (docid <= regions[currentRegionIndex].maxDocId) {
            currentRegion = regions[currentRegionIndex];
-           countFinder = new SortedRangeCountFinder(regions[currentRegionIndex]);
+           countFinder.reset(regions[currentRegionIndex]);
            return true;
          }
        }

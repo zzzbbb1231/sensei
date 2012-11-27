@@ -145,7 +145,7 @@ public class SegmentReaderTest {
           SingleValueForwardIndex index =  (SingleValueForwardIndex) segment.getForwardIndex(column);
         TermValueList<?> list = index.getDictionary();
         String valueFromJson = obj.get(column).toString();
-        int forwardIndexValue = index.getValueIndex(i);
+        int forwardIndexValue = index.getReader().getValueIndex(i);
         String valueFromDict = list.get(forwardIndexValue).toString();
         valueFromDict = valueFromDict.replaceFirst("^0+(?!$)", "");
         valueFromDict = valueFromDict.replaceFirst("^-0+(?!$)", "-");
@@ -178,7 +178,7 @@ public class SegmentReaderTest {
       int max = forwardIndex.getLength() - 1;
       for (int i = 0; i < forwardIndex.getLength(); i++) {
         int rand = min + (int) (Math.random() * ((max - min)));
-        assertTrue(forwardIndex.getValueIndex(rand) >= 0);
+        assertTrue(forwardIndex.getReader().getValueIndex(rand) >= 0);
       }
     }
     long stop = System.currentTimeMillis();
@@ -206,7 +206,7 @@ public class SegmentReaderTest {
     for (String column : metadataMap.keySet()) {
         SingleValueForwardIndex forwardIndex =  (SingleValueForwardIndex) segment.getForwardIndex(column);
       for (int i = 0; i < forwardIndex.getLength(); i++) {
-        assertTrue(forwardIndex.getValueIndex(i) >= 0);
+        assertTrue(forwardIndex.getReader().getValueIndex(i) >= 0);
       }
     }
     long stop = System.currentTimeMillis();

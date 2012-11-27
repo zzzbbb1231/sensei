@@ -5,6 +5,7 @@ import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.MetadataAware;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
+import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.senseidb.ba.gazelle.utils.IntArray;
 
 public class GazelleForwardIndexImpl implements SingleValueForwardIndex, MetadataAware {
@@ -27,11 +28,16 @@ public class GazelleForwardIndexImpl implements SingleValueForwardIndex, Metadat
   public int getLength() {
     return compressedIntArray.size();
   }
-
-  @Override
-  public int getValueIndex(int docId) {
-    return compressedIntArray.getInt(docId);
-  }
+@Override
+public SingleValueRandomReader getReader() {
+  return new SingleValueRandomReader() {
+    @Override
+    public int getValueIndex(int docId) {
+      return compressedIntArray.getInt(docId);
+    }
+  };
+}
+ 
 
 
   @Override

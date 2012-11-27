@@ -122,7 +122,7 @@ public class FacetUtils {
 
     @Override
     public boolean get(int docId) {
-      return forwardIndex.getValueIndex(docId) == index;
+      return forwardIndex.getCompressedIntArray().getInt(docId) == index;
     }
   }
 

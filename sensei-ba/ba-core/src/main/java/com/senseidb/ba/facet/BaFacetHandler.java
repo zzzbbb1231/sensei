@@ -34,6 +34,7 @@ import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.SecondarySortedForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
+import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl;
@@ -221,7 +222,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
     if (forwardIndex instanceof SingleValueForwardIndex) {
       SingleValueForwardIndex forwardIndex2 =
           (SingleValueForwardIndex) forwardIndex;
-      return new String[] { forwardIndex2.getDictionary().get(forwardIndex2.getValueIndex(id)) };
+      return new String[] { forwardIndex2.getDictionary().get(forwardIndex2.getReader().getValueIndex(id)) };
     }
     if (forwardIndex instanceof MultiValueForwardIndex) {
       MultiValueForwardIndex forwardIndex2 =
@@ -263,36 +264,36 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
           }
           return new SortedFacetUtils.SortedDocComparator();
         }
-        if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
-          final SingleValueForwardIndex singleValueForwardIndex =
-              (SingleValueForwardIndex) zeusDataCache.getForwardIndex();
+        if (zeusDataCache.getForwardIndex() instanceof GazelleForwardIndexImpl) {
+          final SingleValueRandomReader randomReader =
+              ((SingleValueForwardIndex) zeusDataCache.getForwardIndex()).getReader();
           if (currentColumnTypes.size() > 1) {
             //we should always return Strings as we have type collisions for different segments
             return new DocComparator() {
               @Override
               public Comparable value(ScoreDoc doc) {
-                int index = singleValueForwardIndex.getValueIndex(doc.doc);
+                int index = randomReader.getValueIndex(doc.doc);
                 return zeusDataCache.getForwardIndex().getDictionary().get(index);
               }
 
               @Override
               public int compare(ScoreDoc doc1, ScoreDoc doc2) {
-                return singleValueForwardIndex.getValueIndex(doc2.doc)
-                    - singleValueForwardIndex.getValueIndex(doc1.doc);
+                return randomReader.getValueIndex(doc2.doc)
+                    - randomReader.getValueIndex(doc1.doc);
               }
             };
           } else 
           return new DocComparator() {
             @Override
             public Comparable value(ScoreDoc doc) {
-              int index = singleValueForwardIndex.getValueIndex(doc.doc);
+              int index = randomReader.getValueIndex(doc.doc);
               return zeusDataCache.getForwardIndex().getDictionary().getComparableValue(index);
             }
 
             @Override
             public int compare(ScoreDoc doc1, ScoreDoc doc2) {
-              return singleValueForwardIndex.getValueIndex(doc2.doc)
-                  - singleValueForwardIndex.getValueIndex(doc1.doc);
+              return randomReader.getValueIndex(doc2.doc)
+                  - randomReader.getValueIndex(doc1.doc);
             }
           };
           
