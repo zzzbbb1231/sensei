@@ -256,10 +256,7 @@ public class TestSensei extends TestCase {
     assertEquals("numhits is wrong", 0, res5.getInt("numhits"));
   }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> fc3f4988cf750fcbf33523db3b336915b6198611
   public void testBqlRelevance1() throws Exception
   {
     logger.info("Executing test case testBqlRelevance1");

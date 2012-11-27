@@ -93,6 +93,8 @@ import com.senseidb.search.relevance.ModelStorage;
 import com.senseidb.search.req.AbstractSenseiRequest;
 import com.senseidb.search.req.AbstractSenseiResult;
 import com.senseidb.search.req.SenseiSystemInfo;
+import com.senseidb.search.req.mapred.impl.DefaultFieldAccessorFactory;
+import com.senseidb.search.req.mapred.impl.FieldAccessorFactory;
 import com.senseidb.servlet.DefaultSenseiJSONServlet;
 import com.senseidb.servlet.SenseiConfigServletContextListener;
 import com.senseidb.servlet.SenseiHttpInvokerServiceServlet;
@@ -492,7 +494,11 @@ public class SenseiServerBuilder implements SenseiConfParams{
         QueryParser queryParser = new QueryParser(Version.LUCENE_35,"contents", analyzer);
         queryBuilderFactory = new DefaultJsonQueryBuilderFactory(queryParser);
       }
-      SenseiCore senseiCore = new SenseiCore(nodeid,partitions,zoieSystemFactory,indexingManager,queryBuilderFactory, decorator);
+      FieldAccessorFactory fieldAccessorFactory = pluginRegistry.getBeanByFullPrefix(SENSEI_MAPRED_FACTORY, FieldAccessorFactory.class);
+      if (fieldAccessorFactory == null) {
+        fieldAccessorFactory = new DefaultFieldAccessorFactory();
+      }
+      SenseiCore senseiCore = new SenseiCore(nodeid,partitions,zoieSystemFactory,indexingManager,queryBuilderFactory, fieldAccessorFactory, decorator);
       senseiCore.setSystemInfo(sysInfo);
     SenseiIndexPruner indexPruner = pluginRegistry.getBeanByFullPrefix(SENSEI_INDEX_PRUNER, SenseiIndexPruner.class);
     if (indexPruner != null){

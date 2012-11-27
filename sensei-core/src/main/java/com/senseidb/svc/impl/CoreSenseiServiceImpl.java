@@ -215,7 +215,7 @@ public class CoreSenseiServiceImpl extends AbstractSenseiCoreService<SenseiReque
 	        browser = new MultiBoboBrowser(BoboBrowser.createBrowsables(validatedSegmentReaders));
 	        BrowseRequest breq = RequestConverter.convert(request, queryBuilderFactory);
 	        if (request.getMapReduceFunction() != null) {
-	          SenseiMapFunctionWrapper mapWrapper = new SenseiMapFunctionWrapper(request.getMapReduceFunction(), _core.getSystemInfo().getFacetInfos());	        
+	          SenseiMapFunctionWrapper mapWrapper = new SenseiMapFunctionWrapper(request.getMapReduceFunction(), _core.getSystemInfo().getFacetInfos(), _core.getFieldAccessorFactory());	        
             breq.setMapReduceWrapper(mapWrapper);
 	        }	        
           SubReaderAccessor<BoboIndexReader> subReaderAccessor =
