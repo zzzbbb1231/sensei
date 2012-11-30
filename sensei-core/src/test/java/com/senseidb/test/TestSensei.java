@@ -254,11 +254,8 @@ public class TestSensei extends TestCase {
     String req5 = "{\"bql\":\"SELECT * FROM SENSEI where $list is empty LIMIT 0, 1\", \"templateMapping\":{\"list\":[\"a\"]}}";
     JSONObject res5 = search(new JSONObject(req5));
     assertEquals("numhits is wrong", 0, res5.getInt("numhits"));
-    
-    String req6 = "{\"bql\":\"SELECT * FROM SENSEI where $list is empty LIMIT 0, 1\", \"templateMapping\":{\"list\":[]}}";
-    JSONObject res6 = search(new JSONObject(req6));
-    assertEquals("numhits is wrong", 15000, res6.getInt("numhits"));
   }
+
 
   public void testBqlRelevance1() throws Exception
   {

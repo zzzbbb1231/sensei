@@ -43,6 +43,7 @@ public interface SenseiConfParams {
 	public static final String SENSEI_QUERY_BUILDER_FACTORY = "sensei.query.builder.factory";
   public static final String SENSEI_SHARDING_STRATEGY = "sensei.sharding.strategy";
 	public static final String SENSEI_INDEX_MANAGER = "sensei.index.manager";
+	public static final String SENSEI_MAPRED_FACTORY = "sensei.mapreduce.accessor.factory";
 	public static final String SENSEI_INDEX_MANAGER_FILTER = "sensei.index.manager.filter";
 
 	public static final String SENSEI_GATEWAY = "sensei.gateway";

@@ -30,9 +30,12 @@ public class SenseiMapFunctionWrapper implements BoboMapFunctionWrapper {
   public static final int BUFFER_SIZE = 2048;
   private int[] partialDocIds;;
   private int docIdIndex = 0;
-  public SenseiMapFunctionWrapper(SenseiMapReduce mapReduceStrategy, Set<SenseiFacetInfo> facetInfos) {
+  private final FieldAccessorFactory fieldAccessorFactory;
+  @SuppressWarnings("rawtypes")
+  public SenseiMapFunctionWrapper(SenseiMapReduce mapReduceStrategy, Set<SenseiFacetInfo> facetInfos, FieldAccessorFactory fieldAccessorFactory) {
     super();
-    this.mapReduceStrategy = mapReduceStrategy;   
+    this.mapReduceStrategy = mapReduceStrategy;
+    this.fieldAccessorFactory = fieldAccessorFactory;   
     partialDocIds = new int[BUFFER_SIZE];
     result = new MapReduceResult();
     this.facetInfos = facetInfos;
@@ -45,7 +48,7 @@ public class SenseiMapFunctionWrapper implements BoboMapFunctionWrapper {
   public void mapFullIndexReader(BoboIndexReader reader, FacetCountCollector[] facetCountCollectors) {
     ZoieSegmentReader<?> zoieReader = (ZoieSegmentReader<?>)(reader.getInnerReader());
     DocIDMapperImpl docIDMapper = (DocIDMapperImpl) zoieReader.getDocIDMaper();
-    result.getMapResults().add(mapReduceStrategy.map(docIDMapper.getDocArray(), docIDMapper.getDocArray().length, zoieReader.getUIDArray(), new FieldAccessor(facetInfos, reader, docIDMapper), new FacetCountAccessor(facetCountCollectors)));    
+    result.getMapResults().add(mapReduceStrategy.map(docIDMapper.getDocArray(), docIDMapper.getDocArray().length, zoieReader.getUIDArray(), fieldAccessorFactory.getAccessor(facetInfos, reader, docIDMapper), new FacetCountAccessor(facetCountCollectors)));    
   }
 
   /* (non-Javadoc)
@@ -61,7 +64,7 @@ public class SenseiMapFunctionWrapper implements BoboMapFunctionWrapper {
       partialDocIds[docIdIndex++] = docId;
       ZoieSegmentReader<?> zoieReader = (ZoieSegmentReader<?>)(reader.getInnerReader());
       DocIDMapperImpl docIDMapper = (DocIDMapperImpl) zoieReader.getDocIDMaper();
-      result.getMapResults().add(mapReduceStrategy.map(partialDocIds, BUFFER_SIZE, zoieReader.getUIDArray(), new FieldAccessor(facetInfos, reader, docIDMapper),  FacetCountAccessor.EMPTY));
+      result.getMapResults().add(mapReduceStrategy.map(partialDocIds, BUFFER_SIZE, zoieReader.getUIDArray(), fieldAccessorFactory.getAccessor(facetInfos, reader, docIDMapper),  FacetCountAccessor.EMPTY));
       docIdIndex = 0;
     }
   }
@@ -75,7 +78,7 @@ public class SenseiMapFunctionWrapper implements BoboMapFunctionWrapper {
     if (docIdIndex > 0) {
       ZoieSegmentReader<?> zoieReader = (ZoieSegmentReader<?>)(reader.getInnerReader());
       DocIDMapperImpl docIDMapper = (DocIDMapperImpl) zoieReader.getDocIDMaper();
-      result.getMapResults().add(mapReduceStrategy.map(partialDocIds, docIdIndex, zoieReader.getUIDArray(), new FieldAccessor(facetInfos, reader, docIDMapper), new FacetCountAccessor(facetCountCollectors)));    
+      result.getMapResults().add(mapReduceStrategy.map(partialDocIds, docIdIndex, zoieReader.getUIDArray(), fieldAccessorFactory.getAccessor(facetInfos, reader, docIDMapper), new FacetCountAccessor(facetCountCollectors)));    
     }
     docIdIndex = 0;
   }
