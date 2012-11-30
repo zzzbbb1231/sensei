@@ -28,7 +28,11 @@ public class MaxMapReduce implements SenseiMapReduce<MaxResult, MaxResult> {
       tmp = accessor.getDouble(column, docIds[i]);
       if (max < tmp) {       
         max = tmp;
-        uid = uids[docIds[i]];
+        if (uids != null && !(uids.length == 1 && uids[0] == Long.MIN_VALUE)) {
+          uid = uids[docIds[i]];
+        } else {
+          uid = docIds[i];
+        }
       }
     }
     return new MaxResult(max, uid);

@@ -26,7 +26,11 @@ public class MinMapReduce implements SenseiMapReduce<MinResult, MinResult> {
       tmp = accessor.getDouble(column, docIds[i]);
       if (min > tmp) {       
         min = tmp;
-        uid = uids[docIds[i]];
+        if (uids != null && !(uids.length == 1 && uids[0] == Long.MIN_VALUE)) {
+          uid = uids[docIds[i]];
+        } else {
+          uid = docIds[i];
+        }
       }
     }
     return new MinResult(min, uid);
