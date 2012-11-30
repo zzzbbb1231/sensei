@@ -15,8 +15,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import scala.actors.threadpool.Arrays;
-
 import com.senseidb.ba.format.GenericIndexCreator;
 import com.senseidb.ba.gazelle.SecondarySortedForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;

@@ -2,7 +2,7 @@ package com.senseidb.ba;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.net.URL;
+import java.util.Arrays;
 
 import junit.framework.Assert;
 
@@ -13,8 +13,6 @@ import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import scala.actors.threadpool.Arrays;
 
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.management.ZkManager;

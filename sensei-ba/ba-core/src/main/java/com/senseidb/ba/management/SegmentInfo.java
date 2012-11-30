@@ -5,13 +5,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.sql.Date;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import scala.actors.threadpool.Arrays;
 
 public class SegmentInfo {
   private String segmentId;

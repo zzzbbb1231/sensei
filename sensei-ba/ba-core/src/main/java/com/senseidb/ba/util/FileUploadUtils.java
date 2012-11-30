@@ -19,7 +19,6 @@ import org.apache.commons.httpclient.methods.multipart.PartSource;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.params.CoreProtocolPNames;
 
 import com.senseidb.ba.file.http.JettyServerHolder;
 
@@ -34,7 +33,7 @@ public class FileUploadUtils {
     HttpClient client = new HttpClient();
     try {
     
-    client.getParams().setParameter(CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+    client.getParams().setParameter("http.protocol.version", HttpVersion.HTTP_1_1);
     PostMethod post  = new PostMethod( "http://" + host + ":" + port + "/files/" );
     Part[] parts = {       
         new FilePart(fileName, new PartSource() {          
