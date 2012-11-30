@@ -6,7 +6,7 @@ import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ForwardIndex;
 
-public class ZeusDataCache {
+public class ZeusDataCache extends FacetDataCache{
   private FacetDataCache fakeCache;
   private DocIdSet[] invertedIndexes;
   private ForwardIndex forwardIndex;

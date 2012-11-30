@@ -14,45 +14,83 @@ import com.senseidb.ba.gazelle.SecondarySortedForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
 
-public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex, SecondarySortedForwardIndex , MetadataAware {
+public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex, SecondarySortedForwardIndex, MetadataAware {
   private TermValueList<?> dictionary;
   private int length;
   private ColumnMetadata columnMetadata;
   private SortedRegion[] sortedRegions;
-  public SecondarySortedForwardIndexImpl(TermValueList<?> dictionary, SortedRegion[] sortedRegions, int length, ColumnMetadata columnMetadata) {
-      super();
-      this.dictionary = dictionary;
-      this.sortedRegions = sortedRegions;      
-      this.length = length;
-      this.columnMetadata = columnMetadata;     
+
+  public SecondarySortedForwardIndexImpl(TermValueList<?> dictionary, SortedRegion[] sortedRegions, int length,
+      ColumnMetadata columnMetadata) {
+    super();
+    this.dictionary = dictionary;
+    this.sortedRegions = sortedRegions;
+    this.length = length;
+    this.columnMetadata = columnMetadata;
   }
+
   public SecondarySortedForwardIndexImpl(TermValueList<?> dictionary) {
     this.dictionary = dictionary;
-    
-  
+
   }
+
   @Override
   public int getLength() {
-      return length;
+    return length;
   }
-@Override
-public SingleValueRandomReader getReader() {
- 
-  return new SingleValueRandomReader() {
-    private int currentRegionIndex = -1;
-    private final SortedRegion[] regions = sortedRegions;
-    private SortedRangeCountFinder countFinder = new SortedRangeCountFinder(regions[0]);
-    private SortedRegion currentRegion = null;
-    public boolean advance(int docid) {
-      if (currentRegionIndex == -1) {
-        if (regions[0].maxDocId >= docid) {
-          currentRegionIndex = 0;
-          currentRegion = regions[currentRegionIndex];
-          //countFinder.reset(regions[currentRegionIndex]);
+
+  @Override
+  public SingleValueRandomReader getReader() {
+    return new SingleValueRandomReader() {
+      SingleValueRandomReader randomReader = getReaderInternal();
+
+      @Override
+      public int getValueIndex(int docId) {
+        int ret = randomReader.getValueIndex(docId);
+        if (ret < 0) {
+          randomReader = getReaderInternal();
+        } else {
+          return ret;
+        }
+        ret = randomReader.getValueIndex(docId);
+        if (ret < 0) {
+          return ret;
+        }
+        return ret;
+      }
+    };
+  }
+
+  public SingleValueRandomReader getReaderInternal() {
+    return new SingleValueRandomReader() {
+      private int currentRegionIndex = -1;
+      private final SortedRegion[] regions = sortedRegions;
+      private SortedRangeCountFinder countFinder = new SortedRangeCountFinder(regions[0]);
+      private SortedRegion currentRegion = null;
+
+      public boolean advance(int docid) {
+        if (currentRegionIndex == -1) {
+          if (regions[0].maxDocId >= docid) {
+            currentRegionIndex = 0;
+            currentRegion = regions[currentRegionIndex];
+            // countFinder.reset(regions[currentRegionIndex]);
+            return true;
+          } else {
+            while (++currentRegionIndex < regions.length) {
+              if (regions[currentRegionIndex].maxDocId >= docid) {
+                currentRegion = regions[currentRegionIndex];
+                countFinder.reset(regions[currentRegionIndex]);
+                return true;
+              }
+            }
+            return false;
+          }
+        }
+        if (docid <= currentRegion.maxDocId) {
           return true;
         } else {
           while (++currentRegionIndex < regions.length) {
-            if (regions[currentRegionIndex].maxDocId >= docid) {
+            if (docid <= regions[currentRegionIndex].maxDocId) {
               currentRegion = regions[currentRegionIndex];
               countFinder.reset(regions[currentRegionIndex]);
               return true;
@@ -60,100 +98,94 @@ public SingleValueRandomReader getReader() {
           }
           return false;
         }
-      } 
-      if (docid <= currentRegion.maxDocId) {
-        return true;
-      } else {
-        while (++currentRegionIndex < regions.length) {
-          if (docid <= regions[currentRegionIndex].maxDocId) {
-            currentRegion = regions[currentRegionIndex];
-            countFinder.reset(regions[currentRegionIndex]);
-            return true;
-          }
+
+      }
+
+      @Override
+      public int getValueIndex(int docId) {
+        if (!advance(docId)) {
+          return -1;
         }
-        return false;
+        return countFinder.find(docId);
       }
-     
-    }
-    @Override
-    public int getValueIndex(int docId) {
-      if (!advance(docId)) {
-        return -1;
-      }
-      return countFinder.find(docId);
-    }
-  };
-}
-
-
-  
+    };
+  }
 
   @Override
   public TermValueList<?> getDictionary() {
-      return dictionary;
+    return dictionary;
   }
+
   private SortedRegion currentRegion;
   private List<SortedRegion> regions;
   int prevDictionaryId = -1;
+
   public void add(int docId, int dictionaryValueId) {
-     Assert.state(dictionaryValueId >= 0);
+    Assert.state(dictionaryValueId >= 0);
     if (currentRegion == null) {
-       regions = new ArrayList<SecondarySortedForwardIndex.SortedRegion>();
-       currentRegion = createNewRegion();
-       regions.add(currentRegion);
-     } if (dictionaryValueId < prevDictionaryId) {       
-       currentRegion = createNewRegion();
-       regions.add(currentRegion);
-     }
-     currentRegion.add(dictionaryValueId, docId);
-     prevDictionaryId = dictionaryValueId;
-    
-  }
-  public SortedRegion createNewRegion() {
-    SortedRegion currentRegion = new SortedRegion(dictionary.size());
-     return currentRegion;
+      regions = new ArrayList<SecondarySortedForwardIndex.SortedRegion>();
+      currentRegion = createNewRegion();
+      regions.add(currentRegion);
+    }
+    if (dictionaryValueId < prevDictionaryId) {
+      currentRegion = createNewRegion();
+      regions.add(currentRegion);
+    }
+    currentRegion.add(dictionaryValueId, docId);
+    prevDictionaryId = dictionaryValueId;
+
   }
 
-  
+  public SortedRegion createNewRegion() {
+    SortedRegion currentRegion = new SortedRegion(dictionary.size());
+    return currentRegion;
+  }
+
   public ColumnMetadata getColumnMetadata() {
-      return columnMetadata;
+    return columnMetadata;
   }
-  
+
   public void setDictionary(TermValueList<?> dictionary) {
-      this.dictionary = dictionary;
+    this.dictionary = dictionary;
   }
+
   public void setLength(int length) {
-      this.length = length;
+    this.length = length;
   }
+
   public void setColumnMetadata(ColumnMetadata columnMetadata) {
-      this.columnMetadata = columnMetadata;
+    this.columnMetadata = columnMetadata;
   }
+
   public void seal(ColumnMetadata columnMetadata) {
-     this.length = columnMetadata.getNumberOfElements();
+    this.length = columnMetadata.getNumberOfElements();
     this.columnMetadata = columnMetadata;
     sortedRegions = regions.toArray(new SortedRegion[regions.size()]);
-     regions = null;
-     currentRegion = null;
-     prevDictionaryId = -1;
-     for (SortedRegion region : sortedRegions) {
-       region.seal();
+    regions = null;
+    currentRegion = null;
+    prevDictionaryId = -1;
+    for (SortedRegion region : sortedRegions) {
+      region.seal();
     }
   }
+
   @Override
   public ColumnType getColumnType() {
     return columnMetadata.getColumnType();
   }
+
   @Override
   public int numberOfSortedRegions() {
     return sortedRegions.length;
   }
+
   @Override
   public SortedRegion[] getSortedRegions() {
     return sortedRegions;
   }
-  
- public static class SortedRangeCountFinder  {
-    
+
+  public static class SortedRangeCountFinder {
+
     private int currentIndex = -1;
     private int currentValueId = -1;
     private int[] minDocIds;
@@ -161,11 +193,12 @@ public SingleValueRandomReader getReader() {
     private int[] dictionaryIds;
 
     public SortedRangeCountFinder(SortedRegion sortedRegion) {
-    
+
       minDocIds = sortedRegion.getMinDocIds();
       maxDocIds = sortedRegion.getMaxDocIds();
       dictionaryIds = sortedRegion.dictionaryIds;
     }
+
     public void reset(SortedRegion sortedRegion) {
       minDocIds = sortedRegion.getMinDocIds();
       maxDocIds = sortedRegion.getMaxDocIds();
@@ -173,10 +206,8 @@ public SingleValueRandomReader getReader() {
       currentIndex = -1;
       currentValueId = -1;
     }
-    
-    
-    
-    public int find(int docid) {  
+
+    public int find(int docid) {
       if (currentIndex == -1) {
         if (maxDocIds[0] >= docid) {
           currentIndex = 0;
@@ -188,7 +219,7 @@ public SingleValueRandomReader getReader() {
           }
           if (currentIndex >= maxDocIds.length) {
             return -1;
-          }          
+          }
           currentValueId = dictionaryIds[currentIndex];
           return currentValueId;
         }

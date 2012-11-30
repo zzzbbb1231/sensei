@@ -9,4 +9,7 @@
       <bean id="sum" class="com.senseidb.ba.facet.SumFacetHandler" lazy-init="false">
     <constructor-arg value="sum" />
   </bean>
+ 
+  
+  
 </beans>

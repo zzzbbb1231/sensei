@@ -22,11 +22,12 @@ public class SegmentToZoieReaderAdapter<R extends IndexReader> extends ZoieSegme
 
   private final IndexSegment offlineSegment;
   private final String segmentId;
-
+  private final long segmentHashBase;
   public SegmentToZoieReaderAdapter(IndexSegment offlineSegment, String segmentId, IndexReaderDecorator<R> decorator) throws IOException {
     super(fakeIndexReader(), null);
     this.offlineSegment = offlineSegment;
     this.segmentId = segmentId;
+    segmentHashBase = getHashBase(segmentId);
     R decorated = decorator.decorate(this);
     try {
     java.lang.reflect.Field decReaderField = ZoieSegmentReader.class.getDeclaredField("_decoratedReader");
@@ -35,6 +36,10 @@ public class SegmentToZoieReaderAdapter<R extends IndexReader> extends ZoieSegme
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
+  }
+
+  public static long getHashBase(String segmentId) {
+    return Math.abs((long) segmentId.hashCode()) << 32;
   }
 
   public static IndexReader fakeIndexReader() {
@@ -65,7 +70,7 @@ public class SegmentToZoieReaderAdapter<R extends IndexReader> extends ZoieSegme
   @Override
   public long getUID(int docid) {
 
-    return 1;
+    return segmentHashBase + docid;
   }
 
   @Override

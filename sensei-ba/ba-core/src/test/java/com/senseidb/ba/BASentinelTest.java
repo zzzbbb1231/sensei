@@ -703,5 +703,26 @@ public class BASentinelTest  extends Assert {
     Arrays.sort(names);
     assertEquals("[segment1]", Arrays.toString(names));
   }
-  
+  @Test
+  public void test10MaxMapReduce() throws Exception {
+      String req = "{\"filter\":{\"term\":{\"dim_memberGender\":\"m\"}}"
+          +", \"mapReduce\":{\"function\":\"sensei.max\",\"parameters\":{\"column\":\"met_impressionCount\"}}}";
+      
+      JSONObject res = TestUtil.search(new URL("http://localhost:8075/sensei"), req);
+      JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
+      assertEquals(53, Long.parseLong(mapReduceResult.getString("max")));
+      assertEquals(3204, Long.parseLong(mapReduceResult.getString("uid")));
+    
+  }
+  @Test
+  public void test11Avg() throws Exception { 
+    String req = "{\"filter\":{\"term\":{\"dim_memberGender\":\"m\"}}" +
+        ", \"mapReduce\":{\"function\":\"sensei.avg\",\"parameters\":{\"column\":\"met_impressionCount\"}}}";
+    JSONObject reqJson = new JSONObject(req);
+    JSONObject res = TestUtil.search(new URL("http://localhost:8075/sensei"), req);
+    System.out.println(res.toString(1));
+    JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
+    assertEquals(2.48, mapReduceResult.getDouble("avg"), 0.1);
+    assertEquals(13222, Long.parseLong(mapReduceResult.getString("count")));
+  }
 }

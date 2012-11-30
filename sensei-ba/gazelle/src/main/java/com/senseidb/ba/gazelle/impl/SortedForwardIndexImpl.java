@@ -55,7 +55,28 @@ public SortedForwardIndexImpl() {
         return length;
     }
     @Override
-    public SingleValueRandomReader getReader() {
+    public SingleValueRandomReader getReader() { 
+      return new SingleValueRandomReader() {
+        SingleValueRandomReader randomReader = getReaderInternal();
+        @Override
+        public int getValueIndex(int docId) {
+          int ret = randomReader.getValueIndex(docId);
+          if (ret < 0) {
+            randomReader = getReaderInternal();
+          } else {
+            return ret;
+          }
+          ret = randomReader.getValueIndex(docId);
+          if (ret < 0) {
+            return ret;
+          }
+          return ret;
+        }
+      };
+    }
+    
+    
+    public SingleValueRandomReader getReaderInternal() {
    
     return new SingleValueRandomReader() {
       private int currentValueId = -1;
