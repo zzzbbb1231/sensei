@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 
+import org.I0Itec.zkclient.ZkClient;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -23,6 +24,8 @@ public class FileManagementServletTest {
     jettyServerHolder.setPort(8088);
      directory = "/tmp/fileUpload";
     FileUtils.deleteDirectory(new File(directory));
+    ZkClient zkClient = new ZkClient("localhost:2181");
+    zkClient.deleteRecursive("/sensei-ba/bla");   
     new File(directory).mkdirs();
     jettyServerHolder.setDirectoryPath(directory);
     jettyServerHolder.setClusterName("bla");

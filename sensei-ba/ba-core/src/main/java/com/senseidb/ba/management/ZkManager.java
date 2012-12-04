@@ -2,11 +2,14 @@ package com.senseidb.ba.management;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.log4j.Logger;
+import org.springframework.util.Assert;
 
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
 
@@ -14,6 +17,7 @@ public class ZkManager {
   private static Logger logger = Logger.getLogger(DirectoryBasedFactoryManager.class);    
   private ZkClient zkClient;
     private final String clusterName;
+   
     public ZkManager(String zkString, String clusterName) {
        this.clusterName = clusterName;
       zkClient = new ZkClient(zkString);
@@ -24,81 +28,80 @@ public class ZkManager {
       this.clusterName = clusterName;
     
    }
-    public void registerSegment(int partition, String segmentId, String pathUrl, SegmentType type, long timeCreated, long timeToLive) {
+    public void registerSegment(int partition, String segmentId, String pathUrl, long timeCreated) {
+      HashMap<String, String> config = new HashMap<String, String>();
+      config.put("timeCreated", String.valueOf(timeCreated));
+      registerSegment(partition, segmentId, pathUrl, config);
+    }
+    public void registerSegment(int partition, String segmentId, String pathUrl, Map<String, String> newConf) {
+      
+      
       logger.info("Registering the new segment with id = " + segmentId + ", partition = " + partition + ", pathUrl = " + pathUrl);
-      String partitionPath = ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName + "/" + partition;
-      if (!zkClient.exists(partitionPath)) {
+      
+      String partitionPath = SegmentUtils.getActiveSegmentsPathForPartition(clusterName, partition);
+      if (!zkClient.exists(partitionPath )) {
         zkClient.createPersistent(partitionPath, true);
       }
-      
-      if (zkClient.exists(partitionPath + "/" + segmentId)) {
-        SegmentInfo oldSegmentInfo = SegmentInfo.fromBytes((byte[])zkClient.readData(partitionPath + "/" + segmentId));
+      SegmentInfo segmentInfo;
+      if (SegmentUtils.isSegmentInfoReady(zkClient, clusterName, segmentId)) {
+         segmentInfo = SegmentInfo.retrieveFromZookeeper(zkClient, clusterName, segmentId);
         
-        if (oldSegmentInfo.getPathUrl().contains(pathUrl)) {
-          logger.info("The url - " + pathUrl + " is already registered for the segment - " + segmentId);
-          //but still we need to recreate the segment
-          pathUrl = oldSegmentInfo.getPathUrl();
-        } else {
-          pathUrl = oldSegmentInfo.getPathUrl() + "," + pathUrl;
+        if (!segmentInfo.getPathUrls().contains(pathUrl)) {
+          segmentInfo.getPathUrls().add(pathUrl);
         }
-        
-        timeCreated = oldSegmentInfo.getTimeCreated();
-        removeSegment(partition, segmentId);
+        segmentInfo.getConfig().putAll(newConf);
+      } else {
+        List<String> pathUrls = new ArrayList<String>();
+        pathUrls.add(pathUrl);
+        segmentInfo = new SegmentInfo( segmentId, pathUrls, newConf);
       }
-      SegmentInfo segmentInfo = new SegmentInfo(segmentId, pathUrl, type, timeCreated, timeToLive);
-      zkClient.createPersistent(partitionPath + "/" + segmentId, segmentInfo.toByteArray());
+      segmentInfo.saveInfoToZookeeper(zkClient, clusterName);
+      SegmentUtils.registerAsActiveSegment(zkClient, clusterName, partition, segmentId);
     }
-    public boolean segmentExists(int partition, String segmentId) {
-      String partitionPath = ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName + "/" + partition;
-      return zkClient.exists(partitionPath + "/" + segmentId);
+    public void moveSegment(String segmentId, int oldPartition, int newPartition) {
+      SegmentInfo retrievedFromZookeeper = SegmentInfo.retrieveFromZookeeper(zkClient, clusterName, segmentId);
+      Assert.notNull(retrievedFromZookeeper);
+      SegmentUtils.removeFromActiveSegments(zkClient, clusterName, oldPartition, segmentId);
+      SegmentUtils.addToActiveSegments(zkClient, clusterName, newPartition, segmentId);
+      
     }
+    
     public void removePartition(int partition) {
-      String partitionPath = ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName + "/" + partition;
+      String partitionPath = SegmentUtils.getActiveSegmentsPathForPartition(clusterName, partition);
       if (zkClient.exists(partitionPath)) {
         zkClient.deleteRecursive(partitionPath);
       } 
     }
-    public List<String> getChildren() {
-      List<String> ret = new ArrayList<String>();
-      List<String> children = zkClient.getChildren(ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName);
-      for (String partition : children) {
-        for (String segment : zkClient.getChildren(ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName + "/" + partition)) {
-          ret.add(partition + "/" + segment);
-        }
-      }
-      return ret;
-    }
+   
     public List<String> getPartitions() {
       List<String> ret = new ArrayList<String>();
-      if (!zkClient.exists(ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName)) {
+      String activeSegmentsPath = SegmentUtils.getActiveSegmentsPath(clusterName);
+      if (!zkClient.exists(activeSegmentsPath)) {
         return Collections.EMPTY_LIST;
       }
-      List<String> children = zkClient.getChildren(ZookeeperTracker.ZK_BASE_PATH + "/" + clusterName);
+      List<String> children = zkClient.getChildren(activeSegmentsPath);
       for (String partition : children) {
         ret.add(partition);
       }
       return ret;
     }
-    public List<String> getSegments(String partition) {
-        String segmentPath =ZookeeperTracker.ZK_BASE_PATH + "/"  + clusterName + "/" + partition;
+    public List<String> getSegmentsForPartition(String partition) {
+        String segmentPath =SegmentUtils.getActiveSegmentsPathForPartition(clusterName, Integer.parseInt(partition));
         if (!zkClient.exists(segmentPath)) {
           return Collections.EMPTY_LIST;
         }
         List<String> children = zkClient.getChildren(segmentPath);
         return children;
     }
-    public SegmentInfo getSegmentInfo(String partition, String segmentId) {
-      String segmentPath =ZookeeperTracker.ZK_BASE_PATH + "/"  + clusterName + "/" + partition  + "/" + segmentId;
-      if (zkClient.exists(segmentPath)) {
-        SegmentInfo segmentInfo = SegmentInfo.fromBytes((byte[])zkClient.readData(segmentPath));
-        return segmentInfo;
-      }
-      return null;
+    public SegmentInfo getSegmentInfo(String segmentId) {
+      return SegmentInfo.retrieveFromZookeeper(zkClient, clusterName, segmentId);
+      
+      
     }
     
     
     public boolean removeSegment(int partition, String segmentId) {
-      String segmentPath =ZookeeperTracker.ZK_BASE_PATH + "/"  + clusterName + "/" + partition  + "/" + segmentId;
+      String segmentPath = SegmentUtils.getActiveSegmentsPath(clusterName, partition, segmentId);
       if (zkClient.exists(segmentPath)) {
         zkClient.deleteRecursive(segmentPath);
         return true;

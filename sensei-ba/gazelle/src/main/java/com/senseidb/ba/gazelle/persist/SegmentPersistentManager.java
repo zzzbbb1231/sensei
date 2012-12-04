@@ -3,6 +3,7 @@ package com.senseidb.ba.gazelle.persist;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -27,6 +28,9 @@ import com.senseidb.ba.gazelle.utils.multi.CompressedMultiArray;
 
 public class SegmentPersistentManager {
   private static Logger logger = Logger.getLogger(SegmentPersistentManager.class);  
+  private static final String VERSION = "001";
+  
+  
   public static void flushToDisk(GazelleIndexSegmentImpl segment, File baseDir) throws IOException, ConfigurationException {
         if (!baseDir.exists()) {
             baseDir.mkdirs();
@@ -38,8 +42,9 @@ public class SegmentPersistentManager {
   }
   
   private static void flush(GazelleIndexSegmentImpl segment, String baseDir, FileSystemMode mode, FileSystem fs) throws IOException, ConfigurationException {
+    segment.getSegmentMetadata().put("index.version", VERSION);
     DictionaryPersistentManager.flush(segment.getColumnMetadataMap(), segment.getDictionaries(), baseDir, mode, fs);
-    MetadataPersistentManager.flush(segment.getColumnMetadataMap(), baseDir, mode, fs);
+    MetadataPersistentManager.flush(segment.getColumnMetadataMap(), segment.getSegmentMetadata(), baseDir, mode, fs);
     HashMap<String, Integer> dictionarySizeMap = new HashMap<String, Integer>();
     for (String column : segment.getDictionaries().keySet()) {
       dictionarySizeMap.put(column, segment.getDictionary(column).size());
@@ -69,14 +74,30 @@ public class SegmentPersistentManager {
   public static GazelleIndexSegmentImpl read(File indexDir, ReadMode mode) throws ConfigurationException, IOException {
     try {
     File file = new File(indexDir, GazelleUtils.METADATA_FILENAME);
-    HashMap<String, ColumnMetadata> metadataMap = MetadataPersistentManager.readFromFile(new PropertiesConfiguration(file));
+    PropertiesConfiguration config = new PropertiesConfiguration(file);
+    Map<String, String> globalProperties = getSegmentMetadata(config);
+    HashMap<String, ColumnMetadata> metadataMap = MetadataPersistentManager.readFromFile(config);
     Map<String, TermValueList> dictionaries = getTermValueListMap(metadataMap, indexDir);
     return new GazelleIndexSegmentImpl(metadataMap, getForwardIndexesMap(metadataMap, dictionaries, indexDir, mode),
-        dictionaries, metadataMap.values().iterator().next().getNumberOfElements());
+        dictionaries, globalProperties, metadataMap.values().iterator().next().getNumberOfElements());
     } catch (Exception ex) {
       logger.error("Couldn't read the segment", ex);
       return null;
     }
+  }
+  public static Map<String, String> getSegmentMetadata(PropertiesConfiguration config) {
+    Map<String, String> globalProperties = new HashMap<String, String>();
+    Iterator keys = config.getKeys();
+    while (keys.hasNext()) {
+      String key = (String) keys.next();
+      if (!key.startsWith("column")) {
+        Object value = config.getProperty(key);
+        if (value != null) {
+          globalProperties.put(key, value.toString());
+        }
+      }
+    }
+    return globalProperties;
   }
 
   private static Map<String, ForwardIndex> getForwardIndexesMap(Map<String, ColumnMetadata> metadataMap,  Map<String, TermValueList> dictionaries, File indexDir, ReadMode mode) {

@@ -42,7 +42,7 @@ public class BaIndexFactoryManager implements SenseiPlugin, ZoieFactoryFactory {
     return new SenseiZoieFactory( idxDir, null, interpreter, decorator, config) {
       @Override
       public Zoie getZoieInstance(int nodeId, int partitionId) {
-        return new BaIndexFactory(SenseiZoieFactory.getPath(idxDir, nodeId, partitionId), clusterName, zeusIndexReaderDecorator, zkClient, fileSystem, readMode, partitionId, executorService);
+        return new BaIndexFactory(SenseiZoieFactory.getPath(idxDir, nodeId, partitionId), clusterName, zeusIndexReaderDecorator, zkClient, fileSystem, readMode,nodeId, partitionId, executorService);
       }
       @Override
       public File getPath(int nodeId, int partitionId) {

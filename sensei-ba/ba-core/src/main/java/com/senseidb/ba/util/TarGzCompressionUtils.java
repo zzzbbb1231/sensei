@@ -1,6 +1,8 @@
 package com.senseidb.ba.util;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -156,5 +158,25 @@ public class TarGzCompressionUtils {
         IOUtils.closeQuietly(is); 
       }
       return untaredFiles;
+  }
+  public static InputStream unTarOneFile(InputStream tarGzInputStream, final String filename) throws FileNotFoundException, IOException, ArchiveException {
+    TarArchiveInputStream debInputStream = null;
+    InputStream is = null;
+      try {
+        is = new GzipCompressorInputStream(tarGzInputStream); 
+       debInputStream = (TarArchiveInputStream) new ArchiveStreamFactory().createArchiveInputStream("tar", is);
+      TarArchiveEntry entry = null; 
+      while ((entry = (TarArchiveEntry)debInputStream.getNextEntry()) != null) {
+        if (entry.getName().contains(filename)) {
+          ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+          IOUtils.copy(debInputStream, byteArrayOutputStream);
+          return new ByteArrayInputStream( byteArrayOutputStream.toByteArray());
+        }  
+      }
+      } finally {
+        IOUtils.closeQuietly(debInputStream); 
+        IOUtils.closeQuietly(is); 
+      }
+      return null;
   }
 }

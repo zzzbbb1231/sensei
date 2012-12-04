@@ -73,13 +73,13 @@ public class BaClient {
           if (path.endsWith(".avro")) {
             GazelleIndexSegmentImpl indexSegmentImpl =  AvroSegmentCreator.readFromAvroFile(new File(path));
             File compressedFile = TestUtil.createCompressedSegment(segmentId, indexSegmentImpl, indexDir);
-            zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);
+            zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), System.currentTimeMillis());
             System.out.println("The segment has been registered");
           } else if (filePath.isDirectory()) {
             if (new File(filePath, GazelleUtils.METADATA_FILENAME).exists()) {
             GazelleIndexSegmentImpl indexSegmentImpl = SegmentPersistentManager.read(filePath, ReadMode.DirectMemory);
             File compressedFile = TestUtil.createCompressedSegment(segmentId, indexSegmentImpl, indexDir);
-            zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);
+            zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), System.currentTimeMillis());
             System.out.println("The segment has been registered");
             } else {
               File[] avroFiles =  filePath.listFiles(new FileFilter() {
@@ -98,7 +98,7 @@ public class BaClient {
                  System.out.println("Registered the segment " + segmentId + " containing " + indexSegmentImpl.getLength());
                 }
                 System.out.println("Registered the segment " + segmentId);
-                zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);
+                zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), System.currentTimeMillis());
               }
               System.out.println("Done registering segments");
               File[] tarGzFiles =  filePath.listFiles(new FileFilter() {
@@ -111,7 +111,7 @@ public class BaClient {
                 File compressedFile = tarGzFile;
                 segmentId = tarGzFile.getName().substring(0, tarGzFile.getName().indexOf(".tar.gz"));               
                 System.out.println("Registered the segment " + segmentId);
-                zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);
+                zkManager.registerSegment(partition, segmentId, compressedFile.getAbsolutePath(), System.currentTimeMillis());
               }
               System.out.println("Done registering segments");
               
@@ -138,8 +138,10 @@ public class BaClient {
     }
   public static JSONObject getPartitionJson(ZkManager zkManager, String partitionIt) throws JSONException {
     JSONObject partitionJson = new JSONObject();
-    for (String segmentId : zkManager.getSegments(partitionIt)) {
-      SegmentInfo segmentInfo = zkManager.getSegmentInfo(partitionIt, segmentId);
+    for (String segmentId : zkManager.getSegmentsForPartition(partitionIt)) {
+      
+      
+      SegmentInfo segmentInfo = zkManager.getSegmentInfo(segmentId);
       if (segmentInfo != null) {
         partitionJson.put(segmentId, segmentInfo.toJson());
       }

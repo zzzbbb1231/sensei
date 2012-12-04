@@ -17,8 +17,8 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
   private Map<String, ForwardIndex> forwardIndexMap = new HashMap<String, ForwardIndex>();
   private int length;
   private Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();
-
-  public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr, TermValueList[] termValueListArr, ColumnMetadata[] columnMetadataArr, int length) {
+  private Map<String, String> segmentMetadata = new HashMap<String, String>();
+  public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr, TermValueList[] termValueListArr, ColumnMetadata[] columnMetadataArr, Map<String, String> segmentMetadata, int length) {
     this.length = length;
     for (int i = 0; i < forwardIndexArr.length; i++) {
       forwardIndexMap.put(columnMetadataArr[i].getName(), forwardIndexArr[i]);
@@ -26,11 +26,14 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
       columnMetatdaMap.put(columnMetadataArr[i].getName(), columnMetadataArr[i]);
     }
     init();
+    this.segmentMetadata = segmentMetadata;
   }
-  public GazelleIndexSegmentImpl(Map<String, ColumnMetadata> metadataMap, Map<String, ForwardIndex> forwardIndexMap, Map<String, TermValueList> termValueListMap, int length) {
+  @SuppressWarnings("rawtypes")
+  public GazelleIndexSegmentImpl(Map<String, ColumnMetadata> metadataMap, Map<String, ForwardIndex> forwardIndexMap, Map<String, TermValueList> termValueListMap, Map<String, String> segmentMetadata, int length) {
     this.forwardIndexMap = forwardIndexMap;
     this.columnMetatdaMap = metadataMap;
     this.termValueListMap = termValueListMap;
+    this.segmentMetadata = segmentMetadata;
     this.length = length;
     init();
   }
@@ -74,7 +77,10 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
   public ForwardIndex getForwardIndex(String column) {
     return forwardIndexMap.get(column);
   }
-
+   
+  public Map<String, String> getSegmentMetadata() {
+    return segmentMetadata;
+  }
   @Override
   public int getLength() {
     return length;

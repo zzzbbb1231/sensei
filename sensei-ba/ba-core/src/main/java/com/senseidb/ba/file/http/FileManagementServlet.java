@@ -4,13 +4,17 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -18,6 +22,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
@@ -27,9 +33,12 @@ import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.springframework.util.Assert;
 
+import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
+import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
+import com.senseidb.ba.util.TarGzCompressionUtils;
 import com.senseidb.util.NetUtil;
 
 public class FileManagementServlet extends HttpServlet {
@@ -128,8 +137,24 @@ public class FileManagementServlet extends HttpServlet {
 
   private void notifyZookeeperNewFileCreated(File file) {
     int partitionId = Math.abs(file.getName().hashCode()) % (maxPartition + 1);
-    SegmentType segmentType =  SegmentType.COMPRESSED_GAZELLE;
-    zkManager.registerSegment(partitionId, file.getName(), baseUrl + file.getName(), segmentType, System.currentTimeMillis(), -1L);
+    try {
+      InputStream metadata = TarGzCompressionUtils.unTarOneFile(new FileInputStream(file), GazelleUtils.METADATA_FILENAME);
+      PropertiesConfiguration properties = new PropertiesConfiguration();
+      properties.setDelimiterParsingDisabled(true);
+      properties.load(metadata);
+      IOUtils.closeQuietly(metadata);
+      Map<String, String> segmentMetadata = SegmentPersistentManager.getSegmentMetadata(properties);
+      
+      if (!segmentMetadata.containsKey("timeCreated")) {
+        segmentMetadata.put("timeCreated", "" + System.currentTimeMillis());
+      }
+      zkManager.registerSegment(partitionId, file.getName(), baseUrl + file.getName(), segmentMetadata);
+    } catch (Exception e) {
+      logger.error("Could not extract properties from metadata. Using default ones", e);
+      zkManager.registerSegment(partitionId, file.getName(), baseUrl + file.getName(),  System.currentTimeMillis());
+    }
+    
+    
   }
 
   public void handleMultiPartUpload(HttpServletRequest req, HttpServletResponse resp) {

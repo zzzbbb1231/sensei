@@ -19,7 +19,7 @@ import com.senseidb.ba.gazelle.utils.StreamUtils;
 
 public class MetadataPersistentManager {
 
-  public static void flush(Map<String, ColumnMetadata> metadataMap, String basePath, FileSystemMode mode, FileSystem fs) throws ConfigurationException, IOException {
+  public static void flush(Map<String, ColumnMetadata> metadataMap, Map<String, String> segmentMetadata, String basePath, FileSystemMode mode, FileSystem fs) throws ConfigurationException, IOException {
     String fileName = basePath + "/" + GazelleUtils.METADATA_FILENAME;
     Path path = new Path(fileName);
     DataOutputStream ds = StreamUtils.getOutputStream(fileName, mode, fs);
@@ -29,13 +29,16 @@ public class MetadataPersistentManager {
         ColumnMetadata columnMetadata = metadataMap.get(column);       
         columnMetadata.addToConfig(config);
       }
+      for (String column : segmentMetadata.keySet()) {
+        config.addProperty(column, segmentMetadata.get(column));
+      }
     } finally {
       config.save(ds);
     }
   }
 
-  public static void flush(Map<String, ColumnMetadata> metadataMap, String basePath, FileSystemMode mode) throws ConfigurationException, IOException {
-    flush(metadataMap, basePath, mode, null);
+  public static void flush(Map<String, ColumnMetadata> metadataMap, Map<String, String> segmentMetadata, String basePath, FileSystemMode mode) throws ConfigurationException, IOException {
+    flush(metadataMap, segmentMetadata, basePath, mode, null);
   }
   
   public static HashMap<String, ColumnMetadata> readFromFile(PropertiesConfiguration config) {

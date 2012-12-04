@@ -10,18 +10,20 @@ import java.util.Set;
 import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
+import org.springframework.util.Assert;
 
 public  class ZookeeperTracker implements IZkChildListener {
   private ZkClient zkClient;
-  public static String ZK_BASE_PATH =  "/sensei-ba/partitions";
   private String partitionPath;
   
   private final SegmentTracker segmentTracker;
-  public ZookeeperTracker(ZkClient zkClient, String clusterName, int partitionId, SegmentTracker segmentTracker) {
+  private final String clusterName;
+  public ZookeeperTracker(ZkClient zkClient, String clusterName, int nodeId, int partitionId, SegmentTracker segmentTracker) {
     this.zkClient = zkClient;
+    this.clusterName = clusterName;
+    partitionPath = SegmentUtils.getActiveSegmentsPathForPartition(clusterName, partitionId);
     this.segmentTracker = segmentTracker;
     zkClient.setZkSerializer(new BytesPushThroughSerializer());
-    partitionPath = ZK_BASE_PATH + "/" + clusterName + "/" + partitionId;
   }
   public void start() {
     if (!zkClient.exists(partitionPath)) {
@@ -49,7 +51,9 @@ public  class ZookeeperTracker implements IZkChildListener {
       for (String child : childs) {
         if (!currentSegments.contains(child)) {
           if (toAdd == null) toAdd = new HashMap<String, SegmentInfo>();
-          toAdd.put(child, SegmentInfo.fromBytes((byte[])zkClient.readData(partitionPath + "/" + child)));
+          SegmentInfo segmentInfo = SegmentInfo.retrieveFromZookeeper(zkClient, clusterName, child);
+          Assert.notNull(segmentInfo, "Segment " + child + " was registered as the active segment, but the corresponding segmentInfo is not present in zookeeper");
+          toAdd.put(child, segmentInfo);
         }
       }
       for (String existingSegment : currentSegments) {

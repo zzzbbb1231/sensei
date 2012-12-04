@@ -2,6 +2,7 @@ package com.senseidb.ba.management;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,13 +121,11 @@ public class SegmentTracker {
 
   public void instantiateSegment(String segmentId, SegmentInfo segmentInfo) {
     long time = System.currentTimeMillis();
-    String uri = segmentInfo.getPathUrl();
+    List<String> uris = new ArrayList<String>(segmentInfo.getPathUrls());
     boolean success = false;
-    if (uri.contains(",")) {
-      
-      String[] uris =uri.split(",");     
-      for (int index= uris.length - 1; index >= 0; index--) {
-        String currentUri = uris[index].trim();
+      Collections.shuffle(uris);
+      for (String currentUri : uris) {
+        currentUri = currentUri.trim();
         logger.info("trying to load segment  + " + segmentId + ", by uri - " + currentUri);
         success = instantiateSegmentForUri(segmentId, currentUri);
         if (success) {
@@ -136,15 +135,12 @@ public class SegmentTracker {
           logger.warn("Couldn't load the segment by the uri " + currentUri);
         }
       }    
-    } else {
-      success = instantiateSegmentForUri(segmentId, uri);
-      
-    }
+   
     if (!success) {
-      logger.warn("[final]Failed to load the segment - " + segmentId + ", by the collection of uris" + segmentInfo.getPathUrl());
+      logger.warn("[final]Failed to load the segment - " + segmentId + ", by the collection of uris" + segmentInfo.getPathUrls());
       segmentsFailedToLoad.inc();
       segmentFailedInstantiateTime.update(System.currentTimeMillis() - time, TimeUnit.MILLISECONDS);
-      logger.error("[final]Failed to load the segment - " + segmentId + ", by the uri -" + segmentInfo.getPathUrl());
+      logger.error("[final]Failed to load the segment - " + segmentId + ", by the uris -" + segmentInfo.getPathUrls());
     } else {
       currentNumberOfSegments.inc();
       segmentSuccesfulInstantiateTime.update(System.currentTimeMillis() - time, TimeUnit.MILLISECONDS);

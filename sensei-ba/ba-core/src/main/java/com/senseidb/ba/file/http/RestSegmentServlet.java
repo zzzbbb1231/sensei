@@ -30,7 +30,9 @@ import org.springframework.util.Assert;
 
 import com.senseidb.ba.management.SegmentInfo;
 import com.senseidb.ba.management.SegmentType;
+import com.senseidb.ba.management.SegmentUtils;
 import com.senseidb.ba.management.ZkManager;
+import com.senseidb.ba.management.ZookeeperTracker;
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
 import com.senseidb.util.NetUtil;
 
@@ -86,12 +88,7 @@ public class RestSegmentServlet extends HttpServlet {
     if (newPartition > maxPartition) {
       throw new IllegalStateException("The new partition is bigger than max partition - " + maxPartition);
     }
-    SegmentInfo segmentId = zkManager.getSegmentInfo(partition, segment);
-    if (segmentId == null) {
-      throw new IllegalStateException("The segment doesn't exist - " + segment);
-    }
-    deleteSegment(partition, segment);
-    zkManager.registerSegment(newPartition, segment, segmentId.getPathUrl(), segmentId.getType(), segmentId.getTimeCreated(), segmentId.getTimeToLive());
+    zkManager.moveSegment(segment, Integer.parseInt(partition), newPartition);
     return newPartition;
   }
 
@@ -123,7 +120,7 @@ public class RestSegmentServlet extends HttpServlet {
         resp.getOutputStream().print( partitionJson.toString(1));
       }
     } else {
-      SegmentInfo segmentInfo = zkManager.getSegmentInfo(partition, segment);
+      SegmentInfo segmentInfo = zkManager.getSegmentInfo(segment);
       if (segmentInfo != null) {
         resp.getOutputStream().print( segmentInfo.toJson().toString(1));
       }
@@ -132,8 +129,8 @@ public class RestSegmentServlet extends HttpServlet {
 
   public JSONObject getPartitionJson(ZkManager zkManager, String partitionIt) throws JSONException {
     JSONObject partitionJson = new JSONObject();
-    for (String segmentId : zkManager.getSegments(partitionIt)) {
-      SegmentInfo segmentInfo = zkManager.getSegmentInfo(partitionIt, segmentId);
+    for (String segmentId : zkManager.getSegmentsForPartition(partitionIt)) {
+      SegmentInfo segmentInfo = zkManager.getSegmentInfo(segmentId);
       if (segmentInfo != null) {
         partitionJson.put(segmentId, segmentInfo.toJson());
       }

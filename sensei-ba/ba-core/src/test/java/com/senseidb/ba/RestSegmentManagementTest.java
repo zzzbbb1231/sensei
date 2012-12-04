@@ -3,6 +3,8 @@ package com.senseidb.ba;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import junit.framework.Assert;
 
@@ -15,6 +17,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
+import com.senseidb.ba.management.SegmentInfo;
 import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.util.FileUploadUtils;
 import com.senseidb.ba.util.TestUtil;
@@ -38,7 +41,7 @@ public class RestSegmentManagementTest  extends Assert {
   public static void setUp() throws Exception {
     indexDir = new File("testIndex");
     ZkClient zkClient = new ZkClient("localhost:2181");
-    zkClient.deleteRecursive("/sensei-ba/partitions/testCluster2");    
+    zkClient.deleteRecursive("/sensei-ba/testCluster2");    
     SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
     SingleNodeStarter.rmrf(indexDir);
     File ConfDir1 = new File(RestSegmentManagementTest.class.getClassLoader().getResource("ba-conf").toURI());
@@ -89,5 +92,14 @@ public class RestSegmentManagementTest  extends Assert {
      names = JSONObject.getNames(json.getJSONObject("1")); 
      assertEquals("[segment1]", Arrays.toString(names));
   }
-  
+  @Test
+  public void test2AddSegmentAndModifyItAfter() throws Exception {
+    HashMap<String,String> config = new HashMap<String, String>();
+    config.put("key1", "prop1");
+    SegmentInfo info = new SegmentInfo("segment", Arrays.asList("url1"), config);
+    zkManager.registerSegment(0, "segm", "path1", System.currentTimeMillis());
+    zkManager.registerSegment(0, "segm", "path2", System.currentTimeMillis());
+    SegmentInfo segmentInfo = zkManager.getSegmentInfo("segm");
+    assertEquals(2, new HashSet<String>(segmentInfo.getPathUrls()).size());
+  }
 }

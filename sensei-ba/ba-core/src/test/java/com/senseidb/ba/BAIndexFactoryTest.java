@@ -28,9 +28,10 @@ public class BAIndexFactoryTest extends TestCase {
     SingleNodeStarter.rmrf(indexDir);
     indexDir.mkdir();
      zkClient = new ZkClient("localhost:2181");
+     zkClient.deleteRecursive("/sensei-ba/testCluster2"); 
      zkManager = new ZkManager(zkClient, "testCluster2");
      zkManager.removePartition(0);
-     baIndexFactory = new BaIndexFactory(indexDir, "testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, ReadMode.Heap, 0, null);
+     baIndexFactory = new BaIndexFactory(indexDir, "testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, ReadMode.Heap, 0, 0, null);
      baIndexFactory.start();
      indexSegment = TestUtil.createIndexSegment();
   }
@@ -45,12 +46,12 @@ public class BAIndexFactoryTest extends TestCase {
   
   public void test1RegisteringTwoSegments() throws Exception {
     File createCompressedSegment = TestUtil.createCompressedSegment("segment1", indexSegment, indexDir);
-    zkManager.registerSegment(0, "segment1", createCompressedSegment.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);
+    zkManager.registerSegment(0, "segment1", createCompressedSegment.getAbsolutePath(),System.currentTimeMillis());
     new Wait(){
       public boolean until() {return baIndexFactory.getIndexReaders().size() == 1;};
     }; 
     File createCompressedSegment2 = TestUtil.createCompressedSegment("segment2", indexSegment, indexDir);
-    zkManager.registerSegment(0, "segment2", createCompressedSegment2.getAbsolutePath(), SegmentType.COMPRESSED_GAZELLE, System.currentTimeMillis(), Long.MAX_VALUE);
+    zkManager.registerSegment(0, "segment2", createCompressedSegment2.getAbsolutePath(),System.currentTimeMillis());
     new Wait(){
       public boolean until() {return baIndexFactory.getIndexReaders().size() == 2;};
     }; 
@@ -59,7 +60,7 @@ public class BAIndexFactoryTest extends TestCase {
   public void test2RegisteringTwoSegmentsAndRestartingFactory() throws Exception {
     test1RegisteringTwoSegments();
     baIndexFactory.shutdown();
-    baIndexFactory = new BaIndexFactory(indexDir,"testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, ReadMode.DirectMemory, 0, null);
+    baIndexFactory = new BaIndexFactory(indexDir,"testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, ReadMode.DirectMemory, 0, 0, null);
     baIndexFactory.start();
     new Wait(){
       public boolean until() {return baIndexFactory.getIndexReaders().size() == 2;};
@@ -68,7 +69,7 @@ public class BAIndexFactoryTest extends TestCase {
   public void test3Delete() throws Exception {
     test1RegisteringTwoSegments();
     baIndexFactory.shutdown();
-    baIndexFactory = new BaIndexFactory(indexDir, "testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, ReadMode.DirectMemory, 0, null);
+    baIndexFactory = new BaIndexFactory(indexDir, "testCluster2", new ZeusIndexReaderDecorator(), zkClient, null, ReadMode.DirectMemory, 0, 0, null);
     baIndexFactory.start();
     zkManager.removeSegment(0, "segment2");
     new Wait() {

@@ -27,6 +27,8 @@ import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 public class SumGroupByFacetHandler extends FacetHandler<Serializable> {
 
   public static final String[] EMPTY_STRING = new String[0];
+  private String metric;
+  private String dimension;
 
   public SumGroupByFacetHandler() {
     super("sumGroupBy", asSet());
@@ -38,6 +40,12 @@ public class SumGroupByFacetHandler extends FacetHandler<Serializable> {
 
   }
 
+  public SumGroupByFacetHandler(String name, String dimension, String metric ) {
+    super(name, asSet());
+    this.dimension = dimension;
+    this.metric = metric;
+
+  }
   public static Set<String> asSet(String... vals) {
     Set<String> ret = new HashSet<String>(vals.length);
     for (String str : vals) {
@@ -64,7 +72,12 @@ public class SumGroupByFacetHandler extends FacetHandler<Serializable> {
       public FacetCountCollector getFacetCountCollector(BoboIndexReader reader, int docBase) {
         String dimension = fspec.getProperties().get("dimension");
         String metric = fspec.getProperties().get("metric");
-
+       if (dimension == null) {
+         dimension = SumGroupByFacetHandler.this.dimension;
+       }
+       if (metric == null) {
+         metric = SumGroupByFacetHandler.this.metric;
+       }
         ZeusDataCache groupByCache = (ZeusDataCache) reader.getFacetData(dimension);
         final ZeusDataCache sumOverDataCache = (ZeusDataCache) reader.getFacetData(metric);
         final TermNumberList valList = (TermNumberList) sumOverDataCache.getDictionary();
