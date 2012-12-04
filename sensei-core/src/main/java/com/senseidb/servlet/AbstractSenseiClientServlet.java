@@ -155,6 +155,7 @@ public abstract class AbstractSenseiClientServlet extends ZookeeperConfigurableS
           req.setQuery(new SenseiJSONQuery(new FastJSONObject().put("query", "dummy:dummy")));
           SenseiResult res = _senseiBroker.browse(req);
           totalDocs = res.getTotalDocs();
+          _senseiBroker.updateNumberOfNodesMetric();
         }
         catch(Exception e)
         {
