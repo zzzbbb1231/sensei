@@ -240,7 +240,13 @@ public class SenseiBroker extends AbstractConsistentHashBroker<SenseiRequest, Se
 
 
 	public int getNumberOfNodes() {
-		return clusterClient.getNodes().size();
+		int count = 0;
+	  for (Node node : clusterClient.getNodes()) {
+		  if (node.isAvailable()) {
+		    count++;
+		  }
+		}
+	  return count;
 	}
   
 	
