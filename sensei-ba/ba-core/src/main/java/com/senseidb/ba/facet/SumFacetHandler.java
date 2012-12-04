@@ -14,6 +14,7 @@ import com.browseengine.bobo.facets.FacetCountCollectorSource;
 import com.browseengine.bobo.facets.FacetHandler;
 import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.filter.RandomAccessFilter;
+import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
 import com.browseengine.bobo.sort.DocComparatorSource;
 
 /**
@@ -21,6 +22,20 @@ import com.browseengine.bobo.sort.DocComparatorSource;
  *
  */
 public class SumFacetHandler extends FacetHandler<Serializable>{
+  public static final class EmptyCountCollector extends DefaultFacetCountCollector {
+    public EmptyCountCollector(String name, FacetDataCache dataCache, int docBase, BrowseSelection sel, FacetSpec ospec) {
+      super(name, dataCache, docBase, sel, ospec);
+    }
+
+    @Override
+    public void collectAll() {            
+    }
+
+    @Override
+    public void collect(int docid) {           
+    }
+  }
+
   private final String name;
   private String column;
   public SumFacetHandler(String name) {
@@ -36,7 +51,6 @@ public class SumFacetHandler extends FacetHandler<Serializable>{
 
   @Override
   public Serializable load(BoboIndexReader reader) throws IOException {
-
     return FacetHandler.FacetDataNone.instance;
   }
 
@@ -61,8 +75,12 @@ public class SumFacetHandler extends FacetHandler<Serializable>{
     final String currentColumn = currentColumnStr;
     return new FacetCountCollectorSource() {
       @Override
-      public FacetCountCollector getFacetCountCollector(BoboIndexReader reader, int docBase) {
-        return new SumFacetCollector(_name, (ZeusDataCache)reader.getFacetData(currentColumn), docBase, sel, fspec);
+      public FacetCountCollector getFacetCountCollector(BoboIndexReader reader, final int docBase) {
+        ZeusDataCache facetData = (ZeusDataCache)reader.getFacetData(currentColumn);
+        if (facetData == null) {
+        return new EmptyCountCollector(_name, SumFacetCollector.createFakeFacetDataCache(), docBase, sel, fspec);
+        }
+        return new SumFacetCollector(_name, facetData, docBase, sel, fspec);
       }};
   }
 

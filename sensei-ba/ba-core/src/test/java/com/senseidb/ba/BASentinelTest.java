@@ -60,7 +60,6 @@ public class BASentinelTest  extends Assert {
       IOUtils.closeQuietly(inputStream);
     }
     SingleNodeStarter.waitTillServerStarts(20000);
-
   }
 
   

@@ -8,6 +8,7 @@ import proj.zoie.api.ZoieIndexReader;
 
 import com.browseengine.bobo.api.BoboIndexReader;
 import com.browseengine.bobo.facets.FacetHandler;
+import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.data.TermFloatList;
 import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
@@ -81,8 +82,8 @@ public class BaFieldAccessor implements FieldAccessor {
     }
   }
   @Override
-  public ZeusDataCache getValueCache(String name) {
-    return (ZeusDataCache) ((BoboIndexReader)segmentToZoieReaderAdapter.getInnerReader()).getFacetData(name);
+  public FacetDataCache getValueCache(String name) {
+    return null;//(ZeusDataCache) ((BoboIndexReader)segmentToZoieReaderAdapter.getInnerReader()).getFacetData(name);
   }
 
   @Override

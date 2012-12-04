@@ -48,7 +48,14 @@ public class SumFacetCollector extends DefaultFacetCountCollector {
     newDataCache.freqs = new int[] {0, dataCache.getForwardIndex().getLength()};
     return newDataCache;
   }
-
+  public static FacetDataCache createFakeFacetDataCache() {
+    FacetDataCache newDataCache = new FacetDataCache<String>();
+    newDataCache.valArray = createFakeTermValueList();
+    newDataCache.minIDs = new int[] {-1, 0};
+    newDataCache.maxIDs = new int[] {-1, 0};
+    newDataCache.freqs = new int[] {0, 0};
+    return newDataCache;
+  }
   @Override
   public void collect(int docid) {
     if (valArray instanceof TermIntList) {

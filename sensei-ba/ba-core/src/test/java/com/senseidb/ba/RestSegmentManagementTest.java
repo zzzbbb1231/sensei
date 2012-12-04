@@ -94,6 +94,7 @@ public class RestSegmentManagementTest  extends Assert {
   }
   @Test
   public void test2AddSegmentAndModifyItAfter() throws Exception {
+    tearDown();
     HashMap<String,String> config = new HashMap<String, String>();
     config.put("key1", "prop1");
     SegmentInfo info = new SegmentInfo("segment", Arrays.asList("url1"), config);

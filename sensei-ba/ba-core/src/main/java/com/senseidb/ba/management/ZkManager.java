@@ -86,7 +86,7 @@ public class ZkManager {
       return ret;
     }
     public List<String> getSegmentsForPartition(String partition) {
-        String segmentPath =SegmentUtils.getActiveSegmentsPathForPartition(clusterName, Integer.parseInt(partition));
+        String segmentPath = SegmentUtils.getActiveSegmentsPathForPartition(clusterName, Integer.parseInt(partition));
         if (!zkClient.exists(segmentPath)) {
           return Collections.EMPTY_LIST;
         }
@@ -95,10 +95,7 @@ public class ZkManager {
     }
     public SegmentInfo getSegmentInfo(String segmentId) {
       return SegmentInfo.retrieveFromZookeeper(zkClient, clusterName, segmentId);
-      
-      
     }
-    
     
     public boolean removeSegment(int partition, String segmentId) {
       String segmentPath = SegmentUtils.getActiveSegmentsPath(clusterName, partition, segmentId);
@@ -108,8 +105,5 @@ public class ZkManager {
       }
     return false;
     }
-    public static void main(String[] args) {
-      ZkClient zkClient = new ZkClient("localhost:2181");
-      zkClient.deleteRecursive("/sensei-ba/partitions/testCluster2");
-    }
+    
 }

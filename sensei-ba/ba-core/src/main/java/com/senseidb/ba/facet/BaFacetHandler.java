@@ -4,16 +4,12 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.ScoreDoc;
-import org.jboss.netty.util.internal.ConcurrentHashMap;
 
 import com.browseengine.bobo.api.BoboIndexReader;
 import com.browseengine.bobo.api.BrowseSelection;
@@ -76,7 +72,11 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
     return new RandomAccessFilter() {
       @Override
       public double getFacetSelectivity(BoboIndexReader reader) {
+        
         final ZeusDataCache zeusDataCache = BaFacetHandler.this.load(reader);
+        if (zeusDataCache == null) {
+          return 1.0;
+        }
         final int index = zeusDataCache.getDictionary().indexOf(value);
         if (index < 0)
           return 0.0;
@@ -87,6 +87,9 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
       @Override
       public RandomAccessDocIdSet getRandomAccessDocIdSet(BoboIndexReader reader) throws IOException {
         final ZeusDataCache zeusDataCache = BaFacetHandler.this.load(reader);
+        if (zeusDataCache == null) {
+          return EmptyDocIdSet.getInstance();
+        }
         final int index = zeusDataCache.getDictionary().indexOf(value);
         if (index < 0) {
           return EmptyDocIdSet.getInstance();
@@ -98,6 +101,9 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
     };
   }
   public RandomAccessDocIdSet getDocIdSet(final ZeusDataCache zeusDataCache, final int index) {
+    if (zeusDataCache == null) {
+      return EmptyDocIdSet.getInstance();
+    }
     if (zeusDataCache.getForwardIndex() instanceof SortedForwardIndex) {
       return new SortedFacetUtils.SortedForwardDocIdSet((SortedForwardIndex) zeusDataCache.getForwardIndex(), index);
     }
@@ -122,12 +128,18 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
       @Override
       public double getFacetSelectivity(BoboIndexReader reader) {
         final ZeusDataCache zeusDataCache = BaFacetHandler.this.load(reader);
+        if (zeusDataCache == null) {
+          return 1.0;
+        }
         return 0.3;
       }
 
       @Override
       public RandomAccessDocIdSet getRandomAccessDocIdSet(BoboIndexReader reader) throws IOException {
         final ZeusDataCache zeusDataCache = BaFacetHandler.this.load(reader);
+        if (zeusDataCache == null) {
+          return EmptyDocIdSet.getInstance();
+        }
         final int startIndex;
         final int endIndex;
         
@@ -177,12 +189,13 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
 
   @Override
   public FacetCountCollectorSource getFacetCountCollectorSource(final BrowseSelection sel, final FacetSpec fspec) {
-
     return new FacetCountCollectorSource() {
-
       @Override
       public FacetCountCollector getFacetCountCollector(BoboIndexReader reader, int docBase) {
         ZeusDataCache dataCache = load(reader);
+        if (dataCache == null) {
+          return new EmptyFacetCountCollectorSource(BaFacetHandler.this._name);
+        }
         final ForwardIndex forwardIndex = dataCache.getForwardIndex();
 
         final FacetDataCache fakeCache = dataCache.getFakeCache();

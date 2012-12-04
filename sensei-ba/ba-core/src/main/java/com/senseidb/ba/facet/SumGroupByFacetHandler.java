@@ -79,6 +79,7 @@ public class SumGroupByFacetHandler extends FacetHandler<Serializable> {
          metric = SumGroupByFacetHandler.this.metric;
        }
         ZeusDataCache groupByCache = (ZeusDataCache) reader.getFacetData(dimension);
+
         final ZeusDataCache sumOverDataCache = (ZeusDataCache) reader.getFacetData(metric);
         final TermNumberList valList = (TermNumberList) sumOverDataCache.getDictionary();
         if (groupByCache.getForwardIndex() instanceof SingleValueForwardIndex) {
