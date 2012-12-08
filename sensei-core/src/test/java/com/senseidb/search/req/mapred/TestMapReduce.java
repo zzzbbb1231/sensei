@@ -84,6 +84,12 @@ public class TestMapReduce extends TestCase {
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
       assertEquals(16036500, mapReduceResult.getLong("sum"));
     }
+    public void test7SumMapReduceBQL() throws Exception {      
+      String req = "{\"bql\":\"SELECT sum(year),sum(year) FROM cars WHERE color = 'red'\"}";
+      JSONObject res = TestSensei.search(new JSONObject(req));
+      JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
+      assertEquals(4314485, mapReduceResult.getLong("sum"));
+    }
     public void test8AvgMapReduce() throws Exception {      
       String req = "{\"filter\":{\"term\":{\"color\":\"red\"}}, "
           +" \"mapReduce\":{\"function\":\"sensei.avg\",\"parameters\":{\"column\":\"groupid\"}}}";

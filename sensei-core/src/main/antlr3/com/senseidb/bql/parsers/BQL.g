@@ -1213,7 +1213,7 @@ select_stmt returns [Object json]
     boolean seenRouteBy = false;
     boolean seenRelevanceModel = false;
 }
-    :   SELECT ('*' | cols=column_name_list)
+    :   SELECT ('*' | cols=selection_list)
         (FROM (IDENT | STRING_LITERAL))?
         w=where?
         given=given_clause?
@@ -1330,7 +1330,25 @@ select_stmt returns [Object json]
                 }
                 if (group_by != null) {
                     jsonObj.put("groupBy", $group_by.json);
+                    if ($cols.aggregationFunctions.size() >0) {
+                     //TODO add groupby aggregations
+                    }
+                }  
+                if ($cols.aggregationFunctions != null && $cols.aggregationFunctions.size() == 1) {
+                  
+                  String key = $cols.aggregationFunctions.keySet().iterator().next().toLowerCase();
+                  JSONObject ret = null;
+                  
+                  String column = $cols.aggregationFunctions.get(key);
+                  String senseiKey = ("sensei." + key).toLowerCase();
+                  if (com.senseidb.search.req.mapred.impl.MapReduceRegistry.contains(senseiKey)) {
+                    ret = new FastJSONObject().put("function", senseiKey).put("parameters", new FastJSONObject().put("column", column));
+                  } else  if (com.senseidb.search.req.mapred.impl.MapReduceRegistry.contains(key)) {
+                    ret =  new FastJSONObject().put("function", key).put("parameters", new FastJSONObject().put("column", column));
+                  }
+                  jsonObj.put("mapReduce", ret);
                 }
+                
                 if (distinct != null) {
                     jsonObj.put("distinct", $distinct.json);
                 }
@@ -1395,12 +1413,13 @@ describe_stmt
     :   DESCRIBE (IDENT | STRING_LITERAL)
     ;
 
-column_name_list returns [boolean fetchStored, JSONArray json]
+selection_list returns [boolean fetchStored, JSONArray json, Map<String, String> aggregationFunctions]
 @init {
     $fetchStored = false;
     $json = new FastJSONArray();
-}
-    :   col=column_name
+    $aggregationFunctions = new HashMap<String, String>();
+    }
+    :    (col=column_name
         {
             String colName = $col.text;
             if (colName != null) {
@@ -1409,20 +1428,29 @@ column_name_list returns [boolean fetchStored, JSONArray json]
                     $fetchStored = true;
                 }
             }
-        }
-        (COMMA col=column_name
+        } | agrFunction=aggregation_function 
             {
-                String colName = $col.text;
-                if (colName != null) {
-                    $json.put($col.text); 
-                    if ("_srcdata".equals(colName) || colName.startsWith("_srcdata.")) {
-                        $fetchStored = true;
-                    }
+               $aggregationFunctions.put($agrFunction.function, $agrFunction.column);
+            })
+        (COMMA   (col=column_name
+        {
+            String colName = $col.text;
+            if (colName != null) {
+                $json.put($col.text); 
+                if ("_srcdata".equals(colName) || colName.startsWith("_srcdata.")) {
+                    $fetchStored = true;
                 }
             }
-        )*
-        -> ^(COLUMN_LIST column_name+)
-    ;
+        }|  agrFunction=aggregation_function 
+            {
+               $aggregationFunctions.put($agrFunction.function, $agrFunction.column);
+            }))*;
+aggregation_function returns [String function, String column]
+ :   (id=IDENT{System.out.println("ident = " + $id.text);} LPAR columnVar=column_name RPAR) {
+    System.out.println($id.text);
+    $function= $id.text;    
+    $column= $columnVar.text;
+ };
 
 column_name returns [String text]
 @init {
@@ -1450,7 +1478,8 @@ column_name returns [String text]
             }
         }
         )*
-        { $text = builder.toString(); }
+        { $text = builder.toString(); 
+        System.out.println("columnName = " + $text);}
     ;
 
 where returns [Object json]
@@ -1579,7 +1608,7 @@ distinct_clause returns [JSONObject json]
         {
             $json = new FastJSONObject();
             try {
-                JSONArray cols = $or_column_name_list.json;
+                JSONArray cols = $or_column_name_list.json; 
                 if (cols.length() > 1) {
                   throw new FailedPredicateException(input, 
                                                      "distinct_clause",
@@ -2278,10 +2307,10 @@ date_time_string returns [long val]
     ;
 
 match_predicate returns [JSONObject json]
-    :   (NOT)? MATCH LPAR column_name_list RPAR AGAINST LPAR STRING_LITERAL RPAR
+    :   (NOT)? MATCH LPAR selection_list RPAR AGAINST LPAR STRING_LITERAL RPAR
         {
             try {
-                JSONArray cols = $column_name_list.json;
+                JSONArray cols = $selection_list.json;
                 for (int i = 0; i < cols.length(); ++i) {
                     String col = cols.getString(i);
                     String[] facetInfo = _facetInfoMap.get(col);

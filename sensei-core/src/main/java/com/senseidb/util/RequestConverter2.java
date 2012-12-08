@@ -32,6 +32,7 @@ import com.senseidb.search.query.filters.FilterConstructor;
 import com.senseidb.search.req.SenseiJSONQuery;
 import com.senseidb.search.req.SenseiRequest;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
+import com.senseidb.search.req.mapred.functions.CompositeMapReduce;
 import com.senseidb.search.req.mapred.impl.MapReduceRegistry;
 import com.senseidb.util.JSONUtil.FastJSONArray;
 import com.senseidb.util.JSONUtil.FastJSONObject;
@@ -294,12 +295,23 @@ public class RequestConverter2 {
         }
       }
       //map reduce
-      JSONObject mapReduceJson =  json.optJSONObject(RequestConverter2.MAP_REDUCE);
-      if (mapReduceJson != null) {
-        String key = mapReduceJson.getString(MAP_REDUCE_FUNCTION);
-        SenseiMapReduce senseiMapReduce = MapReduceRegistry.get(key);
-        senseiMapReduce.init(mapReduceJson.optJSONObject(MAP_REDUCE_PARAMETERS));
-        req.setMapReduceFunction(senseiMapReduce);
+      Object mapReduceObj =  json.opt(RequestConverter2.MAP_REDUCE);
+      if (mapReduceObj instanceof JSONObject) {
+       JSONObject mapReduceJson = (JSONObject) mapReduceObj;
+          String key = mapReduceJson.getString(MAP_REDUCE_FUNCTION);
+          SenseiMapReduce senseiMapReduce = MapReduceRegistry.get(key);
+          senseiMapReduce.init(mapReduceJson.optJSONObject(MAP_REDUCE_PARAMETERS));
+          req.setMapReduceFunction(senseiMapReduce);
+      } else if (mapReduceObj instanceof JSONArray) {
+        JSONArray mapReduceJson = (JSONArray) mapReduceObj;
+        CompositeMapReduce compositeMapReduce = new CompositeMapReduce();
+        JSONObject convertedParams = new JSONUtil.FastJSONObject();
+        for (int i = 0; i < mapReduceJson.length(); i++) {
+          JSONObject currentFunction = mapReduceJson.getJSONObject(i);
+          convertedParams.put(currentFunction.getString(MAP_REDUCE_FUNCTION), convertedParams.optJSONObject(MAP_REDUCE_PARAMETERS));
+        }
+        compositeMapReduce.init(convertedParams);
+        req.setMapReduceFunction(compositeMapReduce);
       }
 		 // facets
 		  JSONObject facets = json.optJSONObject(RequestConverter2.FACETS);

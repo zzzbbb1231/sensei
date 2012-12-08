@@ -32,7 +32,9 @@ public class MapReduceRegistry {
   public static void register(String mapReduceKey, Class<? extends SenseiMapReduce> mapReduceClass) {
     keyToFunction.put(mapReduceKey, mapReduceClass);
   }
-
+  public static boolean contains(String column) {
+    return keyToFunction.containsKey(column);
+  }
   public static SenseiMapReduce get(String mapReduceKey) {
     try {
     Class<? extends SenseiMapReduce>  cls = keyToFunction.get(mapReduceKey);
