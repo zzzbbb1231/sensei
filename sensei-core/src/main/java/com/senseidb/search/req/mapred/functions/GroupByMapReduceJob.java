@@ -21,8 +21,10 @@ public class GroupByMapReduceJob implements SenseiMapReduce<Serializable, Serial
   private String function;
   @Override
   public void init(JSONObject params) {
-    params.put("mapReduce", new JSONObject().put("function", null).put("params", null));
     try {
+    params.put("mapReduce", new JSONObject().put("function", "").put("params", ""));
+
+    
       metric = params.getString("metric");
       function = params.getString("function");
       JSONArray columnsJson = params.getJSONArray("columns");
