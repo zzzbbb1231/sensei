@@ -109,16 +109,16 @@ public class CountGroupByMapReduce implements SenseiMapReduce<HashMap<String, In
 }
  class GroupedValue implements Comparable {
    String key;
-   int value;
+   Comparable value;
 
-   public GroupedValue(String key, int value) {
+   public GroupedValue(String key, Comparable value) {
      super();
      this.key = key;
      this.value = value;
    }
    @Override
    public int compareTo(Object o) {
-     return ((GroupedValue) o).value - value;
+     return value.compareTo(o);
    }
    @Override
    public String toString() {
