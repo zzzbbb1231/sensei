@@ -1114,6 +1114,7 @@ EMPTY : ('E'|'e')('M'|'m')('P'|'p')('T'|'t')('Y'|'y') ;
 ELSE : ('E'|'e')('L'|'l')('S'|'s')('E'|'e') ;
 END : ('E'|'e')('N'|'n')('D'|'d') ;
 EXCEPT : ('E'|'e')('X'|'x')('C'|'c')('E'|'e')('P'|'p')('T'|'t') ;
+EXECUTE : ('E'|'e')('X'|'x')('E'|'e')('C'|'c')('U'|'u')('T'|'t')('E'|'e') ;
 FACET : ('F'|'f')('A'|'a')('C'|'c')('E'|'e')('T'|'t') ;
 FALSE : ('F'|'f')('A'|'a')('L'|'l')('S'|'s')('E'|'e') ;
 FETCHING : ('F'|'f')('E'|'e')('T'|'t')('C'|'c')('H'|'h')('I'|'i')('N'|'n')('G'|'g') ;
@@ -1179,7 +1180,7 @@ FAST_UTIL_DATA_TYPE
     ;
 
 // Have to define this after the keywords?
-IDENT : (ALPHA | '_') (ALPHA | DIGIT | '-' | '_')* ;
+IDENT : (ALPHA | '_') (ALPHA | DIGIT | '-' | '_'|'.')* ;
 VARIABLE : '$' (ALPHA | DIGIT | '_')+ ;
 
 WS : ( ' ' | '\t' | '\r' | '\n' )+ { $channel = HIDDEN; };
@@ -1209,6 +1210,7 @@ select_stmt returns [Object json]
     boolean seenGroupBy = false;
     boolean seenDistinct = false;
     boolean seenBrowseBy = false;
+    boolean seenExecuteMapReduce = false;
     boolean seenFetchStored = false;
     boolean seenRouteBy = false;
     boolean seenRelevanceModel = false;
@@ -1248,6 +1250,15 @@ select_stmt returns [Object json]
             { 
                 if (seenDistinct) {
                     throw new FailedPredicateException(input, "select_stmt", "DISTINCT clause can only appear once.");
+                }
+                else {
+                    seenDistinct = true;
+                }
+            }
+        |   executeMapReduce = execute_clause
+            { 
+                if (seenExecuteMapReduce) {
+                    throw new FailedPredicateException(input, "select_stmt", "EXECUTE clause can only appear once.");
                 }
                 else {
                     seenDistinct = true;
@@ -1333,22 +1344,24 @@ select_stmt returns [Object json]
                     if ($cols.aggregationFunctions.size() >0) {
                      //TODO add groupby aggregations
                     }
-                }  
-                if ($cols.aggregationFunctions != null && $cols.aggregationFunctions.size() == 1) {
-                  
-                  String key = $cols.aggregationFunctions.keySet().iterator().next().toLowerCase();
-                  JSONObject ret = null;
-                  
-                  String column = $cols.aggregationFunctions.get(key);
-                  String senseiKey = ("sensei." + key).toLowerCase();
-                  if (com.senseidb.search.req.mapred.impl.MapReduceRegistry.contains(senseiKey)) {
-                    ret = new FastJSONObject().put("function", senseiKey).put("parameters", new FastJSONObject().put("column", column));
-                  } else  if (com.senseidb.search.req.mapred.impl.MapReduceRegistry.contains(key)) {
-                    ret =  new FastJSONObject().put("function", key).put("parameters", new FastJSONObject().put("column", column));
-                  }
-                  jsonObj.put("mapReduce", ret);
+                }                  
+                 Map<String,String> aggregateFunctions = null;
+                 if (cols != null) {
+                    aggregateFunctions = $cols.aggregationFunctions;
+                 }
+                if (executeMapReduce != null) {
+                   if (group_by != null) {
+                      BQLParserUtils.decorateWithMapReduce(jsonObj, $cols.aggregationFunctions, $group_by.json, $executeMapReduce.functionName, $executeMapReduce.properties);
+                   } else {
+                      BQLParserUtils.decorateWithMapReduce(jsonObj, $cols.aggregationFunctions, null, $executeMapReduce.functionName, $executeMapReduce.properties);
+                   }
+                } else {
+                   if (group_by != null) {
+                      BQLParserUtils.decorateWithMapReduce(jsonObj, $cols.aggregationFunctions, $group_by.json, null, null);
+                   } else {
+                      BQLParserUtils.decorateWithMapReduce(jsonObj, $cols.aggregationFunctions, null, null, null);
+                   }
                 }
-                
                 if (distinct != null) {
                     jsonObj.put("distinct", $distinct.json);
                 }
@@ -1446,8 +1459,7 @@ selection_list returns [boolean fetchStored, JSONArray json, Map<String, String>
                $aggregationFunctions.put($agrFunction.function, $agrFunction.column);
             }))*;
 aggregation_function returns [String function, String column]
- :   (id=IDENT{System.out.println("ident = " + $id.text);} LPAR columnVar=column_name RPAR) {
-    System.out.println($id.text);
+ :   (id=function_name LPAR columnVar=column_name RPAR) {
     $function= $id.text;    
     $column= $columnVar.text;
  };
@@ -1481,7 +1493,13 @@ column_name returns [String text]
         { $text = builder.toString(); 
         System.out.println("columnName = " + $text);}
     ;
+function_name returns [String text]
 
+    :   (colName=column_name)
+        {
+         $text = $colName.text; 
+        }
+    ;
 where returns [Object json]
     :   WHERE^ search_expr
         {
@@ -1657,7 +1675,21 @@ browse_by_clause returns [JSONObject json]
             }
         )*
     ;
-
+execute_clause returns [String functionName, JSONObject properties]
+@init {
+    $properties = new FastJSONObject();
+}
+    :   EXECUTE LPAR funName=function_name
+        {
+            $functionName = $funName.text;
+        }
+        (COMMA map=python_style_dict
+            {
+               $properties = $map.json;
+               
+            }
+        ) RPAR 
+    ;
 facet_spec returns [String column, JSONObject spec]
 @init {
     boolean expand = false;
