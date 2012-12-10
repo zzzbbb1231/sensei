@@ -83,11 +83,7 @@ public class TestMapReduce extends TestCase {
       JSONObject res = TestSensei.search(new JSONObject(req));
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
       assertEquals(16036500, mapReduceResult.getLong("sum"));
-<<<<<<< HEAD
     }
-=======
-    }*/
->>>>>>> 6652fc10a92b10706a6ca01c5d7999bbdaab17e6
     public void test7SumMapReduceBQL() throws Exception {      
       String req = "{\"bql\":\"SELECT sum(year),sum(year) FROM cars WHERE color = 'red'\"}";
       JSONObject res = TestSensei.search(new JSONObject(req));
