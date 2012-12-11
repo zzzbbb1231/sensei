@@ -10,9 +10,13 @@ BNF Grammar for BQL
 
 <describe_stmt> ::= ( DESC | DESCRIBE ) [<index_name>]
 
-<select_list> ::= '*' | <column_name_list>
+<select_list> ::= '*' | (<column_name>|<aggregation_function>)( ',' <column_name>|<aggregation_function> )*
 
 <column_name_list> ::= <column_name> ( ',' <column_name> )*
+
+<aggregation_function> ::= <function_name> '(' <column_name> ')'
+
+<function_name> ::= <column_name>
 
 <from_clause> ::= FROM <index_name>
 
@@ -113,6 +117,7 @@ BNF Grammar for BQL
                       | <limit_clause>
                       | <group_by_clause>
                       | <distinct_clause>
+                      | <execute_clause>
                       | <browse_by_clause>
                       | <fetching_stored_clause>
                       | <route_by_clause>
@@ -130,11 +135,15 @@ BNF Grammar for BQL
 
 <distinct_clause> ::= DISTINCT <distinct_spec>
 
-<group_spec> ::= <or_column_name_list> [TOP <max_per_group>]
+<execute_clause> ::= EXECUTE '(' function_name ((',' python_style_dict) | (',' key_value_pair)*) ')'
+
+<group_spec> ::= <comma_column_name_list> [TOP <max_per_group>]
 
 <distinct_spec> ::= <or_column_name_list>
 
 <or_column_name_list> ::= <column_name> ( OR <column_name> )*
+
+<comma_column_name_list> ::= <column_name> ( (OR | ',') <column_name> )*
 
 <limit_clause> ::= LIMIT [<offset> ','] <count>
 
