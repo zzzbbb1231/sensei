@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import com.senseidb.search.req.mapred.CombinerStage;
 import com.senseidb.search.req.mapred.FacetCountAccessor;
 import com.senseidb.search.req.mapred.FieldAccessor;
+import com.senseidb.search.req.mapred.IntArray;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
 import com.senseidb.util.JSONUtil.FastJSONArray;
 import com.senseidb.util.JSONUtil.FastJSONObject;
@@ -27,10 +28,10 @@ public class SumMapReduce implements SenseiMapReduce<Double, Double> {
   }
 
   @Override
-  public Double map(int[] docIds, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountAccessor) {
+  public Double map(IntArray docIds, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountAccessor) {
     double ret = 0;
     for (int i = 0; i < docIdCount; i++) {
-      ret += accessor.getDouble(column, docIds[i]);
+      ret += accessor.getDouble(column, docIds.get(i));
     }
     return ret;
   }

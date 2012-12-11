@@ -17,6 +17,7 @@ import org.springframework.util.Assert;
 import com.senseidb.search.req.mapred.CombinerStage;
 import com.senseidb.search.req.mapred.FacetCountAccessor;
 import com.senseidb.search.req.mapred.FieldAccessor;
+import com.senseidb.search.req.mapred.IntArray;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
 import com.senseidb.search.req.mapred.impl.MapReduceRegistry;
 import com.senseidb.util.JSONUtil;
@@ -97,7 +98,7 @@ public class CompositeMapReduce implements SenseiMapReduce<Serializable, Seriali
   }
 
   @Override
-  public Serializable map(int[] docIds, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountsAccessor) {
+  public Serializable map(IntArray docIds, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountsAccessor) {
     HashMap<Key, Serializable> mapResults = new HashMap<Key, Serializable>();
     for (Key id : innerFunctionsRefs.keySet()) {
       Pair<String, SenseiMapReduce> pair = innerFunctionsRefs.get(id);
