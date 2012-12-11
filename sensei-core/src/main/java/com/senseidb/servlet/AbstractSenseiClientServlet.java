@@ -10,6 +10,7 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -41,6 +42,7 @@ import com.senseidb.search.node.SenseiSysBroker;
 import com.senseidb.search.node.broker.BrokerConfig;
 import com.senseidb.search.node.broker.LayeredBroker;
 import com.senseidb.search.req.ErrorType;
+import com.senseidb.search.req.RequestPostProcessor;
 import com.senseidb.search.req.SenseiError;
 import com.senseidb.search.req.SenseiHit;
 import com.senseidb.search.req.SenseiJSONQuery;
@@ -86,6 +88,7 @@ public abstract class AbstractSenseiClientServlet extends ZookeeperConfigurableS
   private JsonTemplateProcessor jsonTemplateProcessor = new JsonTemplateProcessor();
 
   private Timer _statTimer;
+  private RequestPostProcessor postProcessor;
 
 
   public AbstractSenseiClientServlet() {
@@ -97,6 +100,7 @@ public abstract class AbstractSenseiClientServlet extends ZookeeperConfigurableS
     super.init(config);
     BrokerConfig brokerConfig = new BrokerConfig(senseiConf, loadBalancerFactory);
     brokerConfig.init();
+    postProcessor = pluginRegistry.getBeanByFullPrefix(SenseiConfParams.SENSEI_REQUEST_POSTPROCESSOR, RequestPostProcessor.class);
     _senseiBroker = brokerConfig.buildSenseiBroker();
     _senseiSysBroker = brokerConfig.buildSysSenseiBroker(versionComparator);
     _networkClient = brokerConfig.getNetworkClient();
@@ -251,12 +255,20 @@ public abstract class AbstractSenseiClientServlet extends ZookeeperConfigurableS
           requestContext.query = "json=" + requestContext.content;
           requestContext.compiledJson = requestContext.jsonObj;
         }
-
         if (requestContext.templatesJson != null)
         {
           requestContext.compiledJson.put(JsonTemplateProcessor.TEMPLATE_MAPPING_PARAM, requestContext.templatesJson);
         }
+        List<SenseiError> errors = null;
+        if (postProcessor != null) {
+          errors = postProcessor.process(requestContext.compiledJson);
+        }
         requestContext.senseiReq = SenseiRequest.fromJSON(requestContext.compiledJson, _facetInfoMap);
+        if (errors != null) {
+          for (SenseiError error : errors) {
+            requestContext.senseiReq.addError(error);
+          }
+        }
       }
       SenseiResult res = broker.browse(requestContext.senseiReq);
       numHits = res.getNumHits();

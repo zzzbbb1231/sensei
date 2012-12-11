@@ -78,7 +78,7 @@ public interface SenseiConfParams {
 	public static final String SERVER_SEARCH_ROUTER_FACTORY = "sensei.search.router.factory";
 
 	public static final String SENSEI_INDEX_PRUNER = "sensei.index.pruner";
-
+	public static final String SENSEI_REQUEST_POSTPROCESSOR = "sensei.request.postrocessor";
 	public static final String SENSEI_ZOIE_RETENTION_DAYS = "sensei.indexing.retention.days";
   public static final String SENSEI_ZOIE_RETENTION_CLASS = "sensei.indexing.retention";
 

@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import com.senseidb.search.req.mapred.CombinerStage;
 import com.senseidb.search.req.mapred.FacetCountAccessor;
 import com.senseidb.search.req.mapred.FieldAccessor;
+import com.senseidb.search.req.mapred.IntArray;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
 import com.senseidb.util.JSONUtil.FastJSONObject;
 
@@ -27,10 +28,10 @@ public class DistinctCountMapReduce implements SenseiMapReduce<LongOpenHashSet, 
   }
 
   @Override
-  public LongOpenHashSet map(int[] docId, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountAccessor) {
+  public LongOpenHashSet map(IntArray docId, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountAccessor) {
     LongOpenHashSet hashSet = new LongOpenHashSet(docIdCount);
     for (int i =0; i < docIdCount; i++) {
-      hashSet.add(accessor.getLong(column, docId[i]));
+      hashSet.add(accessor.getLong(column, docId.get(i)));
     }
     
     return hashSet;

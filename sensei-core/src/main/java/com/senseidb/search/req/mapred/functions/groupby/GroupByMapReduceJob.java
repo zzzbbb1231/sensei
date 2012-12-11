@@ -13,6 +13,7 @@ import org.json.JSONObject;
 import com.senseidb.search.req.mapred.CombinerStage;
 import com.senseidb.search.req.mapred.FacetCountAccessor;
 import com.senseidb.search.req.mapred.FieldAccessor;
+import com.senseidb.search.req.mapred.IntArray;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
 
 public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, GroupedValue>, HashMap<String, GroupedValue>> {
@@ -40,16 +41,16 @@ public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, Grou
     }
 
     @Override
-    public HashMap<String, GroupedValue> map(int[] docIds, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountsAccessor) {
+    public HashMap<String, GroupedValue> map(IntArray docIds, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountsAccessor) {
       HashMap<String, GroupedValue> map = new HashMap<String, GroupedValue>();
       for (int i =0; i < docIdCount; i++) {
-        String key = getKey(columns, accessor, docIds[i]);
+        String key = getKey(columns, accessor, docIds.get(i));
         GroupedValue value = map.get(key);
         
         if (value != null) {
-          value.merge(aggregateFunction.produceSingleValue(accessor, docIds[i]));
+          value.merge(aggregateFunction.produceSingleValue(accessor, docIds.get(i)));
         } else {
-            map.put(key, aggregateFunction.produceSingleValue(accessor, docIds[i]));
+            map.put(key, aggregateFunction.produceSingleValue(accessor, docIds.get(i)));
         }
       }
       trimToSize(map, TRIM_SIZE * 3);
