@@ -20,7 +20,7 @@ public class TestMapReduce extends TestCase {
       httpRestSenseiService = SenseiStarter.httpRestSenseiService;
     }
     
-    
+
     
     public void test2GroupByColorAndGroupId() throws Exception { 
       String req = "{\"size\":0,\"filter\":{\"terms\":{\"color\":{\"includes\":[],\"excludes\":[\"gold\"],\"operator\":\"or\"}}}" +
@@ -84,6 +84,7 @@ public class TestMapReduce extends TestCase {
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
       assertEquals(16036500, mapReduceResult.getLong("sum"));
     }
+    
     public void test8AvgMapReduce() throws Exception {      
       String req = "{\"filter\":{\"term\":{\"color\":\"red\"}}, "
           +" \"mapReduce\":{\"function\":\"sensei.avg\",\"parameters\":{\"column\":\"groupid\"}}}";
@@ -114,5 +115,43 @@ public class TestMapReduce extends TestCase {
       assertEquals(1560, mapReduceResult.getJSONObject("facetCounts").getInt("white"));
       
       
+    }
+    public void test11SumMapReduceBQL() throws Exception {      
+      String req = "{\"bql\":\"SELECT sum(year) FROM cars WHERE color = 'red'\"}";
+      JSONObject res = TestSensei.search(new JSONObject(req));
+      JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
+      assertEquals(4314485, mapReduceResult.getLong("sum"));
+
+    }
+    public void test12AvgMapReduceBQL() throws Exception {      
+      String req = "{\"bql\":\"SELECT avg(price), avg(year) FROM cars WHERE color = 'red'\"}";
+      JSONObject res = TestSensei.search(new JSONObject(req));
+      System.out.println(res.toString(1));
+      JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
+     
+      assertEquals(1997.446, mapReduceResult.getJSONArray("results").getJSONObject(1).getJSONObject("result").getDouble("avg"), 0.01);
+
+    }
+    public void test13CountMapReduceBQLWithGroupBy() throws Exception {      
+      String req = "{\"bql\":\"SELECT sum(year), sum(price) FROM cars WHERE color = 'red' GROUP BY category\"}";
+      JSONObject res = TestSensei.search(new JSONObject(req));
+      System.out.println(res.toString(1));
+      JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
+      assertEquals(3657300, mapReduceResult.getJSONArray("results").getJSONObject(1).getJSONObject("result").getJSONObject("compact").getLong("sum"));
+    }
+    public void test14CountMapReduceBQLWithMultipleGroupBy() throws Exception {      
+      String req = "{\"bql\":\"SELECT color, sum(year), sum(price) FROM cars WHERE color = 'red' GROUP BY category, color limit 10\"}";
+      JSONObject res = TestSensei.search(new JSONObject(req));
+      System.out.println(res.toString(1));
+      JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
+      assertEquals(10, mapReduceResult.getJSONArray("results").getJSONObject(1).getJSONObject("result").length());
+    }
+    public void test14MapReduce() throws Exception {      
+      String req = "{\"bql\":\"SELECT * FROM cars WHERE color <> 'gold' EXECUTE(com.senseidb.search.req.mapred.CountGroupByMapReduce, {'columns':['groupid', 'color']})\"}";
+      JSONObject res = TestSensei.search(new JSONObject(req));
+      System.out.println(res.toString(1));
+      
+      JSONObject highestResult = res.getJSONObject("mapReduceResult").getJSONArray("groupedCounts").getJSONObject(0);
+      assertEquals(8, highestResult.getInt(highestResult.keys().next().toString()));
     }
 }

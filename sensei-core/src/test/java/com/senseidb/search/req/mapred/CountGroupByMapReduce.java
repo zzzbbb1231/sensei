@@ -118,7 +118,7 @@ public class CountGroupByMapReduce implements SenseiMapReduce<HashMap<String, In
    }
    @Override
    public int compareTo(Object o) {
-     return ((GroupedValue) o).value - value;
+     return ((GroupedValue)o).value - value;
    }
    @Override
    public String toString() {

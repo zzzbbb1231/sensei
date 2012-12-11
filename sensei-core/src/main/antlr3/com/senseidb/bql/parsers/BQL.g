@@ -468,6 +468,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import com.senseidb.util.JSONUtil.FastJSONArray;
 import com.senseidb.util.JSONUtil.FastJSONObject;
+import com.senseidb.util.Pair;
+import com.senseidb.search.req.BQLParserUtils;
 }
 
 @parser::members {
@@ -1114,6 +1116,7 @@ EMPTY : ('E'|'e')('M'|'m')('P'|'p')('T'|'t')('Y'|'y') ;
 ELSE : ('E'|'e')('L'|'l')('S'|'s')('E'|'e') ;
 END : ('E'|'e')('N'|'n')('D'|'d') ;
 EXCEPT : ('E'|'e')('X'|'x')('C'|'c')('E'|'e')('P'|'p')('T'|'t') ;
+EXECUTE : ('E'|'e')('X'|'x')('E'|'e')('C'|'c')('U'|'u')('T'|'t')('E'|'e') ;
 FACET : ('F'|'f')('A'|'a')('C'|'c')('E'|'e')('T'|'t') ;
 FALSE : ('F'|'f')('A'|'a')('L'|'l')('S'|'s')('E'|'e') ;
 FETCHING : ('F'|'f')('E'|'e')('T'|'t')('C'|'c')('H'|'h')('I'|'i')('N'|'n')('G'|'g') ;
@@ -1207,13 +1210,14 @@ select_stmt returns [Object json]
     boolean seenOrderBy = false;
     boolean seenLimit = false;
     boolean seenGroupBy = false;
+     boolean seenExecuteMapReduce = false;
     boolean seenDistinct = false;
     boolean seenBrowseBy = false;
     boolean seenFetchStored = false;
     boolean seenRouteBy = false;
     boolean seenRelevanceModel = false;
 }
-    :   SELECT ('*' | cols=column_name_list)
+    :   SELECT ('*' | cols=selection_list)
         (FROM (IDENT | STRING_LITERAL))?
         w=where?
         given=given_clause?
@@ -1251,6 +1255,15 @@ select_stmt returns [Object json]
                 }
                 else {
                     seenDistinct = true;
+                }
+            }
+        |   executeMapReduce = execute_clause
+            { 
+                if (seenExecuteMapReduce) {
+                    throw new FailedPredicateException(input, "select_stmt", "EXECUTE clause can only appear once.");
+                }
+                else {
+                    seenExecuteMapReduce = true;
                 }
             }
         |   browse_by = browse_by_clause
@@ -1330,7 +1343,26 @@ select_stmt returns [Object json]
                 }
                 if (group_by != null) {
                     jsonObj.put("groupBy", $group_by.json);
+                    
+                }  
+                List<Pair<String, String>> aggregateFunctions = null;
+                 if (cols != null) {
+                    aggregateFunctions = $cols.aggregationFunctions;
+                 }
+                if (executeMapReduce != null) {
+                   if (group_by != null) {
+                      BQLParserUtils.decorateWithMapReduce(jsonObj, $cols.aggregationFunctions, $group_by.json, $executeMapReduce.functionName, $executeMapReduce.properties);
+                   } else {
+                      BQLParserUtils.decorateWithMapReduce(jsonObj, $cols.aggregationFunctions, null, $executeMapReduce.functionName, $executeMapReduce.properties);
+                   }
+                } else {
+                   if (group_by != null) {
+                      BQLParserUtils.decorateWithMapReduce(jsonObj, $cols.aggregationFunctions, $group_by.json, null, null);
+                   } else {
+                      BQLParserUtils.decorateWithMapReduce(jsonObj, $cols.aggregationFunctions, null, null, null);
+                   }
                 }
+                
                 if (distinct != null) {
                     jsonObj.put("distinct", $distinct.json);
                 }
@@ -1395,12 +1427,13 @@ describe_stmt
     :   DESCRIBE (IDENT | STRING_LITERAL)
     ;
 
-column_name_list returns [boolean fetchStored, JSONArray json]
+selection_list returns [boolean fetchStored, JSONArray json, List<Pair<String, String>> aggregationFunctions]
 @init {
     $fetchStored = false;
     $json = new FastJSONArray();
-}
-    :   col=column_name
+    $aggregationFunctions = new ArrayList<Pair<String, String>>();
+    }
+    :    (col=column_name
         {
             String colName = $col.text;
             if (colName != null) {
@@ -1409,20 +1442,29 @@ column_name_list returns [boolean fetchStored, JSONArray json]
                     $fetchStored = true;
                 }
             }
-        }
-        (COMMA col=column_name
+        } | agrFunction=aggregation_function 
             {
-                String colName = $col.text;
-                if (colName != null) {
-                    $json.put($col.text); 
-                    if ("_srcdata".equals(colName) || colName.startsWith("_srcdata.")) {
-                        $fetchStored = true;
-                    }
+               $aggregationFunctions.add(new Pair($agrFunction.function, $agrFunction.column));
+            })
+        (COMMA   (col=column_name
+        {
+            String colName = $col.text;
+            if (colName != null) {
+                $json.put($col.text); 
+                if ("_srcdata".equals(colName) || colName.startsWith("_srcdata.")) {
+                    $fetchStored = true;
                 }
             }
-        )*
-        -> ^(COLUMN_LIST column_name+)
-    ;
+        }|  agrFunction=aggregation_function 
+            {
+                $aggregationFunctions.add(new Pair($agrFunction.function, $agrFunction.column));
+            }))*;
+
+aggregation_function returns [String function, String column]
+ :   (id=function_name LPAR columnVar=column_name RPAR) {
+    $function= $id.text;    
+    $column= $columnVar.text;
+ };
 
 column_name returns [String text]
 @init {
@@ -1452,7 +1494,13 @@ column_name returns [String text]
         )*
         { $text = builder.toString(); }
     ;
+function_name returns [String text]
 
+    :   (colName=column_name)
+        {
+         $text = $colName.text; 
+        }
+    ;
 where returns [Object json]
     :   WHERE^ search_expr
         {
@@ -1521,7 +1569,26 @@ limit_clause returns [int offset, int count]
             $count = Integer.parseInt($n2.text);
         }
     ;
-
+comma_column_name_list returns [JSONArray json]
+@init {
+    $json = new FastJSONArray();
+}
+    :   col=column_name
+        {
+            String colName = $col.text;
+            if (colName != null) {
+                $json.put($col.text); 
+            }
+        }
+        ((OR | COMMA) col=column_name
+            {
+                String colName = $col.text;
+                if (colName != null) {
+                    $json.put($col.text); 
+                }
+            }
+        )*
+    ;
 or_column_name_list returns [JSONArray json]
 @init {
     $json = new FastJSONArray();
@@ -1544,11 +1611,11 @@ or_column_name_list returns [JSONArray json]
     ;
 
 group_by_clause returns [JSONObject json]
-    :   GROUP BY or_column_name_list (TOP top=INTEGER)?
+    :   GROUP BY comma_column_name_list (TOP top=INTEGER)?
         {
             $json = new FastJSONObject();
             try {
-                JSONArray cols = $or_column_name_list.json;
+                JSONArray cols = $comma_column_name_list.json;
                 for (int i = 0; i < cols.length(); ++i) {
                     String col = cols.getString(i);
                     String[] facetInfo = _facetInfoMap.get(col);
@@ -1579,7 +1646,7 @@ distinct_clause returns [JSONObject json]
         {
             $json = new FastJSONObject();
             try {
-                JSONArray cols = $or_column_name_list.json;
+                JSONArray cols = $or_column_name_list.json; 
                 if (cols.length() > 1) {
                   throw new FailedPredicateException(input, 
                                                      "distinct_clause",
@@ -1628,7 +1695,34 @@ browse_by_clause returns [JSONObject json]
             }
         )*
     ;
-
+execute_clause returns [String functionName, JSONObject properties]
+@init {
+    $properties = new FastJSONObject();
+}
+    :   EXECUTE LPAR funName=function_name
+        {
+            $functionName = $funName.text;
+        }
+        ((COMMA map=python_style_dict
+            {
+               $properties = $map.json;
+               
+            }
+        ) | (
+        (COMMA p=key_value_pair[KeyType.STRING_LITERAL]
+            {
+                try {
+                    $properties.put($p.key, $p.val);
+                }
+                catch (JSONException err) {
+                    throw new FailedPredicateException(input, "python_style_dict", "JSONException: " + err.getMessage());
+                }
+            }
+        )*)
+        )
+        RPAR 
+    ;
+    
 facet_spec returns [String column, JSONObject spec]
 @init {
     boolean expand = false;
@@ -2278,10 +2372,10 @@ date_time_string returns [long val]
     ;
 
 match_predicate returns [JSONObject json]
-    :   (NOT)? MATCH LPAR column_name_list RPAR AGAINST LPAR STRING_LITERAL RPAR
+    :   (NOT)? MATCH LPAR selection_list RPAR AGAINST LPAR STRING_LITERAL RPAR
         {
             try {
-                JSONArray cols = $column_name_list.json;
+                JSONArray cols = $selection_list.json;
                 for (int i = 0; i < cols.length(); ++i) {
                     String col = cols.getString(i);
                     String[] facetInfo = _facetInfoMap.get(col);
