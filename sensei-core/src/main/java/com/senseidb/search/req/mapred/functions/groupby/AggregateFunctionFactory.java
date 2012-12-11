@@ -108,7 +108,7 @@ public class AggregateFunctionFactory {
       @Override
       public CountGroupedValue produceSingleValue(FieldAccessor accessor, int docId) {
         CountGroupedValue ret = new CountGroupedValue();
-          ret.count = accessor.getLong(column, docId);
+          ret.count = 1;
           return ret;
       }
 
