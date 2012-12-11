@@ -1,4 +1,4 @@
-package com.senseidb.bql.parsers;
+package com.senseidb.search.req;
 
 import java.util.ArrayList;
 import java.util.HashMap;

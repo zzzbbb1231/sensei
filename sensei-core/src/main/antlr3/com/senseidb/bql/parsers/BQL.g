@@ -469,6 +469,7 @@ import java.text.SimpleDateFormat;
 import com.senseidb.util.JSONUtil.FastJSONArray;
 import com.senseidb.util.JSONUtil.FastJSONObject;
 import com.senseidb.util.Pair;
+import com.senseidb.search.req.BQLParserUtils;
 }
 
 @parser::members {
