@@ -15,6 +15,7 @@ import org.apache.lucene.util.Version;
 import com.senseidb.ba.gazelle.IndexSegment;
 
 
+import proj.zoie.api.DocIDMapper;
 import proj.zoie.api.ZoieSegmentReader;
 import proj.zoie.api.indexing.IndexReaderDecorator;
 
@@ -90,5 +91,9 @@ public class SegmentToZoieReaderAdapter<R extends IndexReader> extends ZoieSegme
   public String getSegmentId() {
     return segmentId;
   }
-  
+  @Override
+  public DocIDMapper<?> getDocIDMaper() {
+    // TODO Auto-generated method stub
+    return super.getDocIDMaper();
+  }
 }

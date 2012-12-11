@@ -9,6 +9,7 @@ import com.browseengine.bobo.api.BoboIndexReader;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.search.req.SenseiSystemInfo.SenseiFacetInfo;
 import com.senseidb.search.req.mapred.FieldAccessor;
+import com.senseidb.search.req.mapred.IntArray;
 import com.senseidb.search.req.mapred.impl.FieldAccessorFactory;
 
 public class BaFieldAccessorFactory implements FieldAccessorFactory {
@@ -19,4 +20,18 @@ public class BaFieldAccessorFactory implements FieldAccessorFactory {
     return new BaFieldAccessor(adapter, adapter.getSegmentId());
   }
 
+  @Override
+  public IntArray getDocArray(BoboIndexReader boboIndexReader) {
+    final SegmentToZoieReaderAdapter adapter =  (SegmentToZoieReaderAdapter) boboIndexReader.getInnerReader();
+    return new IntArray() {
+      @Override
+      public int size() {
+        return adapter.getOfflineSegment().getLength();
+      }
+      @Override
+      public int get(int index) {
+        return index;
+      }
+    };
+  }
 }

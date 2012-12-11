@@ -64,6 +64,9 @@ public class JsonDataSource implements GazelleDataSource {
                     Map map = (Map) mapField.get(innerJSONObject);
                     for (Object key : map.keySet()) {
                         Object value = map.get(key);
+                        if (value instanceof Boolean) {
+                          map.put(key, value.toString());
+                        }
                         if (value instanceof com.alibaba.fastjson.JSONArray) {
                             map.put(key, transform((com.alibaba.fastjson.JSONArray) value)); 
                         }

@@ -723,4 +723,45 @@ public class BASentinelTest  extends Assert {
     assertEquals(2.48, mapReduceResult.getDouble("avg"), 0.1);
     assertEquals(13222, Long.parseLong(mapReduceResult.getString("count")));
   }
+  @Test
+  public void test12SimpleBQL() throws Exception {
+    String req = "{\"bql\":\"select * from sensei where dim_memberIndustry in (102, 100)\"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong", 326, resp.getInt("numhits"));
+   
+  }
+  @Test
+  public void test13AggregateBQL() throws Exception {
+    String req = "{\"bql\":\"select sum(met_impressionCount) where dim_memberIndustry in (102, 100)\"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong", 326, resp.getInt("numhits"));
+    assertEquals( 812, resp.getJSONObject("mapReduceResult").getInt("sum"));
+   
+  }
+  @Test
+  public void test14AggregateBQLWithGroupBy() throws Exception {
+    String req = "{\"bql\":\"select sum(met_impressionCount) where dim_memberIndustry in (102, 100) group by dim_memberIndustry\"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong", 326, resp.getInt("numhits"));
+    assertEquals("numhits is wrong", 766, resp.getJSONObject("mapReduceResult").getJSONObject("100").getInt("sum"));
+  }
+  @Test
+  public void test15AggregateBQLOnFullDataSet() throws Exception {
+    String req = "{\"bql\":\"select sum(met_impressionCount) \"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals( 20000, resp.getInt("numhits"));
+    assertEquals( 49138, resp.getJSONObject("mapReduceResult").getInt("sum"));
+  }
+  @Test
+  public void test16AggregateBQLWithRangePredicate() throws Exception {
+    String req = "{\"bql\":\"select * where dim_memberIndustry <= 100 \"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals( 784, resp.getInt("numhits"));
+  }
+  
 }
