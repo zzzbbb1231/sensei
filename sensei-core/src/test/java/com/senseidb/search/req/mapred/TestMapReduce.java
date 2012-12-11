@@ -40,14 +40,14 @@ public class TestMapReduce extends TestCase {
           +", \"mapReduce\":{\"function\":\"sensei.max\",\"parameters\":{\"column\":\"groupid\"}}}";
       JSONObject res = TestSensei.search(new JSONObject(req));
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
-      assertEquals(14990, Long.parseLong(mapReduceResult.getString("max")));
+      assertEquals(14990, Double.valueOf((Double.parseDouble(mapReduceResult.getString("max")))).longValue());
       assertEquals(14994, Long.parseLong(mapReduceResult.getString("uid")));
        req = "{\"filter\":{\"term\":{\"color\":\"red\"}}"
           +  ",\"selections\":[{\"terms\":{\"groupid\":{\"excludes\":[14990],\"operator\":\"or\"}}}]"
           + ", \"mapReduce\":{\"function\":\"sensei.max\",\"parameters\":{\"column\":\"groupid\"}}}";
        res = TestSensei.search(new JSONObject(req));
        mapReduceResult = res.getJSONObject("mapReduceResult");
-      assertEquals(14980, Long.parseLong(mapReduceResult.getString("max")));
+      assertEquals(14980, Double.valueOf((Double.parseDouble(mapReduceResult.getString("max")))).longValue());
       //assertEquals(14989, Long.parseLong(mapReduceResult.getString("uid")));
       
     }
@@ -69,13 +69,13 @@ public class TestMapReduce extends TestCase {
           +", \"mapReduce\":{\"function\":\"sensei.min\",\"parameters\":{\"column\":\"groupid\"}}}";
       JSONObject res = TestSensei.search(new JSONObject(req));
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
-      assertEquals(-15000L, Long.parseLong(mapReduceResult.getString("min")));
+      assertEquals(-15000L, Double.valueOf((Double.parseDouble(mapReduceResult.getString("min")))).longValue());
       assertEquals(0L, Long.parseLong(mapReduceResult.getString("uid")));
        req = "{\"filter\":{\"term\":{\"tags\":\"reliable\"}}"
           +", \"mapReduce\":{\"function\":\"sensei.min\",\"parameters\":{\"column\":\"year\"}}}";
        res = TestSensei.search(new JSONObject(req));
        mapReduceResult = res.getJSONObject("mapReduceResult");
-      assertEquals(1993L, Long.parseLong(mapReduceResult.getString("min")));
+      assertEquals(1993L, Double.valueOf((Double.parseDouble(mapReduceResult.getString("min")))).longValue());
     }
     public void test7SumMapReduce() throws Exception {      
       String req = "{\"filter\":{\"term\":{\"color\":\"red\"}}, "

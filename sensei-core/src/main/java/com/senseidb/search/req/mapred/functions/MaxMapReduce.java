@@ -71,7 +71,7 @@ public class MaxMapReduce implements SenseiMapReduce<MaxResult, MaxResult> {
   public JSONObject render(MaxResult reduceResult) {
     
     try {
-      return new FastJSONObject().put("max", reduceResult.value).put("uid", reduceResult.uid);
+      return new FastJSONObject().put("max",  String.format("%1.5f", reduceResult.value)).put("uid", reduceResult.uid);
     } catch (JSONException ex) {
       throw new RuntimeException(ex);
     }

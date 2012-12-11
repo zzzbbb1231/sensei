@@ -149,7 +149,7 @@ public class AggregateFunctionFactory {
                 JSONObject ret = new JSONUtil.FastJSONObject();
                 for (String key : reduceResult.keySet()) {
                     AvgGroupedValue value = reduceResult.get(key);
-                    ret.put(key, new JSONUtil.FastJSONObject().put("avg", value.avg));
+                    ret.put(key, new JSONUtil.FastJSONObject().put("avg",  String.format("%1.5f", value.avg)));
                 }
                 return ret;
             } catch (Exception e) {
@@ -202,7 +202,7 @@ public class AggregateFunctionFactory {
               JSONObject ret = new JSONUtil.FastJSONObject();
               for (String key : reduceResult.keySet()) {
                 MaxGroupedValue value = reduceResult.get(key);
-                  ret.put(key, new JSONUtil.FastJSONObject().put("max", value.max));
+                  ret.put(key, new JSONUtil.FastJSONObject().put("max",  String.format("%1.5f", value.max)));
               }
               return ret;
           } catch (Exception e) {
@@ -256,7 +256,7 @@ public class AggregateFunctionFactory {
             JSONObject ret = new JSONUtil.FastJSONObject();
             for (String key : reduceResult.keySet()) {
               MinGroupedValue value = reduceResult.get(key);
-                ret.put(key, new JSONUtil.FastJSONObject().put("min", value.min));
+                ret.put(key, new JSONUtil.FastJSONObject().put("min",  String.format("%1.5f", value.min)));
             }
             return ret;
         } catch (Exception e) {
