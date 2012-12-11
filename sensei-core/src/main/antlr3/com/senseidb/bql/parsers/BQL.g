@@ -468,6 +468,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import com.senseidb.util.JSONUtil.FastJSONArray;
 import com.senseidb.util.JSONUtil.FastJSONObject;
+import com.senseidb.util.Pair;
 }
 
 @parser::members {
@@ -1180,7 +1181,7 @@ FAST_UTIL_DATA_TYPE
     ;
 
 // Have to define this after the keywords?
-IDENT : (ALPHA | '_') (ALPHA | DIGIT | '-' | '_'|'.')* ;
+IDENT : (ALPHA | '_') (ALPHA | DIGIT | '-' | '_')* ;
 VARIABLE : '$' (ALPHA | DIGIT | '_')+ ;
 
 WS : ( ' ' | '\t' | '\r' | '\n' )+ { $channel = HIDDEN; };
@@ -1208,9 +1209,9 @@ select_stmt returns [Object json]
     boolean seenOrderBy = false;
     boolean seenLimit = false;
     boolean seenGroupBy = false;
+     boolean seenExecuteMapReduce = false;
     boolean seenDistinct = false;
     boolean seenBrowseBy = false;
-    boolean seenExecuteMapReduce = false;
     boolean seenFetchStored = false;
     boolean seenRouteBy = false;
     boolean seenRelevanceModel = false;
@@ -1261,7 +1262,7 @@ select_stmt returns [Object json]
                     throw new FailedPredicateException(input, "select_stmt", "EXECUTE clause can only appear once.");
                 }
                 else {
-                    seenDistinct = true;
+                    seenExecuteMapReduce = true;
                 }
             }
         |   browse_by = browse_by_clause
@@ -1341,11 +1342,9 @@ select_stmt returns [Object json]
                 }
                 if (group_by != null) {
                     jsonObj.put("groupBy", $group_by.json);
-                    if ($cols.aggregationFunctions.size() >0) {
-                     //TODO add groupby aggregations
-                    }
-                }                  
-                 Map<String,String> aggregateFunctions = null;
+                    
+                }  
+                List<Pair<String, String>> aggregateFunctions = null;
                  if (cols != null) {
                     aggregateFunctions = $cols.aggregationFunctions;
                  }
@@ -1362,6 +1361,7 @@ select_stmt returns [Object json]
                       BQLParserUtils.decorateWithMapReduce(jsonObj, $cols.aggregationFunctions, null, null, null);
                    }
                 }
+                
                 if (distinct != null) {
                     jsonObj.put("distinct", $distinct.json);
                 }
@@ -1426,11 +1426,11 @@ describe_stmt
     :   DESCRIBE (IDENT | STRING_LITERAL)
     ;
 
-selection_list returns [boolean fetchStored, JSONArray json, Map<String, String> aggregationFunctions]
+selection_list returns [boolean fetchStored, JSONArray json, List<Pair<String, String>> aggregationFunctions]
 @init {
     $fetchStored = false;
     $json = new FastJSONArray();
-    $aggregationFunctions = new HashMap<String, String>();
+    $aggregationFunctions = new ArrayList<Pair<String, String>>();
     }
     :    (col=column_name
         {
@@ -1443,7 +1443,7 @@ selection_list returns [boolean fetchStored, JSONArray json, Map<String, String>
             }
         } | agrFunction=aggregation_function 
             {
-               $aggregationFunctions.put($agrFunction.function, $agrFunction.column);
+               $aggregationFunctions.add(new Pair($agrFunction.function, $agrFunction.column));
             })
         (COMMA   (col=column_name
         {
@@ -1456,8 +1456,9 @@ selection_list returns [boolean fetchStored, JSONArray json, Map<String, String>
             }
         }|  agrFunction=aggregation_function 
             {
-               $aggregationFunctions.put($agrFunction.function, $agrFunction.column);
+                $aggregationFunctions.add(new Pair($agrFunction.function, $agrFunction.column));
             }))*;
+
 aggregation_function returns [String function, String column]
  :   (id=function_name LPAR columnVar=column_name RPAR) {
     $function= $id.text;    
@@ -1490,8 +1491,7 @@ column_name returns [String text]
             }
         }
         )*
-        { $text = builder.toString(); 
-        System.out.println("columnName = " + $text);}
+        { $text = builder.toString(); }
     ;
 function_name returns [String text]
 
@@ -1568,7 +1568,26 @@ limit_clause returns [int offset, int count]
             $count = Integer.parseInt($n2.text);
         }
     ;
-
+comma_column_name_list returns [JSONArray json]
+@init {
+    $json = new FastJSONArray();
+}
+    :   col=column_name
+        {
+            String colName = $col.text;
+            if (colName != null) {
+                $json.put($col.text); 
+            }
+        }
+        ((OR | COMMA) col=column_name
+            {
+                String colName = $col.text;
+                if (colName != null) {
+                    $json.put($col.text); 
+                }
+            }
+        )*
+    ;
 or_column_name_list returns [JSONArray json]
 @init {
     $json = new FastJSONArray();
@@ -1591,11 +1610,11 @@ or_column_name_list returns [JSONArray json]
     ;
 
 group_by_clause returns [JSONObject json]
-    :   GROUP BY or_column_name_list (TOP top=INTEGER)?
+    :   GROUP BY comma_column_name_list (TOP top=INTEGER)?
         {
             $json = new FastJSONObject();
             try {
-                JSONArray cols = $or_column_name_list.json;
+                JSONArray cols = $comma_column_name_list.json;
                 for (int i = 0; i < cols.length(); ++i) {
                     String col = cols.getString(i);
                     String[] facetInfo = _facetInfoMap.get(col);
@@ -1683,13 +1702,26 @@ execute_clause returns [String functionName, JSONObject properties]
         {
             $functionName = $funName.text;
         }
-        (COMMA map=python_style_dict
+        ((COMMA map=python_style_dict
             {
                $properties = $map.json;
                
             }
-        ) RPAR 
+        ) | (
+        (COMMA p=key_value_pair[KeyType.STRING_LITERAL]
+            {
+                try {
+                    $properties.put($p.key, $p.val);
+                }
+                catch (JSONException err) {
+                    throw new FailedPredicateException(input, "python_style_dict", "JSONException: " + err.getMessage());
+                }
+            }
+        )*)
+        )
+        RPAR 
     ;
+    
 facet_spec returns [String column, JSONObject spec]
 @init {
     boolean expand = false;

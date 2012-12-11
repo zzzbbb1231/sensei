@@ -7,7 +7,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.util.Assert;
@@ -18,30 +20,89 @@ import com.senseidb.search.req.mapred.FieldAccessor;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
 import com.senseidb.search.req.mapred.impl.MapReduceRegistry;
 import com.senseidb.util.JSONUtil;
+import com.senseidb.util.Pair;
 
 public class CompositeMapReduce implements SenseiMapReduce<Serializable, Serializable> {
-  private Map<String, SenseiMapReduce> innerFunctions = new HashMap<String, SenseiMapReduce>();
-
+  private List<Pair<String, SenseiMapReduce>> innerFunctions = new ArrayList<Pair<String,SenseiMapReduce>>();
+  private Map<Key, Pair<String, SenseiMapReduce>> innerFunctionsRefs = new HashMap<Key, Pair<String,SenseiMapReduce>>();
+  public static class Key implements Serializable {
+    private static AtomicLong atomicLong = new AtomicLong();
+    private long value;
+    public Key() {
+      value = atomicLong.incrementAndGet();
+    }
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + (int) (value ^ (value >>> 32));
+      return result;
+    }
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj)
+        return true;
+      if (obj == null)
+        return false;
+      if (getClass() != obj.getClass())
+        return false;
+      Key other = (Key) obj;
+      if (value != other.value)
+        return false;
+      return true;
+    }
+    
+  }
+  
+  
   @Override
   public void init(JSONObject params) {
-    Iterator<String> keys = params.keys();
-    while (keys.hasNext()) {
-      String key = keys.next();
-      JSONObject innerFunctionParams = params.optJSONObject(key);
-      SenseiMapReduce senseiMapReduce = MapReduceRegistry.get(key);
-      Assert.notNull(senseiMapReduce, "Could not retrieve map reduce function by the identifier");
-      innerFunctions.put(key, senseiMapReduce);
-      senseiMapReduce.init(innerFunctionParams);
+    try {
+    if (params.optJSONArray("array") != null) {
+      JSONArray array = params.optJSONArray("array");
+      for (int i = 0; i < array.length(); i++) {
+        JSONObject mapRed = array.optJSONObject(i);
+        if (mapRed == null) {
+          continue;
+        }
+          String function = mapRed.getString("mapReduce");
+          SenseiMapReduce senseiMapReduce = MapReduceRegistry.get(function);
+          Assert.notNull(senseiMapReduce, "Could not retrieve map reduce function by the identifier");
+          innerFunctions.add(new Pair(function, senseiMapReduce));
+          senseiMapReduce.init(mapRed);
+      }
+      
+    } else {
+      Iterator<String> keys = params.keys();
+      while (keys.hasNext()) {
+        String key = keys.next();
+        JSONObject innerFunctionParams = params.optJSONObject(key);
+        SenseiMapReduce senseiMapReduce = MapReduceRegistry.get(key);
+        Assert.notNull(senseiMapReduce, "Could not retrieve map reduce function by the identifier");
+        innerFunctions.add(new Pair(key, senseiMapReduce));
+        senseiMapReduce.init(innerFunctionParams);
+      }
+     
     }
+    
+    
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
+    for (Pair<String, SenseiMapReduce> pair : innerFunctions) {
+      innerFunctionsRefs.put(new Key(), pair);
+    }
+   
 
   }
 
   @Override
   public Serializable map(int[] docIds, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountsAccessor) {
-    HashMap<String, Serializable> mapResults = new HashMap<String, Serializable>(innerFunctions.size());
-    for (String function : innerFunctions.keySet()) {
-      SenseiMapReduce senseiMapReduce = innerFunctions.get(function);
-      mapResults.put(function, senseiMapReduce.map(docIds, docIdCount, uids, accessor, facetCountsAccessor));
+    HashMap<Key, Serializable> mapResults = new HashMap<Key, Serializable>();
+    for (Key id : innerFunctionsRefs.keySet()) {
+      Pair<String, SenseiMapReduce> pair = innerFunctionsRefs.get(id);
+      SenseiMapReduce senseiMapReduce = pair.getSecond();
+      mapResults.put(id, senseiMapReduce.map(docIds, docIdCount, uids, accessor, facetCountsAccessor));
     }
     return mapResults;
   }
@@ -51,12 +112,15 @@ public class CompositeMapReduce implements SenseiMapReduce<Serializable, Seriali
     if (mapResults.size() < 2) {
       return mapResults;
     }
-    HashMap<String, Serializable> firstResult = (HashMap<String, Serializable>) mapResults.get(0);
-    Set<String> keys = firstResult.keySet();
-    HashMap<String, ArrayList<Serializable>> resultsPerFunction = aggregate(mapResults, keys);
+    if (combinerStage == CombinerStage.nodeLevel) {
+      System.out.println();
+    }
+    HashMap<Key, Serializable> firstResult = (HashMap<Key, Serializable>) mapResults.get(0);
+    
+    HashMap<Key, ArrayList<Serializable>> resultsPerFunction = aggregate(mapResults, firstResult.keySet(), combinerStage == CombinerStage.partitionLevel);
     firstResult.clear();
-    for (String key : keys) {
-      SenseiMapReduce function = combinerStage == CombinerStage.partitionLevel ? innerFunctions.get(key) : MapReduceRegistry.get(key);
+    for (Key key : resultsPerFunction.keySet()) {
+      SenseiMapReduce function = combinerStage == CombinerStage.partitionLevel ? innerFunctionsRefs.get(key).getSecond() : MapReduceRegistry.get(innerFunctionsRefs.get(key).getFirst());
       firstResult.put(key, (Serializable) function.combine(resultsPerFunction.get(key), combinerStage));
     }
     ArrayList<Serializable> ret = new ArrayList<Serializable>();
@@ -74,28 +138,31 @@ public class CompositeMapReduce implements SenseiMapReduce<Serializable, Seriali
     if (combineResults.size() == 1) {
       return combineResults.get(0);
     }
-    HashMap<String, Serializable> firstResult = (HashMap<String, Serializable>) combineResults.get(0);
-    Set<String> keys = firstResult.keySet();
-    HashMap<String, ArrayList<Serializable>> resultsPerFunction = aggregate(combineResults, keys);
+    HashMap<Key, Serializable> firstResult = (HashMap<Key, Serializable>) combineResults.get(0);
+    HashMap<Key, ArrayList<Serializable>> resultsPerFunction = aggregate(combineResults, firstResult.keySet(), false);
     firstResult.clear();
-    for (String key : keys) {
-      SenseiMapReduce function = MapReduceRegistry.get(key);
+    for (Key key : resultsPerFunction.keySet()) {
+      SenseiMapReduce function = MapReduceRegistry.get(innerFunctionsRefs.get(key).getFirst());
+      
       firstResult.put(key, (Serializable) function.reduce(resultsPerFunction.get(key)));
     }
-
     return firstResult;
   }
  
-  private HashMap<String, ArrayList<Serializable>> aggregate(List<Serializable> mapResults, Set<String> keys) {
-    HashMap<String, ArrayList<Serializable>> resultsPerFunction = new HashMap<String, ArrayList<Serializable>>(keys.size());
-    for (String key : keys) {
+  private HashMap<Key, ArrayList<Serializable>> aggregate(List<Serializable> mapResults, Set<Key> keys, boolean isPartitionLevel) {
+    HashMap<Key, ArrayList<Serializable>> resultsPerFunction = new HashMap<Key, ArrayList<Serializable>>(keys.size());
+    for (Key key : keys) {
       resultsPerFunction.put(key, new ArrayList<Serializable>());
     }
     for (Serializable mapResultRaw : mapResults) {
-      HashMap<String, Serializable> mapResult = (HashMap<String, Serializable>) mapResultRaw;
-      for (String key : keys) {
-
-        resultsPerFunction.get(key).add(mapResult.get(key));
+      HashMap<Key, Serializable> mapResult = (HashMap<Key, Serializable>) mapResultRaw;
+      for (Key key : keys) {
+        
+        Serializable value = mapResult.get(key);
+        if (value instanceof List && !isPartitionLevel && ((List)value).size() == 1) {
+          value = (Serializable) ((List)value).get(0);
+        }
+        resultsPerFunction.get(key).add(value);
       }
     }
     return resultsPerFunction;
@@ -104,11 +171,16 @@ public class CompositeMapReduce implements SenseiMapReduce<Serializable, Seriali
   @Override
   public JSONObject render(Serializable reduceResultRaw) {
     try {
-      HashMap<String, Serializable> reduceResult = (HashMap<String, Serializable>) reduceResultRaw;
+      HashMap<Key, Serializable> reduceResult = (HashMap<Key, Serializable>) reduceResultRaw;
       JSONObject ret = new JSONUtil.FastJSONObject();
-      for (String key : innerFunctions.keySet()) {
-        ret.put(key, innerFunctions.get(key).render(reduceResult.get(key)));
+      JSONArray array = new JSONUtil.FastJSONArray();
+      for (Key key : innerFunctionsRefs.keySet()) {
+        JSONObject entry = new JSONUtil.FastJSONObject();
+        entry.put("result", innerFunctionsRefs.get(key).getSecond().render(reduceResult.get(key)));
+        entry.put("function", innerFunctionsRefs.get(key).getFirst());
+        array.put(entry);
       }
+      ret.put("results", array);
       return ret;
     } catch (JSONException e) {
       throw new RuntimeException(e);

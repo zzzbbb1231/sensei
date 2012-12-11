@@ -10,6 +10,7 @@ import com.senseidb.search.req.mapred.functions.DistinctCountMapReduce;
 import com.senseidb.search.req.mapred.functions.MaxMapReduce;
 import com.senseidb.search.req.mapred.functions.MinMapReduce;
 import com.senseidb.search.req.mapred.functions.SumMapReduce;
+import com.senseidb.search.req.mapred.functions.groupby.GroupByMapReduceJob;
 
 /**
  * Registry, that is used to register map reduce functions with the nickname, so that it can be easily referred from the Json api
@@ -26,6 +27,7 @@ public class MapReduceRegistry {
     keyToFunction.put("sensei.distinctCountHashSet", DistinctCountMapReduce.class);
     keyToFunction.put("sensei.min", MinMapReduce.class);
     keyToFunction.put("sensei.avg", AvgMapReduce.class);
+    keyToFunction.put("sensei.groupBy", GroupByMapReduceJob.class);
     keyToFunction.put("sensei.sum", SumMapReduce.class);
     keyToFunction.put("sensei.composite", CompositeMapReduce.class);
   }
@@ -40,6 +42,12 @@ public class MapReduceRegistry {
   public static SenseiMapReduce get(String mapReduceKey) {
     try {
     Class<? extends SenseiMapReduce>  cls = keyToFunction.get(mapReduceKey);
+    if (cls != null) {
+      return (SenseiMapReduce) cls.newInstance();
+    }
+    if (!mapReduceKey.contains(".")) {
+      cls = keyToFunction.get("sensei." + mapReduceKey);
+    }
     if (cls != null) {
       return (SenseiMapReduce) cls.newInstance();
     }

@@ -1,6 +1,5 @@
 package com.senseidb.search.req.mapred.functions.groupby;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -15,22 +14,20 @@ import com.senseidb.search.req.mapred.CombinerStage;
 import com.senseidb.search.req.mapred.FacetCountAccessor;
 import com.senseidb.search.req.mapred.FieldAccessor;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
-import com.senseidb.search.req.mapred.functions.groupby.AggregateFunction.GroupedValue;
 
-public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, GroupedValue<Serializable>>, HashMap<String, GroupedValue<Serializable>>> {
+public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, GroupedValue>, HashMap<String, GroupedValue>> {
 
-    private static final int TRIM_SIZE = 1000;
+    private static final int TRIM_SIZE = 200;
     private String[] columns;
     private String metric;
     private String function;
     private AggregateFunction aggregateFunction;
-    private HashMap<String, GroupedValue<Serializable>> map = new HashMap<String, GroupedValue<Serializable>>();;
     @Override
     public void init(JSONObject params) {
       try {
         metric = params.getString("metric");
         function = params.getString("function");
-        aggregateFunction = AggregateFunctionFactory.valueOf(function);
+        aggregateFunction = AggregateFunctionFactory.valueOf(function, metric);
         JSONArray columnsJson = params.getJSONArray("columns");
         columns = new String[columnsJson.length()];
         for (int i = 0; i < columnsJson.length(); i++) {
@@ -43,31 +40,39 @@ public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, Grou
     }
 
     @Override
-    public HashMap<String, GroupedValue<Serializable>> map(int[] docIds, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountsAccessor) {
+    public HashMap<String, GroupedValue> map(int[] docIds, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountsAccessor) {
+      HashMap<String, GroupedValue> map = new HashMap<String, GroupedValue>();
       for (int i =0; i < docIdCount; i++) {
-        String key = getKey(columns, accessor, i);
-        GroupedValue<Serializable> value = map.get(key);
+        String key = getKey(columns, accessor, docIds[i]);
+        GroupedValue value = map.get(key);
         
         if (value != null) {
-          value.merge(aggregateFunction.produceSingleValue(accessor, i));
+          value.merge(aggregateFunction.produceSingleValue(accessor, docIds[i]));
         } else {
-            map.put(key, aggregateFunction.produceSingleValue(accessor, i));
+            map.put(key, aggregateFunction.produceSingleValue(accessor, docIds[i]));
         }
       }
-      trimToSize(map, TRIM_SIZE);
-      return null;
+      trimToSize(map, TRIM_SIZE * 3);
+      return map;
     }
 
-    private void trimToSize(HashMap<String, GroupedValue<Serializable>> map, int count) {
+    /**Tries to trim the map to smaller size
+     * @param map
+     * @param count
+     */
+    private static void trimToSize(Map<String, ? extends Comparable> map, int count) {
         if (map.size() < count) {
             return;
         }
-        double trimRatio = ((double) count) / map.size();
-        int queueSize = (int)(map.size() / Math.log(map.size())) / 2;
-        PriorityQueue<GroupedValue<Serializable>> queue = new PriorityQueue<GroupedValue<Serializable>>(queueSize);
+        double trimRatio = ((double) count) / map.size() * 2;
+        if (trimRatio >= 1.0D) {
+          return;
+        }
+        int queueSize = (int)(map.size() / Math.log(map.size()) / 4) ;
+        PriorityQueue<Comparable> queue = new PriorityQueue<Comparable>(queueSize);
         int i = 0;
         int addElementRange = map.size() / queueSize;
-        for (GroupedValue<Serializable> groupedValue : map.values()) {
+        for (Comparable groupedValue : map.values()) {
             if (i == addElementRange) {
                 i = 0;
                 queue.add(groupedValue);
@@ -75,27 +80,30 @@ public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, Grou
                 i++;
             }
         }
-        int elementIndex = (int) (queue.size() * trimRatio);
-        Iterator<GroupedValue<Serializable>> iterator =  queue.iterator();
+        int elementIndex = (int) (queue.size() * (1.0d - trimRatio));
+        if (elementIndex >= queue.size()) {
+          elementIndex = queue.size() - 1;
+        }
+       
         int counter = 0;
-        GroupedValue<Serializable> newMinimumValue = null;
-        while(iterator.hasNext()) {
+        Comparable newMinimumValue = null;
+        while(!queue.isEmpty()) {
             if (counter == elementIndex) {
-                newMinimumValue =  iterator.next();
+                newMinimumValue =  queue.poll();
                 break;
             } else {
                 counter++;
-                iterator.next();
+                queue.poll();
             }
         }
         if (newMinimumValue == null) {
             return;
         }
-        iterator = map.values().iterator();
+        Iterator<? extends Comparable> iterator = map.values().iterator();
         int numToRemove = map.size() - count;
        counter = 0;
        while (iterator.hasNext()) {
-            if (iterator.next().compareTo((Serializable) newMinimumValue) <= 0) {
+            if (iterator.next().compareTo( newMinimumValue) <= 0) {
                 counter++;
                 iterator.remove();
                  if (counter >= numToRemove) {
@@ -106,27 +114,23 @@ public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, Grou
     }
 
     @Override
-    public List<HashMap<String, GroupedValue<Serializable>>> combine(List<HashMap<String, GroupedValue<Serializable>>> mapResults, CombinerStage combinerStage) {
-      if (combinerStage == CombinerStage.partitionLevel) {
-          List<HashMap<String, GroupedValue<Serializable>>> ret = java.util.Arrays.asList(map);
-          map = null;
-          return ret;
-      } else {
+    public List<HashMap<String, GroupedValue>> combine(List<HashMap<String, GroupedValue>> mapResults, CombinerStage combinerStage) {
+    
           if (mapResults.size() < 2) {
               return mapResults;
           }
-          HashMap<String, GroupedValue<Serializable>> firstMap = mapResults.get(0);
+          HashMap<String, GroupedValue> firstMap = mapResults.get(0);
           for (int i = 1; i < mapResults.size() ; i++) {
               merge(firstMap, mapResults.get(i));
           }
-          trimToSize(firstMap, 2 * TRIM_SIZE);
+          trimToSize(firstMap,  TRIM_SIZE);
           return java.util.Arrays.asList(firstMap);
-      }
+     
     }
 
-    private void merge(HashMap<String, GroupedValue<Serializable>> firstMap, HashMap<String, GroupedValue<Serializable>> secondMap) {
-        for(Map.Entry<String, GroupedValue<Serializable>> entry : secondMap.entrySet()) {
-            GroupedValue<Serializable> groupedValue = firstMap.get(entry.getKey());
+    private void merge(HashMap<String, GroupedValue> firstMap, HashMap<String, GroupedValue> secondMap) {
+        for(Map.Entry<String, GroupedValue> entry : secondMap.entrySet()) {
+            GroupedValue groupedValue = firstMap.get(entry.getKey());
             if (groupedValue != null) {
                 groupedValue.merge(entry.getValue());
             } else {
@@ -137,14 +141,14 @@ public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, Grou
     }
 
     @Override
-    public HashMap<String, GroupedValue<Serializable>> reduce(List<HashMap<String, GroupedValue<Serializable>>> combineResults) {
+    public HashMap<String, GroupedValue> reduce(List<HashMap<String, GroupedValue>> combineResults) {
         if (combineResults.size() == 0) {
             return null;
         }
         if (combineResults.size() == 1) {
             return combineResults.get(0);
         }
-        HashMap<String, GroupedValue<Serializable>> firstMap = combineResults.get(0);
+        HashMap<String, GroupedValue> firstMap = combineResults.get(0);
         for (int i = 1; i < combineResults.size() ; i++) {
             merge(firstMap, combineResults.get(i));
         }
@@ -153,7 +157,7 @@ public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, Grou
     }
 
     @Override
-    public JSONObject render(HashMap<String, GroupedValue<Serializable>> reduceResult) {
+    public JSONObject render(HashMap<String, GroupedValue> reduceResult) {
       return aggregateFunction.toJson(reduceResult);
     }
    
@@ -164,4 +168,14 @@ public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, Grou
       }
       return key.toString();
     }
+    public static void main(String[] args) {
+      HashMap<String, Integer> map = new HashMap<String, Integer>();
+      for (int i = 0; i < 100000; i++) {
+        map.put("" + i, i);
+      }
+      trimToSize(map, 1000);
+      System.out.println(map);
+    }
+    
+    
   }

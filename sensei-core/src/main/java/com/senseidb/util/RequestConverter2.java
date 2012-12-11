@@ -310,7 +310,7 @@ public class RequestConverter2 {
           JSONObject currentFunction = mapReduceJson.getJSONObject(i);
           convertedParams.put(currentFunction.getString(MAP_REDUCE_FUNCTION), convertedParams.optJSONObject(MAP_REDUCE_PARAMETERS));
         }
-        compositeMapReduce.init(convertedParams);
+        compositeMapReduce.init(new JSONUtil.FastJSONObject().put("array", mapReduceJson));
         req.setMapReduceFunction(compositeMapReduce);
       }
 		 // facets

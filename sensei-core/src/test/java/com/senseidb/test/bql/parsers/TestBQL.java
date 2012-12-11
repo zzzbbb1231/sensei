@@ -1671,12 +1671,46 @@ public class TestBQL extends TestCase
     System.out.println("==================================================");
 
     JSONObject json = _compiler.compile(
-      "SELECT sum(year) , sum(year)" +
+      "SELECT sum(year) , sum(color)" +
       "FROM cars " +
       "WHERE color = 'red' ");
     System.out.println(json);
-    JSONObject expected = new JSONObject("{\"query\":{\"query_string\":{\"query\":\"\",\"relevance\":{\"model\":{\"function_params\":[\"srcid\",\"timeVal\",\"_half_time\",\"coolTag\",\"tags\"],\"facets\":{\"mstring\":[\"tags\"]},\"variables\":{\"int\":[\"srcid\"],\"string\":[\"coolTag\"],\"long\":[\"timeVal\",\"_half_time\"]},\"function\":\"int myInt = 0;     float delta = System.currentTimeMillis() - timeVal;     float t = delta > 0 ? delta : 0;     float numHours = t / (1000 * 3600);     float timeScore = (float) Math.exp(-(numHours/_half_time));     if (tags.contains(coolTag))       return 999999;     int x = 0;     x += 5;     x *= 10;     return timeScore;\"},\"values\":{\"_half_time\":8888,\"timeVal\":9999,\"coolTag\":\"zzz\",\"srcid\":1234}}}},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}],\"meta\":{\"select_list\":[\"color\",\"year\"]}}");
-    assertNotNull(json);
+    assertEquals("{\"mapReduce\":{\"function\":\"sensei.composite\",\"parameters\":{\"array\":[{\"column\":\"year\",\"mapReduce\":\"sum\"},{\"column\":\"color\",\"mapReduce\":\"sum\"}]}},\"meta\":{\"select_list\":[]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
+  }
+  @Test
+  public void testAggregationFunctionWithGroupBy() throws Exception
+  {
+    System.out.println("testAggregateFunction");
+    System.out.println("==================================================");
+
+    JSONObject json = _compiler.compile(
+      "SELECT sum(year) , sum(year)" +
+      "FROM cars " +
+      "WHERE color = 'red' GROUP BY color, groupid");
+    System.out.println(json);
+    assertEquals("{\"groupBy\":{\"columns\":[\"color\",\"groupid\"],\"top\":10},\"mapReduce\":{\"function\":\"sensei.composite\",\"parameters\":{\"array\":[{\"columns\":[\"color\",\"groupid\"],\"function\":\"sum\",\"mapReduce\":\"sensei.groupBy\",\"metric\":\"year\"},{\"columns\":[\"color\",\"groupid\"],\"function\":\"sum\",\"mapReduce\":\"sensei.groupBy\",\"metric\":\"year\"}]}},\"meta\":{\"select_list\":[]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
+  }
+  @Test
+  public void testMapReduce() throws Exception
+  {
+    System.out.println("testAggregateFunction");
+    System.out.println("==================================================");
+
+    JSONObject json = _compiler.compile(
+      "SELECT *" +
+      "FROM cars " +
+      "WHERE color = 'red' EXECUTE(sensei.max, 'column':'year')");
+    assertEquals("{\"mapReduce\":{\"function\":\"sensei.max\",\"parameters\":{\"column\":\"year\",\"mapReduce\":\"sensei.max\"}},\"meta\":{\"select_list\":[\"*\"]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
+  }
+  @Test
+  public void testMapReduceWithComplexParams() throws Exception
+  {
+    System.out.println("testAggregateFunction");
+    System.out.println("==================================================");
+
+    JSONObject json = _compiler.compile(
+      "SELECT * FROM cars WHERE color = 'red' EXECUTE(com.senseidb.search.req.mapred.CountGroupByMapReduce, {'columns':['groupid', 'color']})");
+    assertEquals("{\"mapReduce\":{\"function\":\"com.senseidb.search.req.mapred.CountGroupByMapReduce\",\"parameters\":{\"columns\":[\"groupid\",\"color\"],\"mapReduce\":\"com.senseidb.search.req.mapred.CountGroupByMapReduce\"}},\"meta\":{\"select_list\":[\"*\"]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
   }
   /*@Test
   public void testRelevanceModelExpressionsWithtemplateMappings() throws Exception
