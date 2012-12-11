@@ -77,13 +77,13 @@ public class AvgMapReduce implements SenseiMapReduce<AvgResult, AvgResult> {
   public JSONObject render(AvgResult reduceResult) {
     
     try {
-      return new FastJSONObject().put("avg", reduceResult.value).put("count", reduceResult.count);
+      return new FastJSONObject().put("avg", String.format("%1.5f", reduceResult.value)).put("count", reduceResult.count);
     } catch (JSONException e) {
       throw new RuntimeException(e);
     }
   }
 
-  
+ 
   
   
 }

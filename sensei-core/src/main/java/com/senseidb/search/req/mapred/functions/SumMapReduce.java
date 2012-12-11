@@ -60,7 +60,7 @@ public class SumMapReduce implements SenseiMapReduce<Double, Double> {
   public JSONObject render(Double reduceResult) {
    
     try {
-      return new FastJSONObject().put("sum", reduceResult);
+      return new FastJSONObject().put("sum",  String.format("%1.5f", reduceResult));
     } catch (JSONException e) {
       throw new RuntimeException(e);
     }
