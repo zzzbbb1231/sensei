@@ -1,5 +1,10 @@
 package com.senseidb.ba.gazelle;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+
 import java.util.Arrays;
 
 import org.springframework.util.Assert;
@@ -12,52 +17,53 @@ public interface SecondarySortedForwardIndex extends MetadataAware {
     public SortedRegion[] getSortedRegions();
     public int numberOfSortedRegions();
     public static class SortedRegion {
-      public int[] minDocIds;
-      public int[] maxDocIds;
+      private IntArrayList tempMinDocIds = new IntArrayList();
+      private IntArrayList tempMaxDocIds = new IntArrayList();
+      private IntArrayList tempdicts = new IntArrayList();
+      private int lastDictId = -1;
+      private int currentDictIndex = -1;
       public int[] dictionaryIds;
       public int maxDocId = -1;
+      public int[] minDocIds;
+      public int[] maxDocIds;
       public SortedRegion() {       
        
       }
       public SortedRegion(int dictionarySize) {
-        super();
-        this.minDocIds = new int[dictionarySize];
-        this.maxDocIds = new int[dictionarySize];
-        Arrays.fill(minDocIds, -1);
-        Arrays.fill(maxDocIds, -1);
+        super();       
       }
       public void add(int dictionaryValueId, int docId) {
-        if (minDocIds[dictionaryValueId] == -1 || minDocIds[dictionaryValueId] > docId) {
-          minDocIds[dictionaryValueId] = docId;
+        if (lastDictId == dictionaryValueId) {
+         
+          if (tempMinDocIds.get(currentDictIndex) > docId) {
+            tempMinDocIds.set(currentDictIndex, docId);
+          }
+          if (tempMaxDocIds.get(currentDictIndex) < docId) {
+            tempMaxDocIds.set(currentDictIndex, docId);
+          }
+        } else {
+          currentDictIndex++;
+          lastDictId = dictionaryValueId;
+          tempMinDocIds.add(currentDictIndex, docId);
+          tempMaxDocIds.add(currentDictIndex, docId);
+          tempdicts.add(dictionaryValueId);
         }
-        if (maxDocIds[dictionaryValueId] == -1 || maxDocIds[dictionaryValueId] < docId) {
-          maxDocIds[dictionaryValueId] = docId;
-        }
+        
       }
       public void seal() {
-        int count = 0;
-        for (int i = 0; i < maxDocIds.length; i++) {
-          if (maxDocIds[i] != -1) {
-            count++;
-          }
-          if (maxDocId < maxDocIds[i]) {
-            maxDocId = maxDocIds[i];
-          }
-        }
-        int[] newMinDocIds = new int[count];
-        int[] newMaxDocIds = new int[count];
-        dictionaryIds = new int[count];
-        int index = 0;
-        for (int i = 0; i < maxDocIds.length; i++) {
-          if (maxDocIds[i] != -1) {
-            newMinDocIds[index] = minDocIds[i];
-            newMaxDocIds[index] = maxDocIds[i];
-            dictionaryIds[index] = i;
-            index++;
-          }          
-        }
-        minDocIds = newMinDocIds;
-        maxDocIds = newMaxDocIds;
+        tempdicts.trim();
+        tempMinDocIds.trim();
+        tempMaxDocIds.trim();
+        dictionaryIds = tempdicts.toIntArray();
+        minDocIds = tempMinDocIds.toIntArray();
+        maxDocIds = tempMaxDocIds.toIntArray();
+        maxDocId = maxDocIds[maxDocIds.length - 1];
+        tempdicts.clear();
+        tempMinDocIds.clear();
+        tempMaxDocIds.clear();
+        tempdicts = null;
+        tempMinDocIds = null;
+        tempMaxDocIds = null;
         Assert.state(SortUtil.isSorted(minDocIds));
         Assert.state(SortUtil.isSorted(maxDocIds));
         Assert.state(SortUtil.isSorted(dictionaryIds));

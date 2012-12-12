@@ -99,6 +99,8 @@ public class AvroSegmentCreator {
       iterator = dataFileReader.iterator();
       i = 0;
       while (dataFileReader.hasNext()) {
+       /* if (i%100000 == 0)
+        System.out.println(" Added " + i + " elements to the forwardIndex");*/
         GenericRecord record = dataFileReader.next();
         for (int j = 0; j < creators.length; j++) {
           creators[j].addValueToForwardIndex(record.get(j));

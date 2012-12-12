@@ -151,7 +151,7 @@ public TermValueList<?> getDictionary() {
 }
 
 private static ByteBuffer getByteBuffer(int numOfElements, int dictionarySize) {
-    return ByteBuffer.allocate((int) OffHeapCompressedIntArray.getRequiredBufferSize(numOfElements, OffHeapCompressedIntArray.getNumOfBits(dictionarySize)));
+    return ByteBuffer.allocateDirect((int) OffHeapCompressedIntArray.getRequiredBufferSize(numOfElements, OffHeapCompressedIntArray.getNumOfBits(dictionarySize)));
   }
     
 }
