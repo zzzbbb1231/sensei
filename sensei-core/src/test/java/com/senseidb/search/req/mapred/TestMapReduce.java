@@ -137,19 +137,20 @@ public class TestMapReduce extends TestCase {
       JSONObject res = TestSensei.search(new JSONObject(req));
       System.out.println(res.toString(1));
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
-      assertEquals(3657300, mapReduceResult.getJSONArray("results").getJSONObject(1).getJSONObject("result").getJSONObject("compact").getLong("sum"));
+      JSONObject firstObject = mapReduceResult.getJSONArray("results").getJSONObject(0).getJSONObject("result").getJSONArray("grouped").getJSONObject(0);
+      assertEquals(1106487, firstObject.getLong("sum"));
+      assertEquals("exotic", firstObject.getString("group"));
     }
     public void test14CountMapReduceBQLWithMultipleGroupBy() throws Exception {      
       String req = "{\"bql\":\"SELECT color, sum(year), sum(price) FROM cars WHERE color = 'red' GROUP BY category, color limit 10\"}";
       JSONObject res = TestSensei.search(new JSONObject(req));
       System.out.println(res.toString(1));
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
-      assertEquals(10, mapReduceResult.getJSONArray("results").getJSONObject(1).getJSONObject("result").length());
+      assertEquals(10, mapReduceResult.getJSONArray("results").getJSONObject(1).getJSONObject("result").getJSONArray("grouped").length());
     }
     public void test14MapReduce() throws Exception {      
       String req = "{\"bql\":\"SELECT * FROM cars WHERE color <> 'gold' EXECUTE(com.senseidb.search.req.mapred.CountGroupByMapReduce, {'columns':['groupid', 'color']})\"}";
       JSONObject res = TestSensei.search(new JSONObject(req));
-      System.out.println(res.toString(1));
       
       JSONObject highestResult = res.getJSONObject("mapReduceResult").getJSONArray("groupedCounts").getJSONObject(0);
       assertEquals(8, highestResult.getInt(highestResult.keys().next().toString()));
