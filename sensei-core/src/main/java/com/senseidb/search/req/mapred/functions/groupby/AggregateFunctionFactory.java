@@ -1,7 +1,12 @@
 package com.senseidb.search.req.mapred.functions.groupby;
 
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.json.JSONObject;
 
@@ -28,7 +33,17 @@ public class AggregateFunctionFactory {
       }
         return null;
     }
+    public static List<String> sort(final Map<String, ? extends GroupedValue> reduceResult) {
+      List<String> ret = new ArrayList<String>(reduceResult.keySet());
+      Collections.sort(ret, new Comparator<String>() {
 
+        @Override
+        public int compare(String o1, String o2) {
+          return reduceResult.get(o2).compareTo(reduceResult.get(o1));
+        }
+      });
+      return ret;
+    }
     public static class SumGroupedValue implements GroupedValue {
         long sum = 0;
 
@@ -67,7 +82,7 @@ public class AggregateFunctionFactory {
         public JSONObject toJson(HashMap<String, SumGroupedValue> reduceResult) {
             try {
                 JSONObject ret = new JSONUtil.FastJSONObject();
-                for (String key : reduceResult.keySet()) {
+                for (String key : AggregateFunctionFactory.sort(reduceResult)) {
                     SumGroupedValue value = (SumGroupedValue) reduceResult.get(key);
                     ret.put(key, new JSONUtil.FastJSONObject().put("sum", value.sum));
                 }
@@ -116,7 +131,7 @@ public class AggregateFunctionFactory {
       public JSONObject toJson(HashMap<String, CountGroupedValue> reduceResult) {
           try {
               JSONObject ret = new JSONUtil.FastJSONObject();
-              for (String key : reduceResult.keySet()) {
+              for (String key : AggregateFunctionFactory.sort(reduceResult)) {
                 CountGroupedValue value = (CountGroupedValue) reduceResult.get(key);
                   ret.put(key, new JSONUtil.FastJSONObject().put("count", value.count));
               }
@@ -147,7 +162,7 @@ public class AggregateFunctionFactory {
         public JSONObject toJson(HashMap<String, AvgGroupedValue> reduceResult) {
             try {
                 JSONObject ret = new JSONUtil.FastJSONObject();
-                for (String key : reduceResult.keySet()) {
+                for (String key : AggregateFunctionFactory.sort(reduceResult)) {
                     AvgGroupedValue value = reduceResult.get(key);
                     ret.put(key, new JSONUtil.FastJSONObject().put("avg",  String.format("%1.5f", value.avg)));
                 }
@@ -200,7 +215,7 @@ public class AggregateFunctionFactory {
       public JSONObject toJson(HashMap<String, MaxGroupedValue> reduceResult) {
           try {
               JSONObject ret = new JSONUtil.FastJSONObject();
-              for (String key : reduceResult.keySet()) {
+              for (String key : AggregateFunctionFactory.sort(reduceResult)) {
                 MaxGroupedValue value = reduceResult.get(key);
                   ret.put(key, new JSONUtil.FastJSONObject().put("max",  String.format("%1.5f", value.max)));
               }
@@ -235,6 +250,8 @@ public class AggregateFunctionFactory {
     }
 
 }
+  
+  
   public static class MinAggregationFunction implements AggregateFunction<MinGroupedValue> {
     private final String column;
 
@@ -254,7 +271,7 @@ public class AggregateFunctionFactory {
     public JSONObject toJson(HashMap<String, MinGroupedValue> reduceResult) {
         try {
             JSONObject ret = new JSONUtil.FastJSONObject();
-            for (String key : reduceResult.keySet()) {
+            for (String key : AggregateFunctionFactory.sort(reduceResult)) {
               MinGroupedValue value = reduceResult.get(key);
                 ret.put(key, new JSONUtil.FastJSONObject().put("min",  String.format("%1.5f", value.min)));
             }

@@ -1691,6 +1691,19 @@ public class TestBQL extends TestCase
     assertEquals("{\"groupBy\":{\"columns\":[\"color\",\"groupid\"],\"top\":10},\"mapReduce\":{\"function\":\"sensei.composite\",\"parameters\":{\"array\":[{\"columns\":[\"color\",\"groupid\"],\"function\":\"sum\",\"mapReduce\":\"sensei.groupBy\",\"metric\":\"year\"},{\"columns\":[\"color\",\"groupid\"],\"function\":\"sum\",\"mapReduce\":\"sensei.groupBy\",\"metric\":\"year\"}]}},\"meta\":{\"select_list\":[]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
   }
   @Test
+  public void testAggregationFunctionWithGroupByWithStar() throws Exception
+  {
+    System.out.println("testAggregationFunctionWithGroupByWithStar");
+    System.out.println("==================================================");
+
+    JSONObject json = _compiler.compile(
+      "SELECT sum(year) , count(*)" +
+      "FROM cars " +
+      "WHERE color = 'red' GROUP BY color, groupid");
+    System.out.println(json);
+   assertNotNull(json);
+  }
+  @Test
   public void testMapReduce() throws Exception
   {
     System.out.println("testAggregateFunction");

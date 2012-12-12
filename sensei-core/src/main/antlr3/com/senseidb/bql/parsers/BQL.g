@@ -1470,9 +1470,13 @@ selection_list returns [boolean fetchStored, JSONArray json, List<Pair<String, S
             }))*;
 
 aggregation_function returns [String function, String column]
- :   (id=function_name LPAR columnVar=column_name RPAR) {
+ :   (id=function_name LPAR (columnVar=column_name | '*') RPAR) {
     $function= $id.text;    
-    $column= $columnVar.text;
+    if (columnVar != null) {
+        $column = $columnVar.text;
+    } else {
+        $column = ""; 
+    }    
  };
 
 column_name returns [String text]

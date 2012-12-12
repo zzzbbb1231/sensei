@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
 import com.senseidb.search.req.mapred.functions.AvgMapReduce;
 import com.senseidb.search.req.mapred.functions.CompositeMapReduce;
+import com.senseidb.search.req.mapred.functions.CountMapReduce;
 import com.senseidb.search.req.mapred.functions.DistinctCountMapReduce;
 import com.senseidb.search.req.mapred.functions.MaxMapReduce;
 import com.senseidb.search.req.mapred.functions.MinMapReduce;
@@ -29,6 +30,7 @@ public class MapReduceRegistry {
     keyToFunction.put("sensei.avg", AvgMapReduce.class);
     keyToFunction.put("sensei.groupBy", GroupByMapReduceJob.class);
     keyToFunction.put("sensei.sum", SumMapReduce.class);
+    keyToFunction.put("sensei.count", CountMapReduce.class);
     keyToFunction.put("sensei.composite", CompositeMapReduce.class);
   }
   
