@@ -708,7 +708,7 @@ public class BASentinelTest  extends Assert {
       
       JSONObject res = TestUtil.search(new URL("http://localhost:8075/sensei"), req);
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
-      assertEquals(53, Long.parseLong(mapReduceResult.getString("max")));
+      assertEquals(53, Double.valueOf(Double.parseDouble(mapReduceResult.getString("max"))).longValue());
       assertEquals(3204, Long.parseLong(mapReduceResult.getString("uid")));
     
   }
@@ -746,7 +746,7 @@ public class BASentinelTest  extends Assert {
     JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
     System.out.println(resp.toString(1));
     assertEquals("numhits is wrong", 326, resp.getInt("numhits"));
-    assertEquals("numhits is wrong", 766, resp.getJSONObject("mapReduceResult").getJSONObject("100").getInt("sum"));
+    assertEquals("numhits is wrong", 766, resp.getJSONObject("mapReduceResult").getJSONArray("grouped").getJSONObject(0).cd sensei-co getInt("sum"));
   }
   @Test
   public void test15AggregateBQLOnFullDataSet() throws Exception {
