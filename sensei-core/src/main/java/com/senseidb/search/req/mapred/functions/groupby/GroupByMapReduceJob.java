@@ -15,6 +15,7 @@ import com.senseidb.search.req.mapred.FacetCountAccessor;
 import com.senseidb.search.req.mapred.FieldAccessor;
 import com.senseidb.search.req.mapred.IntArray;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
+import com.senseidb.util.JSONUtil;
 
 public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, GroupedValue>, HashMap<String, GroupedValue>> {
 
@@ -159,7 +160,16 @@ public class GroupByMapReduceJob implements SenseiMapReduce<HashMap<String, Grou
 
     @Override
     public JSONObject render(HashMap<String, GroupedValue> reduceResult) {
-      return aggregateFunction.toJson(reduceResult);
+      Object result =  aggregateFunction.toJson(reduceResult);
+      if (result instanceof JSONObject) {
+        return (JSONObject) result;
+      } else {
+        try {
+          return new JSONUtil.FastJSONObject().put("grouped", result);
+        } catch (JSONException e) {
+          throw new RuntimeException(e);
+        }
+      }
     }
    
     private String getKey(String[] columns, FieldAccessor fieldAccessor, int docId) {
