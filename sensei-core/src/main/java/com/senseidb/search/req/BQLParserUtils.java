@@ -10,7 +10,9 @@ import org.json.JSONObject;
 
 import antlr.collections.List;
 
+import com.senseidb.conf.SenseiFacetHandlerBuilder;
 import com.senseidb.util.JSONUtil;
+import com.senseidb.util.JSONUtil.FastJSONObject;
 import com.senseidb.util.Pair;
 
 public class BQLParserUtils {
@@ -31,13 +33,39 @@ public class BQLParserUtils {
           array.put(props);
         }
       } else {
+        JSONArray columns = groupBy.optJSONArray("columns");
+        int countSum = 0;
+        int countCount = 0;
         for (Pair<String, String> pair: aggreagationFunctions) {
-          JSONObject props = new JSONUtil.FastJSONObject();
-          props.put("function", pair.getFirst());
-          props.put("metric", pair.getSecond());
-          props.put("columns", groupBy.optJSONArray("columns"));
-          props.put("mapReduce", "sensei.groupBy");
-          array.put(props);
+          if (columns.length() == 1 && "sum".equals(pair.getFirst()) && countSum == 0) {
+            countSum++;
+            JSONObject facetSpec = new FastJSONObject().put("expand", false)
+                .put("minhit", 0)
+                .put("max", 100).put("properties", new  FastJSONObject().put("dimension", columns.get(0)).put("metric", pair.getSecond()));
+            if (jsonObj.opt("facets") == null) {
+              jsonObj.put("facets", new FastJSONObject());
+            } 
+            jsonObj.getJSONObject("facets").put(SenseiFacetHandlerBuilder.SUM_GROUP_BY_FACET_NAME, facetSpec);
+          } else if (columns.length() == 1 && "count".equals(pair.getFirst()) && countCount == 0) {
+            countCount++;
+            JSONObject facetSpec = new FastJSONObject().put("expand", false)
+                .put("minhit", 0)
+                .put("max", 100);
+            if (jsonObj.opt("facets") == null) {
+              jsonObj.put("facets", new FastJSONObject());
+            } 
+            jsonObj.getJSONObject("facets").put(columns.getString(0), facetSpec);
+          }else {
+            JSONObject props = new JSONUtil.FastJSONObject();
+            
+            
+            props.put("function", pair.getFirst());
+            props.put("metric", pair.getSecond());
+           
+            props.put("columns", columns);
+            props.put("mapReduce", "sensei.groupBy");
+            array.put(props);
+          }
         }
       }
       if (functionName != null) {
@@ -51,7 +79,7 @@ public class BQLParserUtils {
       JSONObject mapReduce = new JSONUtil.FastJSONObject();
       if (array.length() == 0) {
         return;
-      }
+      }      
       if (array.length() == 1) {
         JSONObject props = array.getJSONObject(0);
         mapReduce.put("function", props.get("mapReduce"));

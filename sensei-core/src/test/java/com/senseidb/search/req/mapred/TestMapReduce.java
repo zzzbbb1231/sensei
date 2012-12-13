@@ -20,7 +20,7 @@ public class TestMapReduce extends TestCase {
       httpRestSenseiService = SenseiStarter.httpRestSenseiService;
     }
     
-
+    
     
     public void test2GroupByColorAndGroupId() throws Exception { 
       String req = "{\"size\":0,\"filter\":{\"terms\":{\"color\":{\"includes\":[],\"excludes\":[\"gold\"],\"operator\":\"or\"}}}" +
@@ -137,8 +137,9 @@ public class TestMapReduce extends TestCase {
       JSONObject res = TestSensei.search(new JSONObject(req));
       System.out.println(res.toString(1));
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
-      JSONObject firstObject = mapReduceResult.getJSONArray("results").getJSONObject(0).getJSONObject("result").getJSONArray("grouped").getJSONObject(0);
-      assertEquals(1106487, firstObject.getLong("sum"));
+     
+      JSONObject firstObject = mapReduceResult.getJSONArray("grouped").getJSONObject(0);
+      assertEquals(8040600, firstObject.getLong("sum"));
       assertEquals("exotic", firstObject.getString("group"));
     }
     public void test14CountMapReduceBQLWithMultipleGroupBy() throws Exception {      
