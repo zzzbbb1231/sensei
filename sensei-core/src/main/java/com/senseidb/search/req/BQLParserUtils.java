@@ -35,12 +35,14 @@ public class BQLParserUtils {
       } else {
         JSONArray columns = groupBy.optJSONArray("columns");
         int countSum = 0;
+        int top = groupBy.optInt("top");
         for (Pair<String, String> pair: aggreagationFunctions) {
           if (columns.length() == 1 && "sum".equals(pair.getFirst()) && countSum == 0) {
             countSum++;
+            
             JSONObject facetSpec = new FastJSONObject().put("expand", false)
                 .put("minhit", 0)
-                .put("max", 100).put("properties", new  FastJSONObject().put("dimension", columns.get(0)).put("metric", pair.getSecond()));
+                .put("max", top).put("properties", new  FastJSONObject().put("dimension", columns.get(0)).put("metric", pair.getSecond()));
             if (jsonObj.opt("facets") == null) {
               jsonObj.put("facets", new FastJSONObject());
             } 
@@ -48,7 +50,7 @@ public class BQLParserUtils {
           } else if (columns.length() == 1 && "count".equals(pair.getFirst()) ) {
             JSONObject facetSpec = new FastJSONObject().put("expand", false)
                 .put("minhit", 0)
-                .put("max", 100);
+                .put("max", top);
             if (jsonObj.opt("facets") == null) {
               jsonObj.put("facets", new FastJSONObject());
             } 

@@ -1701,7 +1701,7 @@ public class TestBQL extends TestCase
       "FROM cars " +
       "WHERE color = 'red' GROUP BY color");
     System.out.println(json);
-    assertEquals("{\"facets\":{\"_sumGroupBy\":{\"expand\":false,\"max\":100,\"minhit\":0,\"properties\":{\"dimension\":\"color\",\"metric\":\"year\"}}},\"groupBy\":{\"columns\":[\"color\"],\"top\":10},\"meta\":{\"select_list\":[]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
+    assertEquals("{\"facets\":{\"_sumGroupBy\":{\"expand\":false,\"max\":10,\"minhit\":0,\"properties\":{\"dimension\":\"color\",\"metric\":\"year\"}}},\"groupBy\":{\"columns\":[\"color\"],\"top\":10},\"meta\":{\"select_list\":[]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
   }
   @Test
   public void testCountFunctionWithSingleGroupBy() throws Exception
@@ -1714,7 +1714,7 @@ public class TestBQL extends TestCase
       "FROM cars " +
       "WHERE color = 'red' GROUP BY color");
     System.out.println(json);
-    assertEquals("{\"facets\":{\"color\":{\"expand\":false,\"max\":100,\"minhit\":0}},\"groupBy\":{\"columns\":[\"color\"],\"top\":10},\"meta\":{\"select_list\":[]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
+    assertEquals("{\"facets\":{\"color\":{\"expand\":false,\"max\":10,\"minhit\":0}},\"groupBy\":{\"columns\":[\"color\"],\"top\":10},\"meta\":{\"select_list\":[]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
   }
   @Test
   public void testAggregationFunctionWithGroupByWithStar() throws Exception
