@@ -117,7 +117,7 @@ public class TwitterSampleStreamer extends StreamDataProvider<JSONObject> {
         }
 
         tweetJSON.put("contents", contentBuilder.toString());
-
+        tweetJSON.put("text", textString);
         tweetJSON.put("tweet", jsonObj);
         tweetEvent = new DataEvent<JSONObject>(tweetJSON,String.valueOf(System.currentTimeMillis()));
         if (logger.isDebugEnabled()){

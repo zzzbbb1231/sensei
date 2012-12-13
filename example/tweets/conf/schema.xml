@@ -6,6 +6,8 @@
   <table uid="id">
 	<column name="time" type="long" />
 	<column name="tweeter" type="string" />
+	<column name="retweet_count" type="int" />
+	<column name="text" type="string" />
 	<column name="hashtags" type="string" delimiter=","/>
 	<column name="contents" type="text" index="ANALYZED" store="NO" termvector="NO"/>
   </table>
@@ -14,6 +16,8 @@
 	 <facet name="tweeter" type="simple" />
 	 <facet name="hashtags" type="multi" />
 	 <facet name="time" type="range" />
+	 <facet name="text" type="simple" />
+	 <facet name="retweet_count" type="simple" />
 	 <facet name="timeRange"  type="dynamicTimeRange" depends="time">
 	    <params>	
 		     <param name="range" value="000000100" />
