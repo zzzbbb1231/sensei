@@ -35,7 +35,6 @@ public class BQLParserUtils {
       } else {
         JSONArray columns = groupBy.optJSONArray("columns");
         int countSum = 0;
-        int countCount = 0;
         for (Pair<String, String> pair: aggreagationFunctions) {
           if (columns.length() == 1 && "sum".equals(pair.getFirst()) && countSum == 0) {
             countSum++;
@@ -46,8 +45,7 @@ public class BQLParserUtils {
               jsonObj.put("facets", new FastJSONObject());
             } 
             jsonObj.getJSONObject("facets").put(SenseiFacetHandlerBuilder.SUM_GROUP_BY_FACET_NAME, facetSpec);
-          } else if (columns.length() == 1 && "count".equals(pair.getFirst()) && countCount == 0) {
-            countCount++;
+          } else if (columns.length() == 1 && "count".equals(pair.getFirst()) ) {
             JSONObject facetSpec = new FastJSONObject().put("expand", false)
                 .put("minhit", 0)
                 .put("max", 100);
