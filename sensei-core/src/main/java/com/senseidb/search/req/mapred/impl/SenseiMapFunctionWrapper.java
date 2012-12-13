@@ -1,5 +1,6 @@
 package com.senseidb.search.req.mapred.impl;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -51,7 +52,10 @@ public class SenseiMapFunctionWrapper implements BoboMapFunctionWrapper {
     ZoieSegmentReader<?> zoieReader = (ZoieSegmentReader<?>)(reader.getInnerReader());
     DocIDMapperImpl docIDMapper = (DocIDMapperImpl) zoieReader.getDocIDMaper();
     IntArray docArray = fieldAccessorFactory.getDocArray(reader);
-    result.getMapResults().add(mapReduceStrategy.map(docArray, docArray.size(), zoieReader.getUIDArray(), fieldAccessorFactory.getAccessor(facetInfos, reader, docIDMapper), new FacetCountAccessor(facetCountCollectors)));    
+    Serializable mapResult = mapReduceStrategy.map(docArray, docArray.size(), zoieReader.getUIDArray(), fieldAccessorFactory.getAccessor(facetInfos, reader, docIDMapper), new FacetCountAccessor(facetCountCollectors));
+    if (mapResult != null) {
+      result.getMapResults().add(mapResult);    
+    }
   }
 
   /* (non-Javadoc)
@@ -67,7 +71,10 @@ public class SenseiMapFunctionWrapper implements BoboMapFunctionWrapper {
       partialDocIds[docIdIndex++] = docId;
       ZoieSegmentReader<?> zoieReader = (ZoieSegmentReader<?>)(reader.getInnerReader());
       DocIDMapperImpl docIDMapper = (DocIDMapperImpl) zoieReader.getDocIDMaper();
-      result.getMapResults().add(mapReduceStrategy.map(new DefaultIntArray(partialDocIds), BUFFER_SIZE, zoieReader.getUIDArray(), fieldAccessorFactory.getAccessor(facetInfos, reader, docIDMapper),  FacetCountAccessor.EMPTY));
+      Serializable mapResult = mapReduceStrategy.map(new DefaultIntArray(partialDocIds), BUFFER_SIZE, zoieReader.getUIDArray(), fieldAccessorFactory.getAccessor(facetInfos, reader, docIDMapper),  FacetCountAccessor.EMPTY);
+      if (mapResult != null) {
+        result.getMapResults().add(mapResult);
+      }
       docIdIndex = 0;
     }
   }
@@ -81,7 +88,10 @@ public class SenseiMapFunctionWrapper implements BoboMapFunctionWrapper {
     if (docIdIndex > 0) {
       ZoieSegmentReader<?> zoieReader = (ZoieSegmentReader<?>)(reader.getInnerReader());
       DocIDMapperImpl docIDMapper = (DocIDMapperImpl) zoieReader.getDocIDMaper();
-      result.getMapResults().add(mapReduceStrategy.map(new DefaultIntArray(partialDocIds), docIdIndex, zoieReader.getUIDArray(), fieldAccessorFactory.getAccessor(facetInfos, reader, docIDMapper), new FacetCountAccessor(facetCountCollectors)));    
+      Serializable mapResult = mapReduceStrategy.map(new DefaultIntArray(partialDocIds), docIdIndex, zoieReader.getUIDArray(), fieldAccessorFactory.getAccessor(facetInfos, reader, docIDMapper), new FacetCountAccessor(facetCountCollectors));
+      if (mapResult != null) {
+        result.getMapResults().add(mapResult);    
+      }
     }
     docIdIndex = 0;
   }
