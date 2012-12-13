@@ -220,7 +220,7 @@ public abstract class AbstractSenseiClientServlet extends ZookeeperConfigurableS
   private void handleSenseiRequest(HttpServletRequest req, HttpServletResponse resp, Broker<SenseiRequest, SenseiResult> broker)
       throws ServletException, IOException {
     long time = System.currentTimeMillis();
-    int numHits = 0, totalDocs = 0;
+    long numHits = 0, totalDocs = 0;
     RequestContext requestContext = null;
     try
     {
@@ -271,8 +271,8 @@ public abstract class AbstractSenseiClientServlet extends ZookeeperConfigurableS
         }
       }
       SenseiResult res = broker.browse(requestContext.senseiReq);
-      numHits = res.getNumHits();
-      totalDocs = res.getTotalDocs();
+      numHits = res.getNumHitsLong();
+      totalDocs = res.getTotalDocsLong();
       sendResponse(req, resp, requestContext.senseiReq, res);
    } catch (JSONException e) {
       try {

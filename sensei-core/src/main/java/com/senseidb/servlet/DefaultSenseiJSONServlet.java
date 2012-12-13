@@ -466,9 +466,9 @@ public class DefaultSenseiJSONServlet extends AbstractSenseiRestServlet
   {
     JSONObject jsonObj = new FastJSONObject();
     jsonObj.put(PARAM_RESULT_TID, res.getTid());
-    jsonObj.put(PARAM_RESULT_TOTALDOCS, res.getTotalDocs());
-    jsonObj.put(PARAM_RESULT_NUMHITS, res.getNumHits());
-    jsonObj.put(PARAM_RESULT_NUMGROUPS, res.getNumGroups());
+    jsonObj.put(PARAM_RESULT_TOTALDOCS, res.getTotalDocsLong());
+    jsonObj.put(PARAM_RESULT_NUMHITS, res.getNumHitsLong());
+    jsonObj.put(PARAM_RESULT_NUMGROUPS, res.getNumGroupsLong());
     jsonObj.put(PARAM_RESULT_PARSEDQUERY, res.getParsedQuery());
     addErrors(jsonObj, res);
     SenseiHit[] hits = res.getSenseiHits();
