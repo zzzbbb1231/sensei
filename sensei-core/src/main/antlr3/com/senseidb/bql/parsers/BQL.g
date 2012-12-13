@@ -1358,6 +1358,14 @@ select_stmt returns [Object json]
                  if (cols != null) {
                     aggregateFunctions = $cols.aggregationFunctions;
                  }
+                
+                
+                if (distinct != null) {
+                    jsonObj.put("distinct", $distinct.json);
+                }
+                if (browse_by != null) {
+                    jsonObj.put("facets", $browse_by.json);
+                }
                 if (executeMapReduce != null) {
                    if (group_by != null) {
                       BQLParserUtils.decorateWithMapReduce(jsonObj, $cols.aggregationFunctions, $group_by.json, $executeMapReduce.functionName, $executeMapReduce.properties);
@@ -1370,13 +1378,6 @@ select_stmt returns [Object json]
                    } else {
                       BQLParserUtils.decorateWithMapReduce(jsonObj, $cols.aggregationFunctions, null, null, null);
                    }
-                }
-                
-                if (distinct != null) {
-                    jsonObj.put("distinct", $distinct.json);
-                }
-                if (browse_by != null) {
-                    jsonObj.put("facets", $browse_by.json);
                 }
                 if (fetch_stored != null) {
                     if (!$fetch_stored.val && (cols != null && $cols.fetchStored)) {

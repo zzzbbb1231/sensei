@@ -123,6 +123,7 @@ import com.browseengine.bobo.api.FacetAccessible;
 import com.browseengine.bobo.api.FacetSpec;
 import com.browseengine.bobo.api.FacetSpec.FacetSortSpec;
 import com.browseengine.bobo.facets.DefaultFacetHandlerInitializerParam;
+import com.senseidb.conf.SenseiFacetHandlerBuilder;
 import com.senseidb.search.req.SenseiError;
 import com.senseidb.search.req.SenseiHit;
 import com.senseidb.search.req.SenseiJSONQuery;
@@ -379,6 +380,11 @@ public class DefaultSenseiJSONServlet extends AbstractSenseiRestServlet
         {
           String key = entry.getKey();
           if (key.equals(PARAM_RESULT_HIT_UID))
+          {
+            // UID is already set.
+            continue;
+          }
+          if (key.equals(SenseiFacetHandlerBuilder.SUM_GROUP_BY_FACET_NAME))
           {
             // UID is already set.
             continue;
