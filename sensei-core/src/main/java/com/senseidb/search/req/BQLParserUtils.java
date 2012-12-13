@@ -22,7 +22,16 @@ public class BQLParserUtils {
       if (aggreagationFunctions == null) {
         aggreagationFunctions = new ArrayList<Pair<String,String>>();
       }
-     
+      if (aggreagationFunctions.size() > 0) {
+        JSONObject meta = jsonObj.optJSONObject("meta");
+        if (meta != null) {
+        JSONArray selectList = meta.optJSONArray("select_list");
+        
+        if (selectList == null || selectList.length() == 0) {
+          meta.put("select_list", new JSONUtil.FastJSONArray().put("*"));
+        }
+        }
+      }
       JSONArray array = new JSONUtil.FastJSONArray();
       if (groupBy == null) {
         for (Pair<String, String> pair: aggreagationFunctions) {
@@ -64,6 +73,7 @@ public class BQLParserUtils {
            
             props.put("columns", columns);
             props.put("mapReduce", "sensei.groupBy");
+            props.put("top", top);
             array.put(props);
           }
         }

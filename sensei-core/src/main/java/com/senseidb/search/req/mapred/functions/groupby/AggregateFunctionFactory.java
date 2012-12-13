@@ -35,6 +35,9 @@ public class AggregateFunctionFactory {
         return null;
     }
     public static List<String> sort(final Map<String, ? extends GroupedValue> reduceResult) {
+      if (reduceResult == null) {
+        return Collections.EMPTY_LIST;
+      }
       List<String> ret = new ArrayList<String>(reduceResult.keySet());
       Collections.sort(ret, new Comparator<String>() {
 
