@@ -18,6 +18,7 @@ import org.json.JSONObject;
 import com.browseengine.bobo.api.BoboIndexReader;
 import com.browseengine.bobo.facets.FacetHandler;
 import com.browseengine.bobo.facets.data.FacetDataCache;
+import com.browseengine.bobo.facets.filter.EmptyFilter;
 import com.browseengine.bobo.facets.filter.FacetRangeFilter;
 import com.browseengine.bobo.facets.filter.RandomAccessFilter;
 import com.browseengine.bobo.query.MatchAllDocIdSetIterator;
@@ -136,7 +137,7 @@ public class RangeFilterConstructor extends FilterConstructor
         }
         
         if(type == null)
-          throw new IllegalArgumentException("need to specify the type of field in filter json: " + json);
+          return EmptyFilter.getInstance().getDocIdSet(reader);
         
         if ("int".equals(type)) {
           MetaType metaType = DefaultSenseiInterpreter.CLASS_METATYPE_MAP.get(int.class);
