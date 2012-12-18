@@ -2,7 +2,7 @@ package com.senseidb.ba.gazelle.readers;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
+import static org.junit.Assert.assertNotNull;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -11,6 +11,7 @@ import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.math.stat.descriptive.AggregateSummaryStatistics;
 import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -25,6 +26,9 @@ import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.SegmentAggregationLevel;
+import com.senseidb.ba.gazelle.SegmentMetadata;
+import com.senseidb.ba.gazelle.SegmentTimeType;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
@@ -45,18 +49,39 @@ public class SegmentReaderTest {
   private GazelleIndexSegmentImpl _segment;
 
   @Before
-  public void setup() throws IOException, ConfigurationException, URISyntaxException {
+  public void setup() throws IOException, ConfigurationException, URISyntaxException, IllegalAccessException {
     _indexDir = new File("index");
     FileUtils.deleteDirectory(_indexDir);
     _indexDir.mkdir();
 
     _avroFile = new File(getClass().getClassLoader().getResource("data/sample_data.avro").toURI());
     _jsonFile = new File(getClass().getClassLoader().getResource("data/sample_data.json").toURI());
-    System.out.println(_indexDir.getAbsolutePath());
+
     _segment = AvroSegmentCreator.readFromAvroFile(_avroFile);
+    SegmentMetadata segmentMetadata = new SegmentMetadata();
+    segmentMetadata.setAggregationLevel(SegmentAggregationLevel.DAILY);
+    segmentMetadata.setClusterName("some-cluster-name");
+    segmentMetadata.setEndTime("someEndTime");
+    segmentMetadata.setStartTime("someStartTime");
+    segmentMetadata.setTimeType(SegmentTimeType.daysSinceEpoch);
+    segmentMetadata.put("segment.custom.key", "some.value");
+    _segment.setSegmentMetadata(segmentMetadata);
     SegmentPersistentManager.flushToDisk(_segment, _indexDir);
   }
 
+
+  @Test
+  public void testSegmentMetadata() throws IllegalAccessException, IOException, ConfigurationException {
+    GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(_indexDir, ReadMode.DirectMemory);
+    assertNotNull(segment.getSegmentMetadata());
+    assertEquals(segment.getSegmentMetadata().getAggregationLevel(), SegmentAggregationLevel.DAILY);
+    assertEquals(segment.getSegmentMetadata().getClusterName(), "some-cluster-name");
+    assertEquals(segment.getSegmentMetadata().getEndTime(), "someEndTime");
+    assertEquals(segment.getSegmentMetadata().getStartTime(), "someStartTime");
+    assertEquals(segment.getSegmentMetadata().getTimeType(), SegmentTimeType.daysSinceEpoch);
+    assertEquals(segment.getSegmentMetadata().get("segment.custom.key"), "some.value");
+    assertNotNull(segment.getSegmentMetadata().get("segment.index.version"));
+  }
 
   @Test
   public void testdictionaryDataAccess() throws ConfigurationException, IOException {
