@@ -15,6 +15,7 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.SecondarySortedForwardIndex;
+import com.senseidb.ba.gazelle.SegmentMetadata;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
@@ -31,18 +32,18 @@ public class SegmentPersistentManager {
   private static final String VERSION = "001";
   
   
-  public static void flushToDisk(GazelleIndexSegmentImpl segment, File baseDir) throws IOException, ConfigurationException {
+  public static void flushToDisk(GazelleIndexSegmentImpl segment, File baseDir) throws IOException, ConfigurationException, IllegalAccessException {
         if (!baseDir.exists()) {
             baseDir.mkdirs();
         }
         flush(segment, baseDir.getAbsolutePath(), FileSystemMode.DISK, null);
       }
-  public static void flushToHadoop(GazelleIndexSegmentImpl segment, String baseDir, FileSystem fs) throws IOException, ConfigurationException {
+  public static void flushToHadoop(GazelleIndexSegmentImpl segment, String baseDir, FileSystem fs) throws IOException, ConfigurationException, IllegalAccessException {
     flush(segment, baseDir, FileSystemMode.HDFS, fs);
   }
   
-  private static void flush(GazelleIndexSegmentImpl segment, String baseDir, FileSystemMode mode, FileSystem fs) throws IOException, ConfigurationException {
-    segment.getSegmentMetadata().put("index.version", VERSION);
+  private static void flush(GazelleIndexSegmentImpl segment, String baseDir, FileSystemMode mode, FileSystem fs) throws IOException, ConfigurationException, IllegalAccessException {
+    segment.getSegmentMetadata().put("segment.index.version", VERSION);
     DictionaryPersistentManager.flush(segment.getColumnMetadataMap(), segment.getDictionaries(), baseDir, mode, fs);
     MetadataPersistentManager.flush(segment.getColumnMetadataMap(), segment.getSegmentMetadata(), baseDir, mode, fs);
     HashMap<String, Integer> dictionarySizeMap = new HashMap<String, Integer>();
@@ -75,7 +76,7 @@ public class SegmentPersistentManager {
     try {
     File file = new File(indexDir, GazelleUtils.METADATA_FILENAME);
     PropertiesConfiguration config = new PropertiesConfiguration(file);
-    Map<String, String> globalProperties = getSegmentMetadata(config);
+    SegmentMetadata globalProperties = MetadataPersistentManager.readSegmentMetadata(config);
     HashMap<String, ColumnMetadata> metadataMap = MetadataPersistentManager.readFromFile(config);
     Map<String, TermValueList> dictionaries = getTermValueListMap(metadataMap, indexDir);
     return new GazelleIndexSegmentImpl(metadataMap, getForwardIndexesMap(metadataMap, dictionaries, indexDir, mode),
@@ -85,6 +86,7 @@ public class SegmentPersistentManager {
       return null;
     }
   }
+
   public static Map<String, String> getSegmentMetadata(PropertiesConfiguration config) {
     Map<String, String> globalProperties = new HashMap<String, String>();
     Iterator keys = config.getKeys();
