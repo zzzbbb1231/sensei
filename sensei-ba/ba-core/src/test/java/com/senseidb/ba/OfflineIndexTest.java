@@ -29,7 +29,7 @@ public class OfflineIndexTest extends TestCase {
   @Test
   public void test3SortAfterCreation() throws Exception {
   
-    GazelleIndexSegmentImpl offlineSegment =  com.senseidb.ba.format.GenericIndexCreator.create(new File(OfflineIndexTest.class.getClassLoader().getResource("data/sample_data.json").toURI()), "dim_memberIndustry");
+    GazelleIndexSegmentImpl offlineSegment =  com.senseidb.ba.format.GenericIndexCreator.create(new File(OfflineIndexTest.class.getClassLoader().getResource("data/sample_data.json").toURI()), new String[] {"dim_memberIndustry"}, new String[0]);
     assertEquals(10000, offlineSegment.getLength());
     assertTrue(offlineSegment.getForwardIndex("dim_memberIndustry") instanceof SortedForwardIndex);
   }

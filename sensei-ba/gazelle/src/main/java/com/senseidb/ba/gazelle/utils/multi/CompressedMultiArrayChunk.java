@@ -204,7 +204,7 @@ public void flush(DataOutputStream dataOutputStream) {
         OffHeapCompressedIntArray compressedIntArray = new OffHeapCompressedIntArray(arrayChunk.currentSize, numBitsPerElement, byteBuffer);
         arrayChunk.compressedIntArray = compressedIntArray;
       } else if (readMode == ReadMode.Heap) {
-        byteBuffer = channel.map(MapMode.READ_ONLY, offset, sizeInBytes);    
+        byteBuffer = channel.map(MapMode.READ_ONLY, offset, sizeInBytes);
             HeapCompressedIntArray heapCompressedIntArray = new HeapCompressedIntArray(arrayChunk.currentSize, numBitsPerElement);
             for (int i = 0; i < heapCompressedIntArray.getBlocks().length; i++) {
               heapCompressedIntArray.getBlocks()[i] = Bits.getLong(byteBuffer, i);

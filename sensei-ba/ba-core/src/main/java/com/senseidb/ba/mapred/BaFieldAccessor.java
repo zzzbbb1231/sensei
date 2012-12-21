@@ -168,6 +168,7 @@ public class BaFieldAccessor implements FieldAccessor {
       if (dictionary instanceof TermFloatList) {
         return ((TermFloatList)dictionary).getPrimitiveValue(valueId);
       }
+      
       return Double.parseDouble(dictionary.get(valueId));      
     } else {      
      throw new IllegalStateException("The column is the multi value - " + fieldName);

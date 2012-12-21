@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.lucene.search.DocIdSet;
+import org.jboss.netty.util.internal.ConcurrentHashMap;
 
 import proj.zoie.api.ZoieIndexReader;
 
@@ -15,7 +16,9 @@ import com.browseengine.bobo.api.BoboIndexReader;
 import com.browseengine.bobo.facets.FacetHandler;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.ba.facet.BaFacetHandler;
+import com.senseidb.ba.facet.SumGroupByFacetHandler;
 import com.senseidb.ba.gazelle.IndexSegment;
+import com.senseidb.conf.SenseiFacetHandlerBuilder;
 import com.senseidb.plugin.SenseiPlugin;
 import com.senseidb.plugin.SenseiPluginRegistry;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
@@ -23,7 +26,7 @@ import com.senseidb.search.node.SenseiIndexReaderDecorator;
 public class ZeusIndexReaderDecorator extends SenseiIndexReaderDecorator implements SenseiPlugin {
   final static String[] emptyString = new String[0];
   private final List customFacetHandlers;
-  private final Map<String, BaFacetHandler> facetHandlers = new HashMap<String, BaFacetHandler>();
+  private final Map<String, BaFacetHandler> staticFacetHandlers = new HashMap<String, BaFacetHandler>();
   
   @SuppressWarnings("rawtypes")
   public ZeusIndexReaderDecorator(List<FacetHandler> customFacetHandlers) {
@@ -33,10 +36,10 @@ public class ZeusIndexReaderDecorator extends SenseiIndexReaderDecorator impleme
     this(Collections.EMPTY_LIST);
   }
   public synchronized BaFacetHandler getFacetHandler(String columnName) {
-    BaFacetHandler ret = facetHandlers.get(columnName);
+    BaFacetHandler ret = staticFacetHandlers.get(columnName);
     if (ret == null) {
       ret = new BaFacetHandler(columnName, columnName, IndexSegment.class.getSimpleName());
-      facetHandlers.put(columnName, ret);
+      staticFacetHandlers.put(columnName, ret);
     }
     return ret;
   }
@@ -55,6 +58,7 @@ public BoboIndexReader decorate(ZoieIndexReader<BoboIndexReader> zoieReader) thr
   if (customFacetHandlers != null) {
     facetHandlers.addAll((List) customFacetHandlers);
   }
+  facetHandlers.add(new SumGroupByFacetHandler(SenseiFacetHandlerBuilder.SUM_GROUP_BY_FACET_NAME));
   BoboIndexReader indexReader =  new BoboIndexReader(adapter,  facetHandlers, Collections.EMPTY_LIST, new BoboIndexReader.WorkArea(), false) {
     public void facetInit() throws IOException {
       putFacetData(IndexSegment.class.getSimpleName(), offlineSegment);
@@ -77,12 +81,10 @@ public BoboIndexReader decorate(ZoieIndexReader<BoboIndexReader> zoieReader) thr
   }
   @Override
   public void start() {
-    // TODO Auto-generated method stub
     
   }
   @Override
   public void stop() {
-    // TODO Auto-generated method stub
     
   }
  

@@ -65,7 +65,7 @@ public class BASentinelTest  extends Assert {
   
   @Test
   public void test1FilterAndFacetCountOnNotSortedColumn() throws Exception {
-    
+    //Thread.sleep(1000000);
     String req = "{" + 
         "  " + 
         "    \"from\": 0," + 
@@ -701,7 +701,7 @@ public class BASentinelTest  extends Assert {
     Arrays.sort(names);
     assertEquals("[segment1]", Arrays.toString(names));
   }
-  /*@Test
+  @Test
   public void test10MaxMapReduce() throws Exception {
       String req = "{\"filter\":{\"term\":{\"dim_memberGender\":\"m\"}}"
           +", \"mapReduce\":{\"function\":\"sensei.max\",\"parameters\":{\"column\":\"met_impressionCount\"}}}";
@@ -742,11 +742,11 @@ public class BASentinelTest  extends Assert {
   }
   @Test
   public void test14AggregateBQLWithGroupBy() throws Exception {
-    String req = "{\"bql\":\"select sum(met_impressionCount) where dim_memberIndustry in (102, 100) group by dim_memberIndustry\"}";
+    String req = "{\"bql\":\"select avg(met_impressionCount) where dim_memberIndustry in (102, 100) group by dim_memberIndustry\"}";
     JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
     System.out.println(resp.toString(1));
     assertEquals("numhits is wrong", 326, resp.getInt("numhits"));
-    assertEquals("numhits is wrong", 766, resp.getJSONObject("mapReduceResult").getJSONArray("grouped").getJSONObject(0).getInt("sum"));
+    assertEquals("2.50327", resp.getJSONObject("mapReduceResult").getJSONArray("grouped").getJSONObject(0).getString("avg"));
   }
   @Test
   public void test15AggregateBQLOnFullDataSet() throws Exception {
@@ -762,6 +762,6 @@ public class BASentinelTest  extends Assert {
     JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
     System.out.println(resp.toString(1));
     assertEquals( 784, resp.getInt("numhits"));
-  }*/
+  }
   
 }

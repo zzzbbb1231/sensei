@@ -34,6 +34,9 @@ public class ZkManager {
       registerSegment(partition, segmentId, pathUrl, config);
     }
     public void registerSegment(int partition, String segmentId, String pathUrl, Map<String, String> newConf) {
+      registerSegment(clusterName, partition, segmentId, pathUrl, newConf);
+    }
+    public void registerSegment(String clusterName, int partition, String segmentId, String pathUrl, Map<String, String> newConf) {
       
       
       logger.info("Registering the new segment with id = " + segmentId + ", partition = " + partition + ", pathUrl = " + pathUrl);
@@ -105,5 +108,22 @@ public class ZkManager {
       }
     return false;
     }
+    public boolean removeSegment(String segmentPath) {
+      if (zkClient.exists(segmentPath)) {
+        zkClient.deleteRecursive(segmentPath);
+        return true;
+      }
+    return false;
+    }
+    public ZkClient getZkClient() {
+      return zkClient;
+    }
+    public void setZkClient(ZkClient zkClient) {
+      this.zkClient = zkClient;
+    }
+    public String getClusterName() {
+      return clusterName;
+    }
+    
     
 }

@@ -21,6 +21,7 @@ import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.ba.management.SegmentInfo;
 import com.senseidb.ba.management.SegmentType;
+import com.senseidb.ba.management.SegmentUtils;
 import com.senseidb.ba.management.ZkManager;
 
 
@@ -39,6 +40,9 @@ public class BaClient {
     }
     //eat1-app184.stg.linkedin.com:10000
     ZkManager zkManager = new ZkManager("localhost:2181", args11[0]);
+    zkManager.getZkClient().deleteRecursive(SegmentUtils.getZkRoot() + "/segment1");
+    zkManager.getZkClient().deleteRecursive(SegmentUtils.getZkRoot() + "/partitions");
+    
     //ZkManager zkManager = new ZkManager("eat1-app266.stg.linkedin.com:10000", "adsClickEvents");
     //ZkManager zkManager = new ZkManager("localhost:2121", args11[0]);
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));

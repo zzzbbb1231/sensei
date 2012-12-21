@@ -1,7 +1,11 @@
 package com.senseidb.ba.management;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.log4j.Logger;
+import org.springframework.util.Assert;
 
 public class SegmentUtils {
   private static Logger logger = Logger.getLogger(SegmentUtils.class);
@@ -11,23 +15,35 @@ public class SegmentUtils {
       zkClient.createPersistent(path, true);
     }
   }
-  public static void removeFromActiveSegments(ZkClient zkClient, String clusterName, int partition, String segmentId) {
+  public static boolean  removeFromActiveSegments(ZkClient zkClient, String clusterName, int partition, String segmentId) {
     String  path = getActiveSegmentsPath(clusterName, partition, segmentId);
     if (zkClient.exists(path)) {
       zkClient.deleteRecursive(path);
+      return true;
+    } else {
+      return false;
     }
   }
   public static String getActiveSegmentsPathForPartition(String clusterName, int partition) {
     return getActiveSegmentsPath(clusterName) +  "/" + partition;
   }
   public static String getActiveSegmentsPath(String clusterName) {
-    return "/sensei-ba/" + clusterName + "/activeSegments";
+    return getZkRoot() + "/" + clusterName + "/activeSegments";
+  }
+  public static String getZkRoot() {
+    return "/sensei-ba";
+  }
+  public static String getMasterZkPath(String clusterName) {
+    return SegmentUtils.getZkRoot() + "/" + clusterName + "/masters";
   }
   public static String getActiveSegmentsPath(String clusterName, int partition, String segmentId) {
     return getActiveSegmentsPath(clusterName) + "/"+ + partition + "/" + segmentId;
   }
   public static String getSegmentInfoPath(String clusterName,  String segmentId) {
-    return "/sensei-ba/" + clusterName + "/segmentInfo/" +  segmentId;
+    return getZkRoot() + "/" + clusterName + "/segmentInfo/" +  segmentId;
+  }
+  public static String getSegmentInfoPath(String clusterName) {
+    return getZkRoot() + "/" + clusterName + "/segmentInfo";
   }
   public static void registerAsActiveSegment(ZkClient zkClient, String clusterName, int partition, String segmentId) {
     String activeSegmentsPath = getActiveSegmentsPath(clusterName, partition, segmentId);
@@ -35,7 +51,13 @@ public class SegmentUtils {
        zkClient.createPersistent(activeSegmentsPath);
      }
   }
-
+  public static List<String> getClusterNames(ZkClient zkClient) {
+      
+     if (!zkClient.exists(getZkRoot())) {
+       return Collections.EMPTY_LIST;
+     }
+     return zkClient.getChildren(getZkRoot());
+  }
   public static boolean isSegmentInfoReady(ZkClient zkClient, String clusterName, String segmentId) {
     try {
       String zkPath = getSegmentInfoPath(clusterName, segmentId);
@@ -50,5 +72,12 @@ public class SegmentUtils {
       logger.error(ex);
     }
     return true;
+  }
+  public static void moveSegment(ZkClient zkClient, String clusterName, String segmentId, int oldPartition, int newPartition) {
+    SegmentInfo retrievedFromZookeeper = SegmentInfo.retrieveFromZookeeper(zkClient, clusterName, segmentId);
+    Assert.notNull(retrievedFromZookeeper);
+    SegmentUtils.removeFromActiveSegments(zkClient, clusterName, oldPartition, segmentId);
+    SegmentUtils.addToActiveSegments(zkClient, clusterName, newPartition, segmentId);
+    
   }
 }

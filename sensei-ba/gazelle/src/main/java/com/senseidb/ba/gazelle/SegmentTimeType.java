@@ -11,4 +11,16 @@ public enum SegmentTimeType {
     }
     throw new IllegalAccessException("UnSupported time type");
   }
+  public long toMillis(long time) {
+    switch (this) {
+     case secondsSinceEpoch : return time * 1000;
+     case minutesSinceEpoch : return time * 1000 * 60;
+     case hoursSinceEpoch : return time * 1000 * 60 * 60;
+     case daysSinceEpoch : return time * 1000 * 60 * 60* 24;
+     case monthsSinceEpoch : return time * 1000* 60 * 60* 24 * 30;
+     case yearsSinceEpoch : return time * 1000* 60 * 60* 24 * 30 * 365;
+    }
+    throw new UnsupportedOperationException();
+  } 
+  
 }

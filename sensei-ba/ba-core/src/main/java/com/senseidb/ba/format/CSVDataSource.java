@@ -10,17 +10,28 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.senseidb.ba.util.IndexConverter;
 
 public class CSVDataSource implements GazelleDataSource {
+  private static Logger logger = Logger.getLogger(CSVDataSource.class);
   private final File csvFile;
+  private String delimiter = ",";
   private Set<CSVIterator> iterators = new HashSet<CSVIterator>();
+  
   public CSVDataSource(File csvFile) {
       this.csvFile = csvFile;
       
   }
+  public CSVDataSource(File csvFile, String delimiter) {
+    this.csvFile = csvFile;
+    this.delimiter = delimiter;
+    
+}
   @Override
   public Iterator<Map<String, Object>> newIterator() {
-      CSVIterator ret = new CSVIterator(csvFile);
+      CSVIterator ret = new CSVIterator(csvFile, delimiter);
       iterators.add(ret);
       return ret;
   }
@@ -34,9 +45,11 @@ public class CSVDataSource implements GazelleDataSource {
   }
   public static class CSVIterator extends AbstractFileIterator {
       private List<String> fields = new ArrayList<String>();
+      private final String delimiter;
     
-      public CSVIterator(File csvFile)  {
+      public CSVIterator(File csvFile, String delimiter)  {
           super(csvFile);
+          this.delimiter = delimiter;
          String firstLine;
          while (true) {
            firstLine = lineIterator.nextLine();
@@ -45,7 +58,7 @@ public class CSVDataSource implements GazelleDataSource {
             
            }
          }
-         for (String field: firstLine.split(",")) {
+         for (String field: firstLine.split(delimiter)) {
            if (StringUtils.isNotBlank(field)) {
              fields.add(field.trim());
            }
@@ -57,7 +70,7 @@ public class CSVDataSource implements GazelleDataSource {
             Map<String, Object> ret = new HashMap<String, Object>(fields.size());
              try {
                 int i = 0; 
-               for (String value: line.split(",")) {
+               for (String value: line.split(delimiter)) {
                     
                     String field = fields.get(i);
                    /* if ("dim_memberIndustry".equals(field) && ! (transformValue(value) instanceof Number)) {
@@ -75,6 +88,7 @@ public class CSVDataSource implements GazelleDataSource {
           return null;
       }
       private Object transformValue(String value) {        
+        try {
         if (value.length() > 0 && (StringUtils.isNumeric(value)  || ( value.startsWith("-") && value.length() > 1 && StringUtils.isNumeric(value.substring(1))))) {
           long lng = Long.parseLong(value);
           if (lng <= Integer.MAX_VALUE && lng >= Integer.MIN_VALUE) {
@@ -87,7 +101,9 @@ public class CSVDataSource implements GazelleDataSource {
           double parseDouble = Double.parseDouble(value);
           return Float.valueOf((float)parseDouble);
         }
-        
+        } catch (Exception ex) {
+          logger.warn(ex.getMessage());
+        }
         return value;
       }
   }
@@ -103,7 +119,7 @@ public class CSVDataSource implements GazelleDataSource {
       return false;
     }
     for (int i = 1; i < sz; i++) {
-        if (Character.isDigit(str.charAt(i)) == false && (str.charAt(i) != '.' && str.charAt(i) == ',')) {
+        if (!(Character.isDigit(str.charAt(i)) == true || str.charAt(i) == '.' || str.charAt(i) == ',')) {
             return false;
         }
     }

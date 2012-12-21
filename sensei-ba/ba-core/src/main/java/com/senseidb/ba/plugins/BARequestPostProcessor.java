@@ -3,6 +3,7 @@ package com.senseidb.ba.plugins;
 import java.util.Arrays;
 import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.senseidb.search.req.ErrorType;
@@ -21,6 +22,7 @@ public class BARequestPostProcessor implements RequestPostProcessor {
     if (query != null) {
       return Arrays.asList(new SenseiError("Queries are not supported for SenseiBA", ErrorType.JsonParsingError));
     }
+   
     return null;
   }
 

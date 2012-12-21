@@ -10,7 +10,10 @@ import java.util.Map;
 
 import javax.management.RuntimeErrorException;
 
+import org.apache.log4j.Logger;
 import org.springframework.util.Assert;
+
+import scala.actors.threadpool.Arrays;
 
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.senseidb.ba.gazelle.ColumnType;
@@ -22,31 +25,48 @@ import com.senseidb.ba.gazelle.creators.ForwardIndexCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.SortUtil;
+import com.senseidb.ba.util.IndexConverter;
 
 public class GenericIndexCreator {
+  private static Logger logger = Logger.getLogger(GenericIndexCreator.class);
   public static boolean canCreateSegment(String filename) {
-    return filename.toLowerCase().endsWith(".json") || filename.toLowerCase().endsWith(".avro") || filename.toLowerCase().endsWith(".csv");
+    return filename.toLowerCase().endsWith(".json") || filename.toLowerCase().endsWith(".avro") || filename.toLowerCase().endsWith(".csv")|| filename.toLowerCase().endsWith(".tsv");
   }  
   public static GazelleIndexSegmentImpl create(File file) throws Exception {
+    return create(file, new String[0]);
+  }
+  public static GazelleIndexSegmentImpl create(File file, String[] excludedColumns) throws Exception {
     Assert.state(canCreateSegment(file.getName()));
     if (file.getName().toLowerCase().endsWith(".json")) {
-      return create(new JsonDataSource(file));
+      return create(new JsonDataSource(file), excludedColumns);
     }
     if (file.getName().toLowerCase().endsWith(".csv")) {
-      return create(new CSVDataSource(file));
+      return create(new CSVDataSource(file, ","), excludedColumns);
+    }
+    if (file.getName().toLowerCase().endsWith(".tsv")) {
+      return create(new CSVDataSource(file, "\t"), excludedColumns);
     }
     if (file.getName().toLowerCase().endsWith(".avro")) {
       return AvroSegmentCreator.readFromAvroFile(file);
     }
     throw new UnsupportedOperationException(file.getName());
   }
-  
-  
   public static GazelleIndexSegmentImpl create(GazelleDataSource gazelleDataSource) throws Exception {
+    return create(gazelleDataSource, new String[0]);
+  }
+  
+  public static GazelleIndexSegmentImpl create(GazelleDataSource gazelleDataSource, String[] exludedColumns) throws Exception {
+        logger.info("Phase 1 getting column types");
         try {
         Map<String, ColumnType> columnTypes = getColumnTypes(gazelleDataSource.newIterator());
-        //System.out.println("!!" + gazelleDataSource.toString() + " - " + columnTypes);
+        for (String excludedColumn : exludedColumns) {
+          columnTypes.remove(excludedColumn);
+        }
+        
+        logger.info("Phase 1 completed");
+        
         gazelleDataSource.closeCurrentIterators();
+        logger.info("Phase 2 constructing  dictionaries");
         Map<String, ForwardIndexCreator> indexCreators = new HashMap<String, ForwardIndexCreator>(columnTypes.size());
         for (String  key : columnTypes.keySet()) {
             ForwardIndexCreator indexCreator = new ForwardIndexCreator(key, columnTypes.get(key));
@@ -63,13 +83,14 @@ public class GenericIndexCreator {
             count++;
         }
         gazelleDataSource.closeCurrentIterators();
+        logger.info("Phase 2 completed");
         for (String  key : columnTypes.keySet()) {
             indexCreators.get(key).produceDictionary(count);
         }
         iterator = gazelleDataSource.newIterator();
-        
+        logger.info("Phase 3 constructing indexes");
         while(iterator.hasNext()) {
-            Map<String, Object> map = iterator.next();
+          Map<String, Object> map = iterator.next();
             for (String  key : indexCreators.keySet()) {
                 indexCreators.get(key).addValueToForwardIndex(map.get(key));
             }
@@ -88,6 +109,7 @@ public class GenericIndexCreator {
           indexSegmentImpl.getForwardIndexes().put(indexCreator.getColumnName(), forwardIndex);
         }
         indexSegmentImpl.setLength(count);
+        logger.info("Phase 3 completed. The segment was created. It contains - " + count + " elements");
         return indexSegmentImpl;
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -110,15 +132,19 @@ public class GenericIndexCreator {
         }
         return columnTypes;
     }
-    public static GazelleIndexSegmentImpl create(File file, String... sortedColumns) throws Exception {
-      GazelleIndexSegmentImpl nonSortedSegment = create(file);
+    public static GazelleIndexSegmentImpl create(File file, String[] sortedColumns, String[] excludedColumns) throws Exception {
+      GazelleIndexSegmentImpl nonSortedSegment = create(file, excludedColumns);
       if (nonSortedSegment == null) {
         return null;
       }
+      if (sortedColumns == null || sortedColumns.length == 0) {
+        return nonSortedSegment;
+      }
+      logger.info("The segment was created. Now sorting by " + Arrays.asList(excludedColumns) + " columns...");
       GazelleIndexSegmentImpl sortedSegment = create(nonSortedSegment, sortedColumns );
       return sortedSegment;
     }
-    public static GazelleIndexSegmentImpl create(final GazelleIndexSegmentImpl nonSortedSegment, String[] sortedColumns) throws Exception {
+    public static GazelleIndexSegmentImpl create(final GazelleIndexSegmentImpl nonSortedSegment, final String[] sortedColumns) throws Exception {
       final int[] permutationArray = new int[nonSortedSegment.getLength()];
       for (int i = 0; i < permutationArray.length; i++) {
         permutationArray[i] = i;
@@ -129,7 +155,7 @@ public class GenericIndexCreator {
         SingleValueForwardIndex forwardIndex = (SingleValueForwardIndex) nonSortedSegment.getForwardIndex(sortedColumns[i]);
         Assert.notNull(forwardIndex, "Index for the column " + sortedColumns[i] + " doesn't exist");
         forwardIndexes[i] = forwardIndex;
-      }
+      }  
       SortUtil.quickSort(0, permutationArray.length, new SortUtil.IntComparator() {
         @Override
         public int compare(Integer o1, Integer o2) {

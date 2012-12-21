@@ -35,6 +35,12 @@ public class BAIndexPruner implements SenseiIndexPruner, SenseiPlugin {
             fields.add(sortField.getField());
         }
         fields.addAll(req.getFacetSpecs().keySet());
+        for (String facet : req.getFacetSpecs().keySet()) {
+          String facetLow = facet.toLowerCase();
+          if (facetLow.startsWith("sum") || facetLow.contains("groupby")) {
+            fields.remove(facet);
+          }
+        }
         Set<String> columnProps = new HashSet<String>();
         columnProps.add("column");
         columnProps.add("metric");

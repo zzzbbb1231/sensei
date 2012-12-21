@@ -9,6 +9,8 @@ import java.util.HashSet;
 import junit.framework.Assert;
 
 import org.I0Itec.zkclient.ZkClient;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
@@ -16,11 +18,17 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.senseidb.ba.gazelle.SegmentAggregationLevel;
+import com.senseidb.ba.gazelle.SegmentTimeType;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.management.SegmentInfo;
+import com.senseidb.ba.management.SegmentUtils;
 import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.util.FileUploadUtils;
 import com.senseidb.ba.util.TestUtil;
+import com.senseidb.ba.util.Wait;
+import com.senseidb.conf.SenseiServerBuilder;
+import com.senseidb.plugin.SenseiPluginRegistry;
 import com.senseidb.util.SingleNodeStarter;
 
 public class RestSegmentManagementTest  extends Assert {
@@ -56,6 +64,13 @@ public class RestSegmentManagementTest  extends Assert {
     indexDir.mkdir();
     indexSegmentImpl = TestUtil.createIndexSegment();
     for (int i = 0; i < 2; i++) {
+      if (i == 1) {
+        indexSegmentImpl.getSegmentMetadata().setEndTime("0");
+        indexSegmentImpl.getSegmentMetadata().setTimeType(SegmentTimeType.secondsSinceEpoch);
+      } else {
+        indexSegmentImpl.getSegmentMetadata().setEndTime("" + System.currentTimeMillis());
+        indexSegmentImpl.getSegmentMetadata().setTimeType(SegmentTimeType.secondsSinceEpoch);
+      }
       File compressedFile = TestUtil.createCompressedSegment("segment" + i, indexSegmentImpl, indexDir);
       FileInputStream inputStream = new FileInputStream(compressedFile);
       FileUploadUtils.sendFile("localhost", "8088", "segment" + i, inputStream, compressedFile.length());
@@ -93,6 +108,51 @@ public class RestSegmentManagementTest  extends Assert {
      assertEquals("[segment1]", Arrays.toString(names));
   }
   @Test
+  public void test3DeleteSegments() throws Exception {
+    SenseiPluginRegistry senseiPluginRegistry = null;
+    try {File ConfDir1 = new File(RestSegmentManagementTest.class.getClassLoader().getResource("controller-conf").toURI());
+    File senseiConfFile = new File(ConfDir1, SenseiServerBuilder.SENSEI_PROPERTIES);
+    Configuration senseiConf = new PropertiesConfiguration();
+    ((PropertiesConfiguration) senseiConf).setDelimiterParsingDisabled(true);
+    ((PropertiesConfiguration) senseiConf).load(senseiConfFile);
+     senseiPluginRegistry = SenseiPluginRegistry.build(senseiConf);
+    senseiPluginRegistry.start();
+    new Wait(5000){
+      public boolean until() {
+        System.out.println(zkManager.getZkClient().getChildren(SegmentUtils.getSegmentInfoPath(zkManager.getClusterName())));
+        return  zkManager.getZkClient().getChildren(SegmentUtils.getSegmentInfoPath(zkManager.getClusterName())).size() == 1;};
+    }; 
+    } finally {
+      senseiPluginRegistry.stop();
+    }
+  }
+  @Test
+  public void test4NasSupport() throws Exception {
+    tearDown();
+    SenseiPluginRegistry senseiPluginRegistry = null;
+    try {File ConfDir1 = new File(RestSegmentManagementTest.class.getClassLoader().getResource("controller-conf").toURI());
+    File senseiConfFile = new File(ConfDir1, SenseiServerBuilder.SENSEI_PROPERTIES);
+    Configuration senseiConf = new PropertiesConfiguration();
+    ((PropertiesConfiguration) senseiConf).setDelimiterParsingDisabled(true);
+    ((PropertiesConfiguration) senseiConf).load(senseiConfFile);
+     senseiPluginRegistry = SenseiPluginRegistry.build(senseiConf);
+     senseiPluginRegistry.start();
+     indexSegmentImpl = TestUtil.createIndexSegment();
+     File compressedFile = TestUtil.createCompressedSegment("nasSegment", indexSegmentImpl, indexDir);
+     FileInputStream inputStream = new FileInputStream(compressedFile);
+     FileUploadUtils.sendFile("localhost", "7088", "nasSegment", inputStream, compressedFile.length());
+     Thread.sleep(1000L);
+     SegmentInfo segmentInfo = zkManager.getSegmentInfo("nasSegment");
+     assertEquals("[/tmp/fileUpload/testCluster2/nasSegment]", segmentInfo.getPathUrls().toString());
+    } finally {
+      try {
+      senseiPluginRegistry.stop();
+      } catch (Exception ex) {
+        ex.printStackTrace();
+      }
+    }
+  }
+  @Test
   public void test2AddSegmentAndModifyItAfter() throws Exception {
     tearDown();
     HashMap<String,String> config = new HashMap<String, String>();
@@ -103,4 +163,5 @@ public class RestSegmentManagementTest  extends Assert {
     SegmentInfo segmentInfo = zkManager.getSegmentInfo("segm");
     assertEquals(2, new HashSet<String>(segmentInfo.getPathUrls()).size());
   }
+
 }

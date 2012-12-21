@@ -1,13 +1,8 @@
 package com.senseidb.ba.file.http;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.ServletConfig;
@@ -16,39 +11,31 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.util.Assert;
 
 import com.senseidb.ba.management.SegmentInfo;
-import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.SegmentUtils;
 import com.senseidb.ba.management.ZkManager;
-import com.senseidb.ba.management.ZookeeperTracker;
-import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
-import com.senseidb.util.NetUtil;
 
-public class RestSegmentServlet extends HttpServlet {
+public class AllClustersRestSegmentServlet extends HttpServlet {
   private static Logger logger = Logger.getLogger(RestSegmentServlet.class);  
  
-  private String clusterName;
-  private ZkManager zkManager;
   private int maxPartition;
+
+  private ZkClient zkClient;
   
   @Override
   public void init(ServletConfig config) throws ServletException {   
     String zkUrl = config.getInitParameter("zkUrl");
-    Assert.notNull(zkUrl, "zkUrl parameter should be present");
-    clusterName = config.getInitParameter("clusterName");
-    zkManager = new ZkManager(zkUrl, clusterName);
+    Assert.notNull(zkUrl, "zkUrl parameter should be present");    
+    zkClient = new ZkClient(zkUrl);
+    zkClient.setZkSerializer(new BytesPushThroughSerializer());
     String maxPartitionId = config.getInitParameter("maxPartitionId");
     Assert.notNull(maxPartition, "maxPartition parameter should be present");
     maxPartition = Integer.parseInt(maxPartitionId);
@@ -59,19 +46,37 @@ public class RestSegmentServlet extends HttpServlet {
   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
     try {
     String pathInfo = req.getPathInfo();
-    String  partition = getPartition(pathInfo);
-    String  segment = getSegmentId(pathInfo);
+    String  clusterName = null;
+    String  partition = null;
+    String  segment = null;
+    List<String> tokenized = tokenizePathInfo(pathInfo);
+    int index = 0;
+    if (index < tokenized.size()) {
+      String firstPart = tokenized.get(index);
+      if (!StringUtils.isNumeric(firstPart)) {
+        clusterName = firstPart;
+        index++;
+      }
+    }
+    if (index < tokenized.size()) {
+       partition = tokenized.get(index);
+        index++;
+    }
+    if (index < tokenized.size()) {
+      segment = tokenized.get(index);
+       index++;
+   }
     String deleteParam = req.getParameter("delete");
     String moveParam = req.getParameter("move");
     
     if (deleteParam != null ) {
-      deleteSegment(partition, segment);
+      deleteSegment(clusterName, partition, segment);
       resp.getOutputStream().println("Succesfully deleted segment - " + segment);
     } else if (moveParam != null) {
-      int newPartition = movePartition(partition, segment, moveParam);
+      int newPartition = movePartition(clusterName, partition, segment, moveParam);
       resp.getOutputStream().println("Succesfully moved segment - " + segment + " to the new partition - " + newPartition);
     } else { 
-      printSegments(resp, partition, segment);
+      printSegments(resp, clusterName, partition, segment);
     }
     
     } catch (Exception ex) {
@@ -82,37 +87,55 @@ public class RestSegmentServlet extends HttpServlet {
     
   }
 
-  public int movePartition(String partition, String segment, String moveParam) {
+  public int movePartition(String clusterName, String partition, String segment, String moveParam) {
     int newPartition = Integer.parseInt(moveParam);
     if (newPartition > maxPartition) {
       throw new IllegalStateException("The new partition is bigger than max partition - " + maxPartition);
     }
-    zkManager.moveSegment(segment, Integer.parseInt(partition), newPartition);
+    SegmentUtils.moveSegment(zkClient, clusterName, segment, Integer.parseInt(partition), Integer.parseInt(moveParam));
     return newPartition;
   }
 
-  public void deleteSegment(String partition, String segment) {
+  public void deleteSegment(String clusterName, String partition, String segment) {
     if (partition == null) {
       throw new IllegalStateException("The partition is not specified");
     }
     if (segment == null) {
       throw new IllegalStateException("The segment is not specified");
     }
-    boolean result = zkManager.removeSegment(Integer.parseInt(partition), segment);
+    boolean result = SegmentUtils.removeFromActiveSegments(zkClient, clusterName, Integer.parseInt(partition), segment);
    if (!result) {
     throw new IllegalStateException("The segment doesn't exist");
    }
   }
-
-  public void printSegments(HttpServletResponse resp, String partition, String segment) throws JSONException, IOException {
-    if (partition == null) {
+ public static List<String> tokenizePathInfo(String pathInfo) {
+   if (pathInfo.contains("?")) {
+     pathInfo = pathInfo.substring(0, pathInfo.indexOf("?"));
+   }
+   List<String> ret = new ArrayList<String>();
+   for (String part : pathInfo.split("/")) {
+     part = part.trim();
+     if (part.length() > 0) {
+       ret.add(part);
+     }
+   }
+   return ret;
+ }
+  public void printSegments(HttpServletResponse resp, String clusterName, String partition, String segment) throws JSONException, IOException {
+    if (clusterName == null) {
       JSONObject obj = new JSONObject();
-      for (String partitionIt : zkManager.getPartitions()) {        
-        obj.put(partitionIt, getPartitionJson(zkManager, partitionIt));
+      for (String clusterNameIt : SegmentUtils.getClusterNames(zkClient)) {
+        obj.put(clusterNameIt, getClusterJson(clusterNameIt));
       }
       resp.getOutputStream().print(obj.toString(1));
       return;
     }
+    if (partition == null) {
+      JSONObject obj = getClusterJson(clusterName);
+      resp.getOutputStream().print(obj.toString(1));
+      return;
+    }
+    ZkManager zkManager = new ZkManager(zkClient, clusterName);
     if (segment == null) {
       JSONObject partitionJson = getPartitionJson(zkManager, partition);
       if (partitionJson != null) {
@@ -123,6 +146,20 @@ public class RestSegmentServlet extends HttpServlet {
       if (segmentInfo != null) {
         resp.getOutputStream().print( segmentInfo.toJson().toString(1));
       }
+    }
+  }
+
+  public JSONObject getClusterJson(String clusterName) throws JSONException {
+    try {
+    ZkManager zkManager = new ZkManager(zkClient, clusterName);
+    JSONObject obj = new JSONObject();
+    for (String partitionIt : zkManager.getPartitions()) {        
+      obj.put(partitionIt, getPartitionJson(zkManager, partitionIt));
+    }
+    return obj;
+    } catch (Exception ex) {
+      logger.error(clusterName + " : " + ex.getMessage(), ex);
+      return new JSONObject().put("error", ex.getMessage());
     }
   }
 
@@ -195,4 +232,3 @@ public class RestSegmentServlet extends HttpServlet {
  
 
 }
-

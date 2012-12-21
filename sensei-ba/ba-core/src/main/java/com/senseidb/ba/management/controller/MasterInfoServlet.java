@@ -1,13 +1,7 @@
-package com.senseidb.ba.file.http;
+package com.senseidb.ba.management.controller;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.ServletConfig;
@@ -16,27 +10,18 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.util.Assert;
 
+import com.senseidb.ba.file.http.AllClustersRestSegmentServlet;
+import com.senseidb.ba.file.http.RestSegmentServlet;
 import com.senseidb.ba.management.SegmentInfo;
-import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.SegmentUtils;
 import com.senseidb.ba.management.ZkManager;
-import com.senseidb.ba.management.ZookeeperTracker;
-import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
-import com.senseidb.util.NetUtil;
 
-public class RestSegmentServlet extends HttpServlet {
+public class MasterInfoServlet extends HttpServlet {
   private static Logger logger = Logger.getLogger(RestSegmentServlet.class);  
  
   private String clusterName;
@@ -49,37 +34,47 @@ public class RestSegmentServlet extends HttpServlet {
     Assert.notNull(zkUrl, "zkUrl parameter should be present");
     clusterName = config.getInitParameter("clusterName");
     zkManager = new ZkManager(zkUrl, clusterName);
-    String maxPartitionId = config.getInitParameter("maxPartitionId");
-    Assert.notNull(maxPartition, "maxPartition parameter should be present");
-    maxPartition = Integer.parseInt(maxPartitionId);
+  
     super.init(config);
   }
 
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
     try {
-    String pathInfo = req.getPathInfo();
-    String  partition = getPartition(pathInfo);
-    String  segment = getSegmentId(pathInfo);
-    String deleteParam = req.getParameter("delete");
-    String moveParam = req.getParameter("move");
-    
-    if (deleteParam != null ) {
-      deleteSegment(partition, segment);
-      resp.getOutputStream().println("Succesfully deleted segment - " + segment);
-    } else if (moveParam != null) {
-      int newPartition = movePartition(partition, segment, moveParam);
-      resp.getOutputStream().println("Succesfully moved segment - " + segment + " to the new partition - " + newPartition);
-    } else { 
-      printSegments(resp, partition, segment);
-    }
-    
+      String pathInfo = req.getPathInfo();
+      List<String> tokenized = AllClustersRestSegmentServlet.tokenizePathInfo(pathInfo);
+      String clusterName = null;
+      if (tokenized.size() > 0) {
+        clusterName = tokenized.get(0);
+        JSONObject ret = getClusterMasterInfo(clusterName);
+        resp.getOutputStream().print( ret.toString(1));
+      } else {
+        JSONObject ret = new JSONObject();
+        for (String clusterNameIt : SegmentUtils.getClusterNames(zkManager.getZkClient())) {
+          ret.put(clusterNameIt, getClusterMasterInfo(clusterNameIt));
+        }
+        resp.getOutputStream().print( ret.toString(1));
+      }
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     } finally {
       resp.getOutputStream().flush();
     }
     
+  }
+
+  public JSONObject getClusterMasterInfo(String clusterName) throws JSONException {
+    String path = SegmentUtils.getMasterZkPath(clusterName);
+    JSONObject ret = new JSONObject();
+    
+    List<String> children = zkManager.getZkClient().getChildren(path);
+  for (String controllerName : children) {
+    byte[] data = zkManager.getZkClient().readData(path + "/" + controllerName);
+    if (data != null) {
+      ret.put(controllerName, MasterInfo.fromBytes(data).toJson());
+    }
+  }
+    return ret;
   }
 
   public int movePartition(String partition, String segment, String moveParam) {

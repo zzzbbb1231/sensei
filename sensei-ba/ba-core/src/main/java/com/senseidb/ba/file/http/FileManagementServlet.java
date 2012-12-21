@@ -39,24 +39,31 @@ import com.senseidb.ba.management.SegmentType;
 import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
 import com.senseidb.ba.util.TarGzCompressionUtils;
+import com.senseidb.indexing.activity.time.Clock;
 import com.senseidb.util.NetUtil;
 
 public class FileManagementServlet extends HttpServlet {
+  private static final int _10_MINUTES = 10 * 60 * 1000;
   private static Logger logger = Logger.getLogger(FileManagementServlet.class);  
   private String directory = "/tmp/uploads";
   private String baseUrl;
   private String clusterName;
   private ZkManager zkManager;
   private int maxPartition;
-  
+  private String nasBasePath;
   @Override
   public void init(ServletConfig config) throws ServletException {
     directory = config.getInitParameter("directory");
     Assert.notNull(directory, "directory parameter should be present");
+   
     File dir = new File(directory);
     if (!dir.exists()) {
       dir.mkdirs();
     }
+   
+     nasBasePath = config.getInitParameter("nasBasePath");
+   
+    
     baseUrl = config.getInitParameter("baseUrl");
     if (baseUrl == null) {
       String port = config.getInitParameter("port");
@@ -66,6 +73,9 @@ public class FileManagementServlet extends HttpServlet {
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
+    }
+    if (nasBasePath != null && !nasBasePath.endsWith("/")) {
+      nasBasePath += "/";
     }
     if (!baseUrl.endsWith("/")) {
       baseUrl += "/";
@@ -123,7 +133,11 @@ public class FileManagementServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_MULTIPLE_CHOICES);        
         return;
       }
+      
       File file = new File(directory, fileName);
+     
+          
+      
       BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
       try {
         IOUtils.copyLarge(req.getInputStream(), outputStream);        
@@ -136,8 +150,9 @@ public class FileManagementServlet extends HttpServlet {
   }
 
   private void notifyZookeeperNewFileCreated(File file) {
-    int partitionId = Math.abs(file.getName().hashCode()) % (maxPartition + 1);
     try {
+    int partitionId = getPartition(file.getName(), maxPartition);
+   
       InputStream metadata = TarGzCompressionUtils.unTarOneFile(new FileInputStream(file), GazelleUtils.METADATA_FILENAME);
       PropertiesConfiguration properties = new PropertiesConfiguration();
       properties.setDelimiterParsingDisabled(true);
@@ -148,13 +163,32 @@ public class FileManagementServlet extends HttpServlet {
       if (!segmentMetadata.containsKey("timeCreated")) {
         segmentMetadata.put("timeCreated", "" + System.currentTimeMillis());
       }
-      zkManager.registerSegment(partitionId, file.getName(), baseUrl + file.getName(), segmentMetadata);
-    } catch (Exception e) {
-      logger.error("Could not extract properties from metadata. Using default ones", e);
-      zkManager.registerSegment(partitionId, file.getName(), baseUrl + file.getName(),  System.currentTimeMillis());
+      String clusterName = this.clusterName;
+      if (segmentMetadata.containsKey("segment.cluster.name")) {
+        clusterName = segmentMetadata.get("segment.cluster.name");
+        logger.info("The deployment cluster name is overriden to - " + clusterName);
+      }
+      if (nasBasePath != null) {
+        String path = nasBasePath + clusterName + "/" + file.getName();
+        File nasFile = new File(path);
+        if (!nasFile.exists() || nasFile.lastModified() < Clock.getTime() - _10_MINUTES) {
+          file.renameTo(nasFile);
+          zkManager.registerSegment(clusterName, partitionId, file.getName(), nasFile.getAbsolutePath(), segmentMetadata);
+        }
+      } else {
+        zkManager.registerSegment(partitionId, file.getName(), baseUrl + file.getName(), segmentMetadata);
+      }
+    
+    } catch (Exception ex) {
+      logger.error(ex.getMessage(), ex);
+      throw new RuntimeException(ex);
     }
     
-    
+  }
+
+  public static int getPartition(String segmentId, int maxPartition) {
+    int partitionId = Math.abs(segmentId.hashCode()) % (maxPartition + 1);
+    return partitionId;
   }
 
   public void handleMultiPartUpload(HttpServletRequest req, HttpServletResponse resp) {
