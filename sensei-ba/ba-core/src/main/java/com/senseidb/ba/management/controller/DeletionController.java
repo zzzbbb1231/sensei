@@ -81,7 +81,12 @@ public String getControllerName(SenseiPluginRegistry pluginRegistry, Map<String,
 }
   @Override
   protected void doBecomeMaster(Map<String, String> config, SenseiPluginRegistry pluginRegistry) {
-     maxPartition = pluginRegistry.getConfiguration().getInt("sensei.index.manager.default.maxpartition.id", 0);
+    String maxPartitionStr = config.get("maxPartitionId");
+    if (maxPartitionStr != null) {
+      maxPartition = Integer.parseInt(maxPartitionStr);
+    } else {
+      maxPartition = pluginRegistry.getConfiguration().getInt("sensei.index.manager.default.maxpartition.id", 0);
+    }
     Assert.notNull(maxPartition, "maxPartition parameter should be present");
     Assert.notNull(config.get("retention"));
     retention = Long.parseLong(config.get("retention"));

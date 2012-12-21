@@ -169,10 +169,14 @@ public class FileManagementServlet extends HttpServlet {
         logger.info("The deployment cluster name is overriden to - " + clusterName);
       }
       if (nasBasePath != null) {
-        String path = nasBasePath + clusterName + "/" + file.getName();
-        File nasFile = new File(path);
+        String path = nasBasePath + clusterName;
+        File nasDir = new File(path);
+        if (!nasDir.exists()) {
+          nasDir.mkdirs();
+        }        
+        File nasFile = new File(nasDir, file.getName());
         if (!nasFile.exists() || nasFile.lastModified() < Clock.getTime() - _10_MINUTES) {
-          file.renameTo(nasFile);
+          Assert.state(file.renameTo(nasFile), "Couldn't rename file to " + nasFile.getAbsolutePath());
           zkManager.registerSegment(clusterName, partitionId, file.getName(), nasFile.getAbsolutePath(), segmentMetadata);
         }
       } else {

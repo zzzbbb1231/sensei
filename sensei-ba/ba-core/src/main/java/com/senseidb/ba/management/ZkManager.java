@@ -70,9 +70,13 @@ public class ZkManager {
     }
     
     public void removePartition(int partition) {
-      String partitionPath = SegmentUtils.getActiveSegmentsPathForPartition(clusterName, partition);
+      String partitionPath = SegmentUtils.getActiveSegmentsPathForPartition(clusterName, partition);      
       if (zkClient.exists(partitionPath)) {
         zkClient.deleteRecursive(partitionPath);
+      } 
+      String infoPath = SegmentUtils.getSegmentInfoPath(clusterName); 
+      if (zkClient.exists(infoPath)) {
+        zkClient.deleteRecursive(infoPath);
       } 
     }
    

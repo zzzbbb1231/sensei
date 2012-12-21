@@ -140,7 +140,7 @@ public class RestSegmentManagementTest  extends Assert {
      indexSegmentImpl = TestUtil.createIndexSegment();
      File compressedFile = TestUtil.createCompressedSegment("nasSegment", indexSegmentImpl, indexDir);
      FileInputStream inputStream = new FileInputStream(compressedFile);
-     FileUploadUtils.sendFile("localhost", "7088", "nasSegment", inputStream, compressedFile.length());
+     FileUploadUtils.sendFile("localhost", "7087", "nasSegment", inputStream, compressedFile.length());
      Thread.sleep(1000L);
      SegmentInfo segmentInfo = zkManager.getSegmentInfo("nasSegment");
      assertEquals("[/tmp/fileUpload/testCluster2/nasSegment]", segmentInfo.getPathUrls().toString());

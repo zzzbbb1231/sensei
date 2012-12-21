@@ -56,7 +56,16 @@ public class BASentinelTest  extends Assert {
     for (int i = 0; i < 2; i++) {
       File compressedFile = TestUtil.createCompressedSegment("segment" + i, indexSegmentImpl, indexDir);
       FileInputStream inputStream = new FileInputStream(compressedFile);
-      FileUploadUtils.sendFile("localhost", "8088", "segment" + i, inputStream, compressedFile.length());
+      String port = i ==0 ? "8088" : "7088";
+      FileUploadUtils.sendFile("localhost", port, "segment" + i, inputStream, compressedFile.length());
+      IOUtils.closeQuietly(inputStream);
+    }
+    for (int i = 0; i < 2; i++) {
+      File compressedFile = TestUtil.createCompressedSegment("segment" + i, indexSegmentImpl, indexDir);
+      FileInputStream inputStream = new FileInputStream(compressedFile);
+      //testing http and the file system
+      String port = i ==0 ? "8088" : "7088";
+      FileUploadUtils.sendFile("localhost", port, "segment" + i, inputStream, compressedFile.length());
       IOUtils.closeQuietly(inputStream);
     }
     SingleNodeStarter.waitTillServerStarts(20000);

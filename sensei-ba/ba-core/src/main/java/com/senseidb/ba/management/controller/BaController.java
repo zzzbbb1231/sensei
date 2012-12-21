@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.log4j.Logger;
+import org.springframework.util.Assert;
 
 import com.senseidb.ba.management.SegmentUtils;
 import com.senseidb.conf.SenseiConfParams;
@@ -20,7 +21,7 @@ import com.senseidb.plugin.SenseiPluginRegistry;
 
 public abstract class BaController implements SenseiPlugin {
   protected  Logger logger = Logger.getLogger(getClass());  
-  private static ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+  private static volatile ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1, new ThreadFactory() {
       @Override
       public Thread newThread(Runnable runnable) {
         Thread thread = new Thread(runnable);
@@ -98,14 +99,27 @@ public abstract class BaController implements SenseiPlugin {
     public final void init(Map<String, String> config, SenseiPluginRegistry pluginRegistry) {
        this.config = config;
       this.pluginRegistry = pluginRegistry;
-      clusterName = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_NAME);
-      String zkUrl = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_URL);
+      clusterName = config.get("clusterName");
+      if (clusterName == null) {
+        clusterName = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_NAME);
+      }
+      Assert.notNull(clusterName, "clusterName parameter should be present");
+      String zkUrl = config.get("zkUrl");         
+      if (zkUrl == null) { 
+        zkUrl = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_URL);
+      }
+      Assert.notNull(zkUrl, "zkUrl parameter should be present");
       int zkTimeout = pluginRegistry.getConfiguration().getInt(SenseiConfParams.SENSEI_CLUSTER_TIMEOUT, 300000);
       zkClient = new ZkClient(zkUrl, zkTimeout);
       zkClient.setZkSerializer(new BytesPushThroughSerializer());
       frequency = getExecutionFrequency(pluginRegistry, config); 
       controllerName = getControllerName(pluginRegistry, config);
-      nodeId = pluginRegistry.getConfiguration().getString(SenseiConfParams.NODE_ID);
+      
+      nodeId = config.get("nodeId");      
+      if (nodeId == null) {
+        nodeId = pluginRegistry.getConfiguration().getString(SenseiConfParams.NODE_ID);
+      }
+      Assert.notNull(nodeId, "nodeId parameter should be present");
     }
     
     public synchronized final void checkIfMasterAndExecute () {

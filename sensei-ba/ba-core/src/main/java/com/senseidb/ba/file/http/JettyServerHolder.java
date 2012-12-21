@@ -8,6 +8,7 @@ import org.mortbay.jetty.handler.HandlerList;
 import org.mortbay.jetty.servlet.ServletHandler;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.jetty.webapp.WebAppContext;
+import org.springframework.util.Assert;
 
 import com.senseidb.ba.management.controller.MasterInfoServlet;
 import com.senseidb.conf.SenseiConfParams;
@@ -34,6 +35,7 @@ public class JettyServerHolder implements SenseiPlugin {
     if (config.get("directory") != null) {
       setDirectoryPath(config.get("directory"));
     }
+    Assert.notNull(directory, "directory parameter should be present");
     if (config.get("port") != null) {
       setPort(Integer.parseInt(config.get("port")));
     } else {
@@ -44,9 +46,24 @@ public class JettyServerHolder implements SenseiPlugin {
       } else {
           hostname = getHostName();
       }
-    maxPartitionId = pluginRegistry.getConfiguration().getInt("sensei.index.manager.default.maxpartition.id", 0);
-    zkUrl = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_URL);
-    clusterName = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_NAME);
+    
+    String maxPartitionStr = config.get("maxPartitionId");
+    if (maxPartitionStr != null) {
+      maxPartitionId = Integer.parseInt(maxPartitionStr);
+    } else {
+      maxPartitionId = pluginRegistry.getConfiguration().getInt("sensei.index.manager.default.maxpartition.id");
+    }
+    
+    clusterName = config.get("clusterName");
+    if (clusterName == null) {
+      clusterName = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_NAME);
+    }
+    Assert.notNull(clusterName, "clusterName parameter should be present");
+    zkUrl = config.get("zkUrl");         
+    if (zkUrl == null) { 
+      zkUrl = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_URL);
+    }
+    Assert.notNull(zkUrl, "zkUrl parameter should be present");
     baseUrl = "http://" + hostname + ":" + port + "/files/";
     nasBasePath = config.get("nasBasePath");
   }
