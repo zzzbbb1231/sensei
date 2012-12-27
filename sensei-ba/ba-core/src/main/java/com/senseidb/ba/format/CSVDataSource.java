@@ -89,6 +89,10 @@ public class CSVDataSource implements GazelleDataSource {
       }
       private Object transformValue(String value) {        
         try {
+            if (value == null) {
+                return null;
+            }
+        
         if (value.length() > 0 && (StringUtils.isNumeric(value)  || ( value.startsWith("-") && value.length() > 1 && StringUtils.isNumeric(value.substring(1))))) {
           long lng = Long.parseLong(value);
           if (lng <= Integer.MAX_VALUE && lng >= Integer.MIN_VALUE) {

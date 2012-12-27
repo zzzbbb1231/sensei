@@ -78,7 +78,11 @@ public class GenericIndexCreator {
         while(iterator.hasNext()) {
             Map<String, Object> map = iterator.next();
             for (String  key : indexCreators.keySet()) {
-                indexCreators.get(key).addValueToDictionary(map.get(key));
+                Object value = map.get(key);
+                if (isNotAvailable(value) && columnTypes.get(key) != ColumnType.STRING) {
+                    value = null;
+                }
+                indexCreators.get(key).addValueToDictionary(value);
             }
             count++;
         }
@@ -92,7 +96,11 @@ public class GenericIndexCreator {
         while(iterator.hasNext()) {
           Map<String, Object> map = iterator.next();
             for (String  key : indexCreators.keySet()) {
-                indexCreators.get(key).addValueToForwardIndex(map.get(key));
+                Object value = map.get(key);
+                if (isNotAvailable(value) && columnTypes.get(key) != ColumnType.STRING) {
+                    value = null;
+                }
+                indexCreators.get(key).addValueToForwardIndex(value);
             }
             
         }
@@ -118,13 +126,27 @@ public class GenericIndexCreator {
             gazelleDataSource.closeCurrentIterators();
           }
     }
-
+ private static boolean isNotAvailable(Object obj) {
+     if (obj == null) {
+         return false;
+     }
+     if (obj instanceof String) {
+         if ("N/A".equalsIgnoreCase(obj.toString()) || "NA".equalsIgnoreCase(obj.toString())) {
+             return true;
+         }
+     }
+     return false;
+ }
     private static Map<String, ColumnType> getColumnTypes(Iterator<Map<String, Object>> iterator) {
         Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();
         while(iterator.hasNext()) {
             Map<String, Object> map = iterator.next();
             for (String  key : map.keySet()) {
-                ColumnType newType = ColumnType.getColumnType(map.get(key));               
+                Object value = map.get(key);
+                if (isNotAvailable(value) && columnTypes.containsKey(key)) {
+                    continue;
+                }
+                ColumnType newType = ColumnType.getColumnType(value);               
                 if (ColumnType.isBigger(columnTypes.get(key), newType)) {
                     columnTypes.put(key, newType);
                 }
@@ -245,4 +267,5 @@ public class GenericIndexCreator {
       }
       
     }
+    
 }
