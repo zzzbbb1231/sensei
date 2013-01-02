@@ -6,8 +6,9 @@ import java.util.HashMap;
 import org.json.JSONObject;
 
 import com.senseidb.search.req.mapred.FieldAccessor;
+import com.senseidb.search.req.mapred.SingleFieldAccessor;
 public interface AggregateFunction<T extends GroupedValue> extends Serializable {
-  public T produceSingleValue(FieldAccessor accessor, int docId);
+  public T produceSingleValue(SingleFieldAccessor accessor, int docId);
   public Object toJson(HashMap<String, T> reduceResult); 
   
 }

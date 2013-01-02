@@ -107,5 +107,6 @@ public interface FieldAccessor {
    * @return
    */
   public DocIDMapper getMapper();
+  public SingleFieldAccessor getSingleFieldAccessor(String facetName);
 
 }

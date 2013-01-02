@@ -58,11 +58,7 @@ public class TestMapReduce extends TestCase {
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
       assertEquals(964, Long.parseLong(mapReduceResult.getString("distinctCount")));
      
-       req = "{"
-          +" \"mapReduce\":{\"function\":\"sensei.distinctCountHashSet\",\"parameters\":{\"column\":\"groupid\"}}}";
-       res = TestSensei.search(new JSONObject(req));
-       mapReduceResult = res.getJSONObject("mapReduceResult");
-      assertEquals(1509, Long.parseLong(mapReduceResult.getString("distinctCount")));
+       
     }
     public void test6MinMapReduce() throws Exception {      
       String req = "{\"filter\":{\"term\":{\"tags\":\"reliable\"}}"
