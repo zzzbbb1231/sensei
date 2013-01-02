@@ -64,4 +64,6 @@ public interface SingleFieldAccessor {
      * @return
      */
     public Object[] getArray(int docId);
+    
+    public int  getDictionaryId(int docId);
 }
