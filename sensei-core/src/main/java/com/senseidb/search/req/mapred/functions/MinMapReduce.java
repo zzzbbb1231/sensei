@@ -11,6 +11,7 @@ import com.senseidb.search.req.mapred.FacetCountAccessor;
 import com.senseidb.search.req.mapred.FieldAccessor;
 import com.senseidb.search.req.mapred.IntArray;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
+import com.senseidb.search.req.mapred.SingleFieldAccessor;
 import com.senseidb.util.JSONUtil.FastJSONArray;
 import com.senseidb.util.JSONUtil.FastJSONObject;
 
@@ -23,8 +24,10 @@ public class MinMapReduce implements SenseiMapReduce<MinResult, MinResult> {
     double min = Double.MAX_VALUE;
     double tmp = 0;
     long uid = 0l;
+    SingleFieldAccessor singleFieldAccessor = accessor.getSingleFieldAccessor(column);
+    
     for (int i =0; i < docIdCount; i++) {
-      tmp = accessor.getDouble(column, docIds.get(i));
+      tmp = singleFieldAccessor.getDouble(docIds.get(i));
       if (min > tmp) {       
         min = tmp;
         if (uids != null && !(uids.length == 1 && uids[0] == Long.MIN_VALUE)) {

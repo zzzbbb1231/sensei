@@ -12,6 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.senseidb.search.req.mapred.FieldAccessor;
+import com.senseidb.search.req.mapred.SingleFieldAccessor;
 import com.senseidb.util.JSONUtil;
 
 public class AggregateFunctionFactory {
@@ -76,9 +77,9 @@ public class AggregateFunctionFactory {
         }
 
         @Override
-        public SumGroupedValue produceSingleValue(FieldAccessor accessor, int docId) {
+        public SumGroupedValue produceSingleValue(SingleFieldAccessor accessor, int docId) {
             SumGroupedValue ret = new SumGroupedValue();
-            ret.sum = accessor.getLong(column, docId);
+            ret.sum = accessor.getLong(docId);
             return ret;
         }
 
@@ -124,7 +125,7 @@ public class AggregateFunctionFactory {
       }
 
       @Override
-      public CountGroupedValue produceSingleValue(FieldAccessor accessor, int docId) {
+      public CountGroupedValue produceSingleValue(SingleFieldAccessor accessor, int docId) {
         CountGroupedValue ret = new CountGroupedValue();
           ret.count = 1;
           return ret;
@@ -153,9 +154,9 @@ public class AggregateFunctionFactory {
         }
 
         @Override
-        public AvgGroupedValue produceSingleValue(FieldAccessor accessor, int docId) {
+        public AvgGroupedValue produceSingleValue(SingleFieldAccessor accessor, int docId) {
             AvgGroupedValue ret = new AvgGroupedValue();
-            ret.avg = accessor.getDouble(column, docId);
+            ret.avg = accessor.getDouble(docId);
             ret.count = 1;
             return ret;
         }
@@ -205,9 +206,9 @@ public class AggregateFunctionFactory {
       }
 
       @Override
-      public MaxGroupedValue produceSingleValue(FieldAccessor accessor, int docId) {
+      public MaxGroupedValue produceSingleValue(SingleFieldAccessor accessor, int docId) {
         MaxGroupedValue ret = new MaxGroupedValue();
-          ret.max = accessor.getDouble(column, docId);
+          ret.max = accessor.getDouble(docId);
           ret.uid = docId;
           return ret;
       }
@@ -260,9 +261,9 @@ public class AggregateFunctionFactory {
     }
 
     @Override
-    public MinGroupedValue produceSingleValue(FieldAccessor accessor, int docId) {
+    public MinGroupedValue produceSingleValue(SingleFieldAccessor accessor, int docId) {
       MinGroupedValue ret = new MinGroupedValue();
-        ret.min = accessor.getDouble(column, docId);
+        ret.min = accessor.getDouble( docId);
         ret.uid = docId;
         return ret;
     }

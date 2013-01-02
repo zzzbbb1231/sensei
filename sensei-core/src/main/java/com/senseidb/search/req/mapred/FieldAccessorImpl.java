@@ -18,6 +18,7 @@ import com.browseengine.bobo.facets.data.TermNumberList;
 import com.browseengine.bobo.facets.data.TermShortList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.search.req.SenseiSystemInfo.SenseiFacetInfo;
+import com.senseidb.search.req.mapred.impl.SingleFieldAccessorImpl;
 
 /**
  * This class was designed to avoid polymorphism and to leverage primitive types as much as possible
@@ -338,5 +339,14 @@ public final class FieldAccessorImpl implements FieldAccessor  {
   public DocIDMapper getMapper() {
     return mapper;
   }
+
+  private Map<String, SingleFieldAccessor> singleFieldAccessors = new HashMap<String, SingleFieldAccessor>();
+  @Override
+public SingleFieldAccessor getSingleFieldAccessor(String facetName) {
+    if (!singleFieldAccessors.containsKey(facetName)) {
+        singleFieldAccessors.put(facetName, new SingleFieldAccessorImpl((FacetDataCache) boboIndexReader.getFacetData(facetName), boboIndexReader.getFacetHandler(facetName), boboIndexReader));
+    }
+    return singleFieldAccessors.get(facetName);
+}
 
 }
