@@ -116,14 +116,21 @@ public class GroupByMapReduceJob implements SenseiMapReduce<Serializable, HashMa
     private long getKey(TermValueList[] dictionaries, BigSegmentedArray[] orders, int[] numBits, int docId) {
         long ret = 0L;
         int i = 0;
+        //StringBuilder b = new StringBuilder();
         while (true) {
             if (i >= numBits.length) {
                 break;
             }
-            ret |= orders[i].get(docId);
             ret = ret << numBits[i];
+            ret |= orders[i].get(docId);
+           // b.append(dictionaries[i].get(orders[i].get(docId)));
+            if (i >= numBits.length - 1) {
+                break;
+            }
+            
             i++;
         }
+        //System.out.println(b.toString() + "\n" + decodeKey(new String[dictionaries.length], dictionaries, numBits, ret));
         return ret;
     }
 
@@ -133,11 +140,13 @@ public class GroupByMapReduceJob implements SenseiMapReduce<Serializable, HashMa
             long number = key & (-1L >>> (64 - numBits[i]));
             str[i] = dictionaries[i].get((int) number);
             key >>>= numBits[i];
+            
             i--;
         }
+        
         StringBuilder builder = new StringBuilder();
-        for (int j = 0; j < str.length - 1; i++) {
-            builder.append(str[i]).append(":");
+        for (int j = 0; j < str.length - 1; j++) {
+            builder.append(str[j]).append(":");
         }
         builder.append(str[str.length - 1]);
         return builder.toString();
@@ -170,18 +179,27 @@ public class GroupByMapReduceJob implements SenseiMapReduce<Serializable, HashMa
                     results.put(current.indexReader, current);
                 }
             }
-            return combine(new ArrayList(results.keySet()), CombinerStage.nodeLevel);
+            HashMap<String, GroupedValue> ret = null;
+            for (BoboIndexReader key : results.keySet()) {
+                if (ret == null ) {
+                    ret = convert(results.get(key));
+                } else {
+                    merge(ret,  convert(results.get(key)));
+                }
+                
+            }
+            return java.util.Arrays.asList((Serializable)ret);
         }
         if (mapResults.size() == 0) {
             return Collections.EMPTY_LIST;
         }
         if (mapResults.size() == 1) {
-            HashMap<String, GroupedValue> ret = convert((MapResult) mapResults.get(0));
+            HashMap<String, GroupedValue> ret =  (HashMap<String, GroupedValue>) mapResults.get(0);
             return java.util.Arrays.asList((Serializable)ret);
         }
-        HashMap<String, GroupedValue> firstMap = convert((MapResult) mapResults.get(0));
+        HashMap<String, GroupedValue> firstMap =  (HashMap<String, GroupedValue>) mapResults.get(0);
         for (int i = 1; i < mapResults.size(); i++) {
-            merge(firstMap, convert((MapResult) mapResults.get(i)));
+            merge(firstMap,  (HashMap<String, GroupedValue>) mapResults.get(i));
         }
         trimToSize(firstMap, TRIM_SIZE);
         return java.util.Arrays.asList((Serializable)firstMap);
