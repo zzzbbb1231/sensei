@@ -63,5 +63,10 @@ public class SingleFieldAccessorImpl implements SingleFieldAccessor {
     public Object[] getArray(int docId) {
         return facetHandler.getRawFieldValues(reader, docId);
     }
+    @Override
+    public int getDictionaryId(int docId) {
+      
+      return orderArray.get(docId);
+    }
 
 }

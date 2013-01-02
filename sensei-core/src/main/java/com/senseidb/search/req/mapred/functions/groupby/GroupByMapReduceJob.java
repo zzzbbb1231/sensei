@@ -81,9 +81,9 @@ public class GroupByMapReduceJob implements SenseiMapReduce<Serializable, HashMa
         }
         MapResult mapResult = new MapResult(TRIM_SIZE, dictionaries, accessor.getBoboIndexReader());
 
-        BigSegmentedArray[] orders = new BigSegmentedArray[columns.length];
+        SingleFieldAccessor[] orders = new SingleFieldAccessor[columns.length];
         for (int i = 0; i < columns.length; i++) {
-            orders[i] = accessor.getValueCache(columns[i]).orderArray;
+            orders[i] = accessor.getSingleFieldAccessor(columns[i]);
         }
         int[] numBits = new int[columns.length];
         int totalBitSet = 0;
@@ -113,7 +113,7 @@ public class GroupByMapReduceJob implements SenseiMapReduce<Serializable, HashMa
         return mapResult;
     }
 
-    private long getKey(TermValueList[] dictionaries, BigSegmentedArray[] orders, int[] numBits, int docId) {
+    private long getKey(TermValueList[] dictionaries, SingleFieldAccessor[] orders, int[] numBits, int docId) {
         long ret = 0L;
         int i = 0;
         //StringBuilder b = new StringBuilder();
@@ -122,7 +122,7 @@ public class GroupByMapReduceJob implements SenseiMapReduce<Serializable, HashMa
                 break;
             }
             ret = ret << numBits[i];
-            ret |= orders[i].get(docId);
+            ret |= orders[i].getDictionaryId(docId);
            // b.append(dictionaries[i].get(orders[i].get(docId)));
             if (i >= numBits.length - 1) {
                 break;
