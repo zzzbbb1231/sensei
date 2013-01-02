@@ -28,14 +28,12 @@ public class ZkSegmentCreator {
 
   public static void main(String[] args) throws Exception {
     //zkManager = new ZkManager("localhost:2181", "ba-server");
-    while (true) {
-    GazelleIndexSegmentImpl indexSegmentImpl = GenericIndexCreator.create(new File("/tmp/part-1.avro"));
+    GazelleIndexSegmentImpl indexSegmentImpl = GenericIndexCreator.create(new File("/Users/vzhabiuk/Downloads/2006.csv"));
    
     File indexDir = new File("testIndex");
     SingleNodeStarter.rmrf(indexDir);
     indexDir.mkdirs();
     SegmentPersistentManager.flushToDisk(indexSegmentImpl, indexDir);
-    }
     
   }
   
