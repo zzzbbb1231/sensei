@@ -143,7 +143,7 @@ public class GenericIndexCreator {
             Map<String, Object> map = iterator.next();
             for (String  key : map.keySet()) {
                 Object value = map.get(key);
-                if (isNotAvailable(value) && columnTypes.containsKey(key)) {
+                if (isNotAvailable(value)) {
                     continue;
                 }
                 ColumnType newType = ColumnType.getColumnType(value);               

@@ -22,6 +22,8 @@ import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;
 import com.senseidb.ba.gazelle.utils.multi.MultiFacetIterator;
 import com.senseidb.search.req.mapred.FieldAccessor;
+import com.senseidb.search.req.mapred.SingleFieldAccessor;
+import com.senseidb.search.req.mapred.impl.SingleFieldAccessorImpl;
 
 public class BaFieldAccessor implements FieldAccessor {
   public static final class DocIdMapper implements DocIDMapper {
@@ -317,12 +319,12 @@ public class BaFieldAccessor implements FieldAccessor {
 
   @Override
   public FacetHandler getFacetHandler(String facetName) {
-    return ((BoboIndexReader)segmentToZoieReaderAdapter.getInnerReader()).getFacetHandler(facetName);
+    return getBoboIndexReader().getFacetHandler(facetName);
   }
 
   @Override
   public BoboIndexReader getBoboIndexReader() {
-    return (BoboIndexReader)segmentToZoieReaderAdapter.getInnerReader();
+    return (BoboIndexReader)segmentToZoieReaderAdapter.getDecoratedReader();
   }
 
   @Override
@@ -332,4 +334,14 @@ public class BaFieldAccessor implements FieldAccessor {
   public SingleValueRandomReader getReader(String column) {
     return randomReaders.get(column);
   }
+  
+  private Map<String, SingleFieldAccessor> singleFieldAccessors = new HashMap<String, SingleFieldAccessor>();
+  @Override
+public SingleFieldAccessor getSingleFieldAccessor(String facetName) {
+    if (!singleFieldAccessors.containsKey(facetName)) {
+        singleFieldAccessors.put(facetName, new BaSingleFieldAccessor(indexSegment.getForwardIndex(facetName), getBoboIndexReader().getFacetHandler(facetName), getBoboIndexReader()));
+    }
+    return singleFieldAccessors.get(facetName);
+}
+ 
 }

@@ -723,6 +723,7 @@ public class BASentinelTest  extends Assert {
   }
   @Test
   public void test11Avg() throws Exception { 
+    
     String req = "{\"filter\":{\"term\":{\"dim_memberGender\":\"m\"}}" +
         ", \"mapReduce\":{\"function\":\"sensei.avg\",\"parameters\":{\"column\":\"met_impressionCount\"}}}";
     JSONObject reqJson = new JSONObject(req);

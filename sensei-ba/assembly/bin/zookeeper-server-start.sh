@@ -7,7 +7,7 @@ then
 	exit 1
 fi
 
-for file in $base_dir/sensei-core/target/lib/*.jar;
+for file in $base_dir/lib/*.jar;
 do
   CLASSPATH=$CLASSPATH:$file
 done

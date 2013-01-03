@@ -39,7 +39,7 @@ public class BaClient {
       indexDir.mkdirs();
     }
     //eat1-app184.stg.linkedin.com:10000
-    ZkManager zkManager = new ZkManager("localhost:2181", args11[0]);
+    ZkManager zkManager = new ZkManager("localhost:2181", "testCluster2");
     zkManager.getZkClient().deleteRecursive(SegmentUtils.getZkRoot() + "/segment1");
     zkManager.getZkClient().deleteRecursive(SegmentUtils.getZkRoot() + "/partitions");
     

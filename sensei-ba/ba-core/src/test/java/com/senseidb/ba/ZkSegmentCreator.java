@@ -28,7 +28,7 @@ public class ZkSegmentCreator {
 
   public static void main(String[] args) throws Exception {
     //zkManager = new ZkManager("localhost:2181", "ba-server");
-    GazelleIndexSegmentImpl indexSegmentImpl = GenericIndexCreator.create(new File("/Users/vzhabiuk/Downloads/2006.csv"));
+    GazelleIndexSegmentImpl indexSegmentImpl = GenericIndexCreator.create(new File("/tmp/pinot-senseidb/1987.csv"));
    
     File indexDir = new File("testIndex");
     SingleNodeStarter.rmrf(indexDir);

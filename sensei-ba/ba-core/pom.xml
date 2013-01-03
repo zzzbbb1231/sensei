@@ -129,20 +129,17 @@
         <artifactId>hadoop-core</artifactId>
         <version>0.20.204.0</version>
       <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-            </exclusion>
+               
             <exclusion>
-                    <groupId>org.mortbay.jetty</groupId>
-                    <artifactId>servlet-api</artifactId>
-            </exclusion>
-            <exclusion>
-                    <groupId>org.mortbay.jetty</groupId>
-                    <artifactId>jsp</artifactId>
-            </exclusion>
+      <groupId>tomcat</groupId>
+      <artifactId>jasper-runtime</artifactId>
+    </exclusion>
+    <exclusion>
+      <groupId>tomcat</groupId>
+      <artifactId>jasper-compiler</artifactId>
+    </exclusion>
             </exclusions>
-            
+          
       </dependency> 
       <dependency>
             <groupId>com.alibaba</groupId>
@@ -176,6 +173,11 @@
     <artifactId>commons-httpclient</artifactId>
     <version>3.1</version>
 </dependency>
+<dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.1.3</version>
+        </dependency>
             <dependency>
             <groupId>org.mortbay.jetty</groupId>
             <artifactId>jetty</artifactId>

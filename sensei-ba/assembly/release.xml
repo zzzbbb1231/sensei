@@ -11,32 +11,44 @@
           <directory>assembly</directory>
           <includes> 
             <include>README*</include> 
-            <include>LICENSE*</include> 
-           <include>log4j*</include> 
-           <include>zooke*</include> 
+            <include>LICENSE*</include>            
           </includes> 
            <outputDirectory>.</outputDirectory>
         </fileSet> 	   
-        <fileSet> 
-          <directory>assembly</directory>
-          <includes>           
-           <include>log4j*</include> 
-           <include>zooke*</include> 
-          </includes> 
-           <outputDirectory>config</outputDirectory>
-        </fileSet>     
-	    <fileSet>
-	      <directory>config-example/src/main/resources</directory>
-	      <outputDirectory>examples</outputDirectory>
-	      <includes>
-	        <include>**</include>
-	      </includes>
-	    </fileSet>
+       
+	   <fileSet>
+          <directory>config-example/target/config-standalone</directory>
+          <outputDirectory>examples/config-standalone</outputDirectory>
+          <includes>
+            <include>**</include>
+          </includes>
+        </fileSet>
+        <fileSet>
+          <directory>config-example/target/config</directory>
+          <outputDirectory>examples/config</outputDirectory>
+          <includes>
+            <include>**</include>
+          </includes>
+        </fileSet>
+        <fileSet>
+          <directory>config-example/target/webapp</directory>
+          <outputDirectory>examples/webapp</outputDirectory>
+          <includes>
+            <include>**</include>
+          </includes>
+        </fileSet>
 		<fileSet>
           <directory>ba-core/target</directory>
           <outputDirectory>lib</outputDirectory>
           <includes>
             <include>*.jar</include>
+          </includes>
+        </fileSet>
+         <fileSet>
+          <directory>assembly/config</directory>
+          <outputDirectory>config</outputDirectory>
+          <includes>
+            <include>**</include>
           </includes>
         </fileSet>
         <fileSet>
