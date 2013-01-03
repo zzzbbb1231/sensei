@@ -1,26 +1,26 @@
 ---
 layout: default
-title: SenseiDB - Getting Started, Part One
+title: SenseiBA - Getting Started, Part One
 name: getting-started
 ---
 <div class="hero-unit">
 	<h2>Getting Started</h2>
 	<p>
-		The 1,2,3 of getting rockin&apos; with Sensei!
+		The 1,2,3 of getting rockin&apos; with SenseiBA!
 	</p>
 </div>
 
 <h2>Getting Sensei</h2>
 <p>
-   Download a release of Sensei at <a href="https://github.com/senseidb/sensei/downloads" target="_blank">here</a>.
+   Download a release of SenseiBA at <a href="https://www.box.com/s/tejg15td9ltcr0tzoexs" target="_blank">here</a>.
 </p>
 <p>
-   Expand the tar ball: <code>tar -zxf sensei-xxx.tar.tz</code> to your favorite location. We will refer to root directory of your Sensei install as <code>$SENSEI_HOME</code>.
+   Expand the tar ball: <code>tar -zxf sensei-ba--xxx.tar.tz</code> to your favorite location. We will refer to root directory of your SenseiBA install as <code>$SENSEIBA_HOME</code>.
 </p>
 
-<h2>Running the Car example</h2>
+<h2>Running the Standalone example</h2>
 <p>
-	Sensei comes with a few examples to help you getting started. Let&apos;s first take a look at the <code>Cars example</code>, and get that running.
+	SenseiBA comes with a few examples to help you getting started. Let&apos;s first take a look at the <code>Standalone example</code>, and get that running.
 </p>
 
 <div class="row">
@@ -32,7 +32,7 @@ name: getting-started
 	</div>
 	<div class="span10">
 		<p>
-		Start your Zookeeper instance: (You can start your own Zookeeper cluster by following instructions <a href="http://zookeeper.apache.org/doc/trunk/zookeeperStarted.html">here</a>), From <code>$SENSEI_HOME</code>
+		Start your Zookeeper instance: (You can start your own Zookeeper cluster by following instructions <a href="http://zookeeper.apache.org/doc/trunk/zookeeperStarted.html">here</a>), From <code>$SENSEIBA_HOME</code>
 		<pre><code>./bin/zookeeper-server-start.sh \ <br/>resources/zookeeper.properties</code></pre>
 		</p>
 		<p>
@@ -46,95 +46,71 @@ name: getting-started
 	<div class="span6">
 		<h3>Step 2: Start Sensei Node</h3>
 		<p>
-		 With Zookeeper running, we can start a Sensei node serving Car example listening on port 8080:
+		 With Zookeeper running, we can start a Sensei node serving  SenseiBA node listening on port 8080:
 		</p>
 	</div>
 	<div class="span10">
 		<p>
-		In <code>$SENSEI_HOME</code>, start your Sensei node by pointing to the <a href="https://github.com/senseidb/sensei/tree/master/example/cars/conf" target="_blank">Car example configuration directory</a>:
-		<pre><code>./bin/start-sensei-node.sh example/cars/conf</code></pre>
+		In <code>$SENSEIBA_HOME</code>, start your SenseiBA node by pointing to the <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/config-example/src/main/resources/config-standalone" target="_blank">Standalone example configuration directory</a>:
+		<pre><code>./bin/start-sensei-node.sh examples/config-standalone</code></pre>
 		</p>
-		<p>This starts a Sensei node with 2 partitions. (click <a href="cluster.html">here</a> to learn more about Sensei Clusters)</p> 
+		
 	</div>
 </div>
-
 <div class="row">
 	<div class="span6">
-		<h3>Step 3: Run the Car example application</h3>
+		<h3>Step 3: Getting the data</h3>
 		<p>
-		 You can open the Car example application with your browser (no need to start any other servers.)
+		 SenseiBA now monitors the /tmp/ba-index-standalone directory. We can put any csv, json, avro files to that location and Sensei would automatically index data from those files.
 		</p>
+                <p>
+		 Let's download the part of the awesome air dataset available at  <a href="http://stat-computing.org/dataexpo/2009/" target="_blank">Data expo</a>:
+		</p> 
 	</div>
 	<div class="span10">
 		<p>
-	Open <code>index.html</code> file with your browser located at: <pre><code>$SENSEI_HOME/example/cars/webapp/index.html</code></pre>
+		<pre><code>wget http://stat-computing.org/dataexpo/2009/1987.csv.bz2</code></pre>
 		</p>
+		<p>
+                And unzip it
+                 </p><p> 
+		<pre><code>bunzip2 1987.csv.bz2</code></pre>
+		</p>
+                <p>Now let's copy the <code>1987.csv</code> to the directory monitored by the SenseiBA </p> 
+                <p> 
+		<pre><code>
+cp 1987.csv /tmp/ba-index-standalone</code></pre>
+		</p> 
+                 <p>It would take approximately 3 minutes for SenseiBA to index the csv file. We can monitor the $SENSEIBA_HOME/logs/sensei-main.log for the entry: </p>
+                 <p><pre><code>2013/01/02 16:00:10.298 INFO [DirectoryBasedFactoryManager] [] Created the new segment - 1987_csv, in the directory /tmp/ba-index-standalone/exploded/1987_csv, the source is /tmp/ba-index-standalone/1987.csv
+2013/01/02 16:00:10.298 INFO [DirectoryBasedFactoryManager] [] the new segment - 1987_csv contains 1311826 elements
+<code></pre><p>
 	</div>
+</div>
+<div class="row">
+	<div class="span6">
+		<h3>Step 4: Run the queries</h3>
+		<p>
+		 Go to  <a href="http://localhost:8080" target="_blank">http://localhost:8080</a> . Let's run a query
+		</p>
+               </div>
+	<div class="span10">
+               <p> 
+		<pre><code>select sum(ArrDelay), count(*) where UniqueCarrier = 'PS' and ArrDelay <> 0 group by Dest
+select avg(ArrDelay)  group by Dest,Origin, UniqueCarrier top 10
+select distinctCount(UniqueCarrier) </code></pre>
+		</p> 
+                 <p>
+		 SenseiBA can be queried by using either json
+		</p>
+                <p>
+		 <a href="http://senseidb.github.com/sensei/client-rest.html" target="_blank">http://senseidb.github.com/sensei/client-rest.html</a> or bql api <a href="http://senseidb.github.com/sensei/bql.html" target="_blank">http://senseidb.github.com/sensei/bql.html</a>
+		</p> 
+	</div>
+	
 </div>
 
 <hr/>
-<h2>Using the Sensei Shell</h2>
-<p>
-	We can also query this Sensei node with <a href="docbkx/ch10.html" target="_blank">BQL</a> via the Sensei Shell:
-</p>
-<pre><code>./bin/sensei-shell.sh</code></pre>
-<p>Output:</p>
-<pre class="prettyprint">
-$ ./bin/sensei-shell.sh localhost 8080 
-Welcome to Sensei Shell
-Url specified, host: localhost, port: 8080
-&gt; desc cars;
-+------------+------------+---------+-----------+-------------+---------+
-| facet_name | facet_type | runtime | column    | column_type | depends |
-+------------+------------+---------+-----------+-------------+---------+
-| year       | range      | false   | year      | int         | []      |
-| color      | simple     | false   | color     | string      | []      |
-| makemodel  | path       | false   | makemodel | string      | []      |
-| groupid    | simple     | false   | groupid   | long        | []      |
-| city       | path       | false   | city      | string      | []      |
-| tags       | multi      | false   | tags      | string      | []      |
-| category   | simple     | false   | category  | string      | []      |
-| mileage    | range      | false   | mileage   | int         | []      |
-| price      | range      | false   | price     | float       | []      |
-+------------+------------+---------+-----------+-------------+---------+
-&gt; select _uid,color,category where color in ('red','green') and query is "cool" order by category browse by color,category limit 10;
-+-------+-------+----------+
-| _uid  | color | category |
-+-------+-------+----------+
-| 11099 | green | compact  |
-| 11101 | green | compact  |
-| 14929 | green | compact  |
-| 15    | green | compact  |
-| 105   | green | compact  |
-| 133   | green | compact  |
-| 149   | green | compact  |
-| 195   | green | compact  |
-| 1071  | green | compact  |
-| 1107  | red   | compact  |
-+-------+-------+----------+
-10 rows in set, 1626 hits, 15129 total docs (server: 14ms, total: 87ms)
-+---------------------+
-| category            |
-+---------------------+
-| compact       (506) |
-| sports car    (265) |
-| exotic        (253) |
-| suv           (199) |
-| sedan         (123) |
-| mini-van      (109) |
-| truck         (75)  |
-| sub-compact   (59)  |
-| van           (22)  |
-| station wagon (15)  |
-+---------------------+
-+--------------+
-| color        |
-+--------------+
-| red   (1070) |
-| green (556)  |
-+--------------+
-&gt; exit
-</pre>
 <h2>Using the Web-console</h2>
 <p>
  Sensei comes with a <a href="console-app.html">web-console</a> (written using Sensei&apos;s Javascript API) to help you interact with your Sensei cluster.
@@ -142,54 +118,22 @@ Url specified, host: localhost, port: 8080
 <p>
   Simply point your favorite browser to: <a href="http://localhost:8080">http://localhost:8080</a>
 </p>
-<p>
-	Learn details of the Javascript API <a href="client-rest.html">here</a>.
-</p>
+
 <h2>Shutting down the Sensei node</h2>
 <p>
-	In $SENSEI_HOME, do:
+	In $SENSEIBA_HOME, do:
 	<pre><code>./bin/kill.sh</code></pre>
 </p>
 <hr/>
 
-<h2>Understanding the Car Example</h2>
-	<h4>Cars data</h4>
-	<p>
-		We have cooked up some data in the form of json objects for 15,000 cars.
-	</p>
-	<p>
-		Data is stored in text file containing a json string on each-line. Each json string contains information of a car.
-	</p>
-	<p>
-		Full dataset can be found <a href='https://github.com/senseidb/sensei/tree/master/example/cars/data' target="_blank">here</a>. See the following example:
-	</p>
-<pre class="prettyprint" id="javascript">
-{
-  "id":0,
-  "groupid":"0",
-  "tags":"hybrid,leather,moon-roof,reliable",
-  "category":"compact",
-  "mileage":14900,
-  "price":7500,
-  "contents":"yellow compact hybrid leather moon-roof reliable u.s.a. florida tampa asian acura 1.6el",
-  "color":"yellow",
-  "year":1994,
-  "makemodel":"asian/acura/1.6el",
-  "city":"u.s.a./florida/tampa"
-}
-</pre>
-<p>
-  This <a href="https://github.com/senseidb/sensei/tree/master/example/cars/conf/sensei.properties" target="_blank">example&apos;s configuration</a> contains schema and server settings for the Cars store.
-</p>
-
 <h2>Screenshot</h2>
 <p>
-	See the following screenshot of the cars example:
+	See the following screenshot of the standalone example:
 </p>
 <p>
-<img src="images/sensei-cars-example.png" width="90%" />
+<img src="images/webconsole-screenshot.png" width="90%" />
 </p>
-<h2>Tweets example</h2>
+<h2>Next example</h2>
 <p>
-  If you think this is cool, move on to the <a class="btn primary" href="gettingStarted2.html">Tweets Example &raquo;</a>
+  If you think this is cool, move on to the <a class="btn primary" href="gettingStarted2.html">Hadoop Example &raquo;</a>
 </p>

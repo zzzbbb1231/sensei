@@ -1,6 +1,6 @@
 ---
 layout: default
-title: SenseiDB - Building Sensei
+title: SenseiBA - Building Sensei
 ---
 <div class="hero-unit">
 	<h2>Building from source</h2>
@@ -9,43 +9,39 @@ title: SenseiDB - Building Sensei
 <h2>Get the code</h2>
 <p>
 	Check out the code:
-	<pre><code>git clone git://linkedin.github.com/sensei.git</code></pre>
+	<pre><code>git clone git://sensei-ba.github.com/sensei.git</code></pre>
 </p>
 
 <h2>Build</h2>
 <p>
-	Sensei builds using <a href="http://maven.apache.org/" target="_blank">Apache Maven</a>.
+	SenseiBA builds using <a href="http://maven.apache.org/" target="_blank">Apache Maven</a>.
 </p>
 <p>
-	The Sensei Kafka gateway uses the latest build of Kafka. Since Kafka is not yet mavenized, we will have to install it manually to our local repository. To do this, simply do: <code>./bin/mvn-install.sh</code>
+	
 </p>
 <p>
-	Now we can build, with: <code>./bin/build.sh</code>
+	Now we can build the Sensei distribution, with: 
+        <code>mvn clean install</code>
 </p>
-
+<p>
+	Let's go to  the sensei-ba directory and build it too: 
+        <pre><code>cd sensei-ba
+mvn clean install</code></pre>
+</p>
 <h2>Code structure</h2>
 <p>
-The following is a quick overview of important directories in the Sensei repository:
+The following is a quick overview of important directories in the sensei-ba repository:
 </p>
 <ul>
-	<li>bin - shell scripts</li>
-	<li>example - Sensei examples
+	<li>assembly - contains metadata to build a tarball</li>
+	<li>config-example - SenseiBA examples
 		<ul>
-			<li>cars - cars example</li>
-			<li>hadoop-indexing - example for hadoop indexing</li>
-			<li>tweets - tweets example</li>
+			<li>config-standalone - directory based indexing</li>
+			<li>config - zookeeper based segment management</li>
 		</ul>
-	</li>
-	<li>docs - documentation, docbook sources</li>
-	<li>clients - client libraries
-		<ul>
-			<li>java-client</li>
-			<li>javascript</li>
-			<li>python</li>
-		</ul>
-	</li>
-	<li>sensei-core - source code the real guts of Sensei</li>
+	</li>	
+	<li>ba-core - source code the real guts of SenseiBA</li>
 	<li>sensei-gateways - a collection of Sensei gateways</li>
-	<li>sensei-hadoop-indexing - hadoop indexing support</li>
-	<li>sensei-war - war packaging of a sensei node, for running in a container</li>
+	<li>gazelle - compressed indexing structures</li>
+	<li>ba-hadoop - the stub project for the Sensei-BA Hadoop specific stuff</li>
 </ul>

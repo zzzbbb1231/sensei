@@ -1,128 +1,46 @@
 ---
 layout: default
-title: SenseiDB - Overview
+title: SenseiBA - Overview
 name: overview
 ---
 <div class="hero-unit">
 	<p>
 		<h2>Introduction</h2>
 		<p>
-			Sensei is a distributed data system that was built to support many product initiatives at <a href="http://www.linkedin.com">LinkedIn.com</a>, e.g. <a href="http://www.linkedin.com/signal">LinkedIn Signal</a> and the LinkedIn Homepage. It is foundation to the LinkedIn's search and data infrastructure.
+			SenseiBA is the distributed OLAP datastore based on <a href="http://www.senseidb.com">SenseiDB</a> project. It leverages highly compressed columnar indexes to support realtime search and aggregation on huge datasets.
 		</p>
-		<p>
-			Sensei is both a search engine and a database. Sensei is designed to query and navigate through documents with parts that contain text and are unstructured, as well as parts containing meta information that have well-formed structures.
-		</p>
-	</p>
-	
-	<p><a class="btn primary large" href="data-guarantee.html">Learn more &raquo;</a>
-	
-</div>
-<h2>If you know RDBMS</h2>
-<p>
-  A good start to understand Sensei is by comparing it to traditional RDBMSs'. This provides a quick reference point to the common feature-sets as well as the differences. 
-</p>
-<p>
-<h3>Query Language</h3>
-<div class="row">
-  <div class="span8 well">
-     <h4>RDBMS</h4>
-     <p>SQL is the de-facto way for querying in the RDBMS world.</p>
-  </div>
-  <div class="span8 well">
-     <h4>Sensei</h4>
-     <p> In the Sensei world, the query language is <a href="bql.html">BQL</a>, which is a SQL-variant that exposes the Sensei specific functionalities.</p>
-  </div>
+	</p>	
 </div>
 
 
+<h3>What makes it different from other OLAP solutions?</h3>
 <p>
-<h3>Interface with data in a program</h3>
-<div class="row">
-<div class="span8 well">
-     <h4>RDBMS</h4>
-     <p>To interface with your data programmatically, the JDBC API is foundation to most Java based frameworks.</p>
-  </div>
-  <div class="span8 well">
-     <h4>Sensei</h4>
-     <p>With Sensei, we offer a variety of client libraries, e.g. Java, Python etc. over a JSON/Http Rest api. Click <a href="clients.html">here</a> for details.</p>
-  </div>
- </div>
+  It can store several billions documents in memory on a single machine with 64 RAM. We all know that hitting the disk is expensive. 
+It takes several milliseconds per a disk seek and that kills the performance. 
+That's why we've made a conscious decision to achieve best possible index compression, so that we can do the index scan in RAM even for a huge dataset. 
+At the same time it's based on the search oriented database and is extremely fast. LinkedIn engineers spend several years to achieve stability and best possible performance for the SenseiDB.
+ And SenseiBA inherits all those cool features
 </p>
-
+<h3>How stable is it?</h3>
 <p>
-<h3>Creating a table/store</h3>
-<div class="row">
-<div class="span8 well">
-     <h4>RDBMS</h4>
-     <p><code>CREATE TABLE</code> SQL statement is issued to RDBMS</p>
-  </div>
-  <div class="span8 well">
-     <h4>Sensei</h4>
-     <p>A Sensei schema is defined in the schema.xml in the configuration file. See <a href="https://github.com/senseidb/sensei/blob/master/example/cars/conf/schema.xml">example</a>.</p>
-  </div>
- </div>
+  Currently at LinkedIn we have 2 production deployments. Moreover it shares 85% of the codebase with SenseiDB. Instances of SenseiDB and SenseiBA can be deployed in the same cluster interchangeably. These two databases share the same api, cluster management and monitoring. In fact it's the same SenseiDB with modified foundations. As for the SenseiDB, it has been used at LinkedIn for a several years on many projects. It proved to be reliable and fast. We have several hundred Sensei nodes serving in production.
 </p>
-
-
+<h3>What SenseiBA isn't?</h3>
 <p>
-<h3>Data population</h3>
-<div class="row">
-<div class="span8 well">
-     <h4>RDBMS</h4>
-     <p>Data are pushed into RDBMS via <code>INSERT</code>, <code>DELETE</code> and <code>UPDATE</code> SQL commands</p>
-  </div>
-  <div class="span8 well">
-     <h4>Sensei</h4>
-     <p>Data are pulled into Sensei via <code>Gateways</code>, which defines a flowing stream of data events. See <a href="indexing-gateway.html">details</a></p>
-  </div>
- </div>
+  SenseiBA doesn't support transactions. It is suitable for append only updates and doesn't offer data mutability. In order to achieve index compression and store 10x more docs per node we had to get rid of Lucene, that's why SenseiBA doesn't support full text search and real time indexing. Although the last one can be achieved by taken hybrid approach and deploying SenseiDb and SenseiBA in the same cluster. In our roadmap we have a plan to implement realtime indexing for the project.
 </p>
-
-	<p>
-		<h2>Architecture Diagram</h2>
+<h3>Index compression</h3>
+<p>
+  The goal of the project is to achieve smallest  possible memory footprint, while keeping queries to be fast 
+</p>
+ <p><a class="btn" href="indexCompression.html">Learch more &raquo;</a></p>
+<h3>How indexing works?</h3>
+<p>
+  Ideally indexes are computed externally (in most cases in Hadoop) and pushed to the SenseiBA via the rest interface.
+</p>
+ <p>
+		<h2>Indexing Diagram</h2>
 		<p>
-			<img border="1" src="images/sensei-architect.png">
-		</p>
-	</p>
-	<hr/>
-	<p>
-		<h2>Design considerations</h2>
-		<p>
-		<ul>
-			<li>data:
-				<ul>
-					<li>Fault tolerance/Availability - when one replication is down, data is still accessible via other replicas</li>
-					<li>Durability - N copies of data is stored so you have N backups</li>
-					<li>Through-put - Parallelizable request-handling on different nodes/data replicas, designed to handle web-scale traffic</li>
-					<li>Consistency - Eventual consistent, your data replicas will never go outta wack!</li>
-					<li>Data recovery - each shared/replica is noted with a watermark for data recovery</li>
-					<li>Large dataset - designed to handle 100s millions - billions of rows</li>
-				</ul>
-			</li>
-			<li>horizontally scalable:
-				<ul>
-					<li>Data is partitioned - so work-load is also distributed</li>
-					<li>Elasticity - Nodes can be added to accommodate data growth</li>
-					<li>Online expansion - Cluster can grow while handling online requests</li>
-					<li>Online cluster management - Cluster topology can change while handling online requests</li>
-					<li>Low operational/maintenance costs - Push it, leave it and forget it.</li>
-				</ul>
-			</li>
-			<li>performance:
-				<ul>
-					<li>low indexing latency - real-time update supported, e.g. when data are added to the system, they become part of the query-able corpus right away.</li>
-					<li>low search latency - millisecond query response time</li>
-					<li>low volatility - low variance in both indexing and search latency</li>
-				</ul>
-			</li>
-			<li>customizability:
-				<ul>
-					<li>plug-in framework - custom query handling logic</li>
-					<li>routing factory - custom routing logic, default: round-robin</li>
-					<li>index sharding strategy - different sharding strategy for different applications, e.g. time, mod etc.</li>
-					<li>relevance model</li>
-				</ul>
-			</li>
-		</ul>
+			<img border="1" src="images/ba_indexing-diagram.png">
 		</p>
 	</p>
