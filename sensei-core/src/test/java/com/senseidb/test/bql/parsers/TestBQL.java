@@ -1037,7 +1037,7 @@ public class TestBQL extends TestCase
     JSONObject json = _compiler.compile(
       "SELECT * " +
       "FROM cars " +
-      "WHERE time BEFORE 3 hours 4 min AGO"
+      "WHERE time BEFORE 3 hours 4 mins AGO"
       );
 
     long timeStamp = Long.parseLong(json.getJSONObject("filter")
@@ -1058,7 +1058,7 @@ public class TestBQL extends TestCase
     JSONObject json = _compiler.compile(
       "SELECT * " +
       "FROM cars " +
-      "WHERE time NOT BEFORE 3 hours 4 min AGO"
+      "WHERE time NOT BEFORE 3 hours 4 mins AGO"
       );
 
     long timeStamp = Long.parseLong(json.getJSONObject("filter")
@@ -1717,6 +1717,19 @@ public class TestBQL extends TestCase
     assertEquals("{\"facets\":{\"color\":{\"expand\":false,\"max\":10,\"minhit\":0}},\"groupBy\":{\"columns\":[\"color\"],\"top\":10},\"meta\":{\"select_list\":[\"*\"]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
   }
   @Test
+  public void testMinFunction() throws Exception
+  {
+    System.out.println("testAggregateFunction");
+    System.out.println("==================================================");
+
+    JSONObject json = _compiler.compile(
+      "SELECT min(year) " +
+      "FROM cars " +
+      "WHERE color = 'red'");
+    System.out.println(json);
+    assertEquals("{\"mapReduce\":{\"function\":\"min\",\"parameters\":{\"column\":\"year\",\"mapReduce\":\"min\"}},\"meta\":{\"select_list\":[\"*\"]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
+  }
+  @Test
   public void testAggregationFunctionWithGroupByWithStar() throws Exception
   {
     System.out.println("testAggregationFunctionWithGroupByWithStar");
@@ -1741,6 +1754,7 @@ public class TestBQL extends TestCase
       "WHERE color = 'red' EXECUTE(sensei.max, 'column':'year')");
     assertEquals("{\"mapReduce\":{\"function\":\"sensei.max\",\"parameters\":{\"column\":\"year\",\"mapReduce\":\"sensei.max\"}},\"meta\":{\"select_list\":[\"*\"]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
   }
+  
   @Test
   public void testMapReduceWithComplexParams() throws Exception
   {

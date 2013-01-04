@@ -44,7 +44,7 @@ public class AggregateFunctionFactory {
 
         @Override
         public int compare(String o1, String o2) {
-          return reduceResult.get(o1).compareTo(reduceResult.get(o2));
+          return reduceResult.get(o2).compareTo(reduceResult.get(o1));
         }
       });
       return ret;
@@ -54,7 +54,7 @@ public class AggregateFunctionFactory {
 
         @Override
         public int compareTo(GroupedValue o) {
-            long val = ((SumGroupedValue) o).sum - sum;
+            long val =  sum - ((SumGroupedValue) o).sum;
             if (val < 0)
                 return -1;
             if (val == 0)
@@ -180,7 +180,7 @@ public class AggregateFunctionFactory {
       int count = 0;
       @Override
       public int compareTo(GroupedValue o) {
-          double val = ((AvgGroupedValue) o).avg - avg;
+          double val =  avg - ((AvgGroupedValue) o).avg;
           if (val < 0)
               return -1;
           if (val == 0)
@@ -232,7 +232,7 @@ public class AggregateFunctionFactory {
     long uid;
     @Override
     public int compareTo(GroupedValue o) {
-        double val = ((MaxGroupedValue) o).max - max;
+        double val =  max - ((MaxGroupedValue) o).max;
         if (val < 0)
             return -1;
         if (val == 0)
@@ -250,6 +250,11 @@ public class AggregateFunctionFactory {
        
     }
 
+    @Override
+    public String toString() {
+      return "MaxGroupedValue [max=" + max + ", uid=" + uid + "]";
+    }
+  
 }
   
   
@@ -270,7 +275,7 @@ public class AggregateFunctionFactory {
 
     @Override
     public Object toJson(HashMap<String, MinGroupedValue> reduceResult) {
-        try {
+      try {
             JSONArray ret = new JSONUtil.FastJSONArray();
             for (String key : AggregateFunctionFactory.sort(reduceResult)) {
               MinGroupedValue value = reduceResult.get(key);
@@ -288,7 +293,7 @@ public static class MinGroupedValue implements GroupedValue {
   long uid;
   @Override
   public int compareTo(GroupedValue o) {
-      double val = ((MinGroupedValue) o).min - min;
+      double val = min - ((MinGroupedValue) o).min;
       val = val * -1;
       if (val < 0)
           return -1;
@@ -300,6 +305,7 @@ public static class MinGroupedValue implements GroupedValue {
   @Override
   public void merge(GroupedValue anotherValue) {
     MinGroupedValue anValue = ((MinGroupedValue) anotherValue);
+     
       if (anValue.min < min) {
         min = anValue.min;
         uid = anValue.uid;
@@ -307,6 +313,11 @@ public static class MinGroupedValue implements GroupedValue {
      
   }
 
+  @Override
+  public String toString() {
+    return "MinGroupedValue [min=" + min + ", uid=" + uid + "]";
+  }
+  
 }
 }
 

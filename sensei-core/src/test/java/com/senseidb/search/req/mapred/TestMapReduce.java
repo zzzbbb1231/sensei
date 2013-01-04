@@ -152,4 +152,32 @@ public class TestMapReduce extends TestCase {
       JSONObject highestResult = res.getJSONObject("mapReduceResult").getJSONArray("groupedCounts").getJSONObject(0);
       assertEquals(8, highestResult.getInt(highestResult.keys().next().toString()));
     }
+    public void test15MinGroupByReduce() throws Exception {      
+      String req = "{\"bql\":\"SELECT min(groupid) group by groupid \"}";
+      JSONObject res = TestSensei.search(new JSONObject(req));
+      System.out.println(res.toString(1));
+      JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
+      JSONObject firstObject = mapReduceResult.getJSONArray("grouped").getJSONObject(0);
+      assertEquals("-0000000000000000000000000000000000015000", firstObject.getString("group"));
+      assertEquals(-15000, firstObject.getLong("min"));
+    }
+    public void test16SumGroupByReduce() throws Exception {      
+      String req = "{\"bql\":\"SELECT sum(groupid), sum(groupid) group by groupid \"}";
+      JSONObject res = TestSensei.search(new JSONObject(req));
+      System.out.println(res.toString(1));
+      JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
+      JSONObject firstObject = mapReduceResult.getJSONArray("grouped").getJSONObject(0);
+      assertEquals("0000000000000000000000000000000000014990", firstObject.getString("group"));
+      assertEquals(149900, firstObject.getLong("sum"));
+    }
+    public void test16MaxGroupByReduce() throws Exception {      
+      String req = "{\"bql\":\"SELECT max(groupid) group by groupid limit 0\"}";
+      JSONObject res = TestSensei.search(new JSONObject(req));
+      System.out.println(res.toString(1));
+      JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
+      JSONObject firstObject = mapReduceResult.getJSONArray("grouped").getJSONObject(0);
+      assertEquals("0000000000000000000000000000000000014990", firstObject.getString("group"));
+      assertEquals(14990, firstObject.getLong("max"));
+    }
+   
 }

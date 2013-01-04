@@ -306,7 +306,6 @@ public class GroupByMapReduceJob implements SenseiMapReduce<Serializable, HashMa
                 }
             }
         }
-
     }
 
     private static void trimToSize(Long2ObjectMap<? extends Comparable> map, int count) {
@@ -331,8 +330,8 @@ public class GroupByMapReduceJob implements SenseiMapReduce<Serializable, HashMa
             }
         }
         int elementIndex = (int) (queue.size() * (1.0d - trimRatio));
-        if (elementIndex >= queue.size()) {
-            elementIndex = queue.size() - 1;
+        if (elementIndex >= queue.size()) {            
+          elementIndex = queue.size() - 1;
         }
 
         int counter = 0;
@@ -361,7 +360,6 @@ public class GroupByMapReduceJob implements SenseiMapReduce<Serializable, HashMa
                 }
             }
         }
-
     }
 
     @Override
