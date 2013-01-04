@@ -1508,11 +1508,15 @@ column_name returns [String text]
         )*
         { $text = builder.toString(); }
     ;
-function_name returns [String text]
+function_name returns [String text] 
 
-    :   (colName=column_name)
+    :   (min= 'min'|colName=column_name)
         {
-         $text = $colName.text; 
+         if (min != null) {
+           $text = "min";
+         } else {
+            $text = $colName.text; 
+         }
         }
     ;
 where returns [Object json]

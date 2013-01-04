@@ -340,13 +340,6 @@
 		<artifactId>zkclient</artifactId>
 		<version>0.1</version>
 	</dependency>
-
-	<dependency>
-		<groupId>org.apache.kafka</groupId>
-		<artifactId>kafka</artifactId>
-		<version>0.7.6</version>
-		<scope>system</scope>
-		<systemPath>${basedir}/../lib/kafka-0.7.6.jar</systemPath>
-	</dependency>              
+	    
 	</dependencies>
 </project>
