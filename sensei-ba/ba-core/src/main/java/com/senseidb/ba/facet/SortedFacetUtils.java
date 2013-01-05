@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.ScoreDoc;
+import org.springframework.util.Assert;
 
 import com.browseengine.bobo.api.BrowseSelection;
 import com.browseengine.bobo.api.FacetSpec;
@@ -277,6 +278,9 @@ public class SortedFacetUtils {
 
     @Override
     public DocIdSetIterator iterator() throws IOException {
+      if (maxDocIds[valueId] < 0) {
+        return EmptyDocIdSet.getInstance().iterator();
+      }
       return new DocIdSetIterator() {
         int doc = -1;
 
@@ -329,12 +333,15 @@ public class SortedFacetUtils {
 
     @Override
     public boolean get(int docId) {
-      int nextDocId = forwardIndex.getMinDocIds()[startValue];
       return (forwardIndex.getMinDocIds()[startValue] <= docId && forwardIndex.getMaxDocIds()[endValue] >= docId);
     }
 
     @Override
     public DocIdSetIterator iterator() throws IOException {
+      if (startIndex < 0) {
+        startIndex = 0;
+      }
+      Assert.state(endIndex >= 0);
       return new DocIdSetIterator() {
         int doc = -1;
 

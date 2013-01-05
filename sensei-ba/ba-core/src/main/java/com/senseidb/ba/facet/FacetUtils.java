@@ -7,6 +7,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 
 import com.browseengine.bobo.api.BrowseSelection;
 import com.browseengine.bobo.api.FacetSpec;
+import com.browseengine.bobo.docidset.EmptyDocIdSet;
 import com.browseengine.bobo.docidset.RandomAccessDocIdSet;
 import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
@@ -81,13 +82,11 @@ public class FacetUtils {
 
     @Override
     public int nextDoc() throws IOException {
-      int nextValueIndexed;
       while (true) {
         doc++;
         if (length <= doc)
           return NO_MORE_DOCS;
-        nextValueIndexed = compressedIntArray.getInt(doc);
-        if (nextValueIndexed == index) {
+        if (compressedIntArray.getInt(doc) == index) {
           return doc;
         }
       }
@@ -143,6 +142,9 @@ public class FacetUtils {
 
     @Override
     public DocIdSetIterator iterator() throws IOException {
+      if (endIndex < 0) {
+        return   EmptyDocIdSet.getInstance().iterator();
+      }
       return new RangeForwardIndexIterator(compressedIntArray, forwardIndex.getLength(), startIndex, endIndex);
     }
 
