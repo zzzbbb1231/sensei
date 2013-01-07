@@ -4,49 +4,65 @@ title: SenseiBA - Getting Started, Part Two
 name: getting-started2
 ---
 <div class="hero-unit">
-	<h2>TBD!</h2>
-	<p>
-		So are you ready for more?
-	</p>
+	<h2>Loading the data into the cluster </h2>
 </div>
-<!--
-
-
-<h2>Getting Started Continued</h2>
 	<p>
-		So are you ready for more?
-	</p>
-</div>
-
-<h2>Build the Tweets extension</h2>
+		In the previous part we've learned how to push the data into the SenseiBA node running in the standalone mode. For a big cluster this approach is not viable, we can not copy csv files across servers in the datacenter.
+The segment is pushed to the cluster via http. Once the segment is uploaded to a signle SenseiBA node, it would atomatically be assigned to one of the partitions. This information is saved to zookeeper. All  other Sensei nodes are subscribed to zookeeper
+ changes. Once they receive the notification that the new segment arrived, they would pull the data from the initial node. Here is the diagram:
 <p>
-	The Tweets example builds a special Gateway to stream from Twitter, we need to build it and plug it into Sensei.
+	<img border="1" src="images/ba_indexing-diagram.png">
 </p>
-<h4>Code</h4>
+<h2>Prerequisites</h2>
 <p>
-	Read the <a href="https://github.com/senseidb/sensei/tree/master/example/tweets" target="_blank">source code</a> for TwitterSampleGateway.
-</p>
-<h4>Build</h4>
-<p>
-	Go to <code>$SENSEI_HOME/example/tweets/conf/ext</code>, the plugin artifact containing the Tweets custom gateway should be there.
+		The SenseiBA is installed. Pointing to $SENSEIBA_HOME
 </p>
 
-<h2>Running the Tweets example</h2>
-<p>
-	This example queries against the Twitter stream directly from Twitter via Twitter&apos;s Streaming (Sample) API
-</p>
-
+<h2>Steps: </h2>
+<br>
 <div class="row">
 	<div class="span6">
-		<h3>Step 1: Start Zookeeper</h3>
+		<h3>Step 1: Building the index offline</h3>
 		<p>
-		Zookeeper manages Sensei&apos;s network topology or cluster.
+		 In the previous tutorial we've downloaded the 1987.csv file containing the departure/arrival stats. Let's build the SenseiBA segment out of it. 
+		</p>
+	</div>
+	<div class="span10">
+		<br>
+               <p>
+		Run the command:
+		<pre><code>$SENSEIBA_HOME/bin/build-segment.sh seg_1987 1987.csv .</code></pre>
+		</p>
+		<p>
+			<ul>
+                         <li>seg_1987 is the name of the segment we want to generate.</li> 
+	                 <li>1987.csv is the path to csv/tsv/json/avro file you want to index</li> 
+                         <li>. is the directory where the output index should be placed</li> 
+		     </ul>
+ 
+		</p>
+                <p>
+                     You can specify some additional properties
+        		<ul>
+                         <li>--exclude= comma separated list of excluded columns</li> 
+	                 <li>--sort= comma separated list of columns we want to sort. Primary and secondary sorts affects how quickly the document can be located by the filtering term</li> 
+		     </ul>
+
+                </p> 
+                 <p>The seg_1987.tar.gz file should be created for you in the working dir. It's essentially the indexed version of 1987.csv</p>   
+	</div>
+</div>
+<div class="row">
+	<div class="span6">
+		<h3>Step 2: Start Zookeeper</h3>
+		<p>
+		Zookeeper manages SenseiBA&apos;s network topology or cluster.
 		</p>
 	</div>
 	<div class="span10">
 		<p>
-		Start your Zookeeper instance: (You can start your own Zookeeper cluster by following instructions <a href="http://zookeeper.apache.org/doc/trunk/zookeeperStarted.html">here</a>). From <code>$SENSEI_HOME</code>
-		<pre><code>./bin/zookeeper-server-start.sh \ <br/>resources/zookeeper.properties</code></pre>
+		Start your Zookeeper instance: (You can start your own Zookeeper cluster by following instructions <a href="http://zookeeper.apache.org/doc/trunk/zookeeperStarted.html">here</a>), From <code>$SENSEIBA_HOME</code>
+		<pre><code>./bin/zookeeper-server-start.sh config/zookeeper.properties</code></pre>
 		</p>
 		<p>
 			You can shut it down by running:
@@ -57,142 +73,112 @@ name: getting-started2
 
 <div class="row">
 	<div class="span6">
-		<h3>Step 2: Set Twitter credentials</h3>
+		<h3>Step 2: Start SenseiBA Node</h3>
 		<p>
-		 You need your credentials to talk to Twitter to get data.
+		 With Zookeeper running, we can start a Sensei node serving  SenseiBA node listening on port 8080:
 		</p>
 	</div>
 	<div class="span10">
 		<p>
-		Edit the file:
-		<pre><code>$SENSEI_HOME/example/tweets/conf/sensei.properties</code></pre>
+		In <code>$SENSEIBA_HOME</code>, start your SenseiBA node by pointing to the <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/config-example/src/main/resources/config" target="_blank">Cluster example configuration directory</a>:
+		<pre><code>./bin/start-sensei-node.sh examples/config</code></pre>
 		</p>
-		<p>
-			And fill out the properties:
-			<pre class="prettyprint">
-sensei.gateway.custom.username = &lt;YOUR TWITTER USERNAME&gt;
-sensei.gateway.custom.password = &lt;YOUR TWITTER PASSWORD&gt;
-			</pre>
-		</p>
+		
 	</div>
 </div>
-
 <div class="row">
 	<div class="span6">
-		<h3>Step 3: Start Sensei Node</h3>
+		<h3>Step 3: Uploading the segment</h3>
 		<p>
-		 With Zookeeper running, we can start a Sensei node serving Tweets example listening on port 8080:
+		Now it's time to ingest some data
 		</p>
 	</div>
 	<div class="span10">
 		<p>
-		In <code>$SENSEI_HOME</code>, start your Sensei node by pointing to the <a href="https://github.com/senseidb/sensei/tree/master/example/tweets/conf" target="_blank">Tweets example configuration directory</a>:
-		<pre><code>./bin/start-sensei-node.sh example/tweets/conf</code></pre>
+		Point your favorite browser to: <a href="http://localhost:8080">http://localhost:8080</a>. To make sure that theSenseiBA is running
 		</p>
-		<p>This starts a Sensei node with 2 partitions. (click <a href="cluster.html">here</a> to learn more about Sensei Clusters)</p>
+                 <p>
+		Let's upload the segment via http:
+		<pre><code>curl -F seg_1987=@seg_1987.tar.gz http://localhost:8089/files</code></pre>
+		</p>
+		 <p>
+		Now we can check whether the upload is succesful. Go to <a href="http://localhost:8089/segments/">http://localhost:8089/segments/</a>. You can see smth like this:
+		<pre>{
+ "0": {},
+ "1": {"seg_1987": {
+  "pathUrl": ["http://172.16.56.114:8089/files/seg_1987"],
+  "segment.index.version": "001",
+  "segmentId": "seg_1987",
+  "timeCreated": "1357598362160"
+ }},
+ "2": {},
+ "3": {},
+ "4": {},
+ "5": {},
+ "6": {},
+ "7": {}
+}</pre>
+	This shows, that seg_1987 was assigned to the partition 1. And it can be downloaded via the path http://x.x.x.x:8089/files/seg_1987
+
+</p>
+<p>
+		Let's also go to the web console: <a href="http://localhost:8080">http://localhost:8080</a>. And run the query:
+<pre><code>select distinctCount(Origin)</code></pre>
+		</p>
+            <p>You should see 10 matching documents in the response along with the distinctCount result at the bottom
 	</div>
 </div>
-
 <div class="row">
 	<div class="span6">
-		<h3>Step 4: Run the Tweets example application</h3>
+		<h3>Step 4: Deleting the segment</h3>
 		<p>
-		 You can open the Tweets example application with your browser (no need to start any other servers.)
+		  Shortly we would add a section about the fancy segment management UI. Meanwhile we can use rest commands
 		</p>
 	</div>
 	<div class="span10">
 		<p>
-	Open <code>index.html</code> file with your browser located at : <pre><code>$SENSEI_HOME/example/tweets/webapp/index.html</code></pre>
-	and click the <b><i>Refresh</i></b> button and see data streaming!
+		
+		<pre><code>http://localhost:8089/segments/1/seg_1987?move=2</code> would move the segment to the partition 2</pre> 
 		</p>
+                <p>
+		
+		<pre><code>http://localhost:8089/segments/1/seg_1987?delete</code> will delete the segment</pre> 
+		</p>
+		
 	</div>
 </div>
-<hr/>
-<h2>Using the Sensei Shell</h2>
-<p>
-	Of course, we can also query this Sensei node with <a href="docbkx/ch10.html" target="_blank">BQL</a> via the Sensei Shell:
-</p>
-<pre><code>./bin/sensei-shell.sh</code></pre>
-<p>Output:</p>
-<pre class="prettyprint">
-$ ./bin/sensei-shell.sh localhost 8080 
-Welcome to Sensei Shell
-Url specified, host: localhost, port: 8080
-&gt; desc tweets
-+------------+------------+---------+----------+-------------+---------+
-| facet_name | facet_type | runtime | column   | column_type | depends |
-+------------+------------+---------+----------+-------------+---------+
-| time       | range      | false   | time     | long        | []      |
-| hashtags   | multi      | false   | hashtags | string      | []      |
-| tweeter    | simple     | false   | tweeter  | string      | []      |
-+------------+------------+---------+----------+-------------+---------+
-&gt; select time,tweeter,hashtags browse by tweeter,hashtags limit 5
-+------------------------------------------+-----------------+----------------+
-| time                                     | tweeter         | hashtags       |
-+------------------------------------------+-----------------+----------------+
-| 0000000000000000000000000001323586320000 | _cupcakemafia   | likeagujjuboss |
-| 0000000000000000000000000001323586320000 | Gorgeous_Biotch |                |
-| 0000000000000000000000000001323586320000 | AeroNews        |                |
-| 0000000000000000000000000001323586320000 | alaanjerezano   |                |
-| 0000000000000000000000000001323586320000 | Wanji_Aswandi   |                |
-+------------------------------------------+-----------------+----------------+
-5 rows in set, 1082 hits, 1082 total docs (server: 70ms, total: 149ms)
-+----------------+
-| hashtags       |
-+----------------+
-| pickone    (3) |
-| Aquarius   (2) |
-| Gemini     (2) |
-| nowplaying (2) |
-| tellme     (2) |
-| 2PM,JYP    (1) |
-| Atletics   (1) |
-| BMT        (1) |
-| CBT        (1) |
-| Cancer     (1) |
-+----------------+
-+---------------------+
-| tweeter             |
-+---------------------+
-| CaptainShankAHo (2) |
-| ahy_ch          (2) |
-| alexiasantana_  (2) |
-| kartalint       (2) |
-| 000CashMoney000 (1) |
-| 0Q27            (1) |
-| 106andParkfans  (1) |
-| 1205FZYJYJC     (1) |
-| 14kakeru        (1) |
-| 16956384        (1) |
-+---------------------+
-&gt; exit
-</pre>
-<h2>Using the Web-console</h2>
-<p>
- Same with the Car Example, we can use the <a href="console-app.html">web-console</a> to interact with Sensei.
-</p>
-<p>
-  Simply point your favorite browser to: <a href="http://localhost:8080">http://localhost:8080</a>
-</p>
-<p>
-	Learn details of the Javascript API <a href="client-rest.html">here</a>.
-</p>
-<h2>Shutting down the Sensei node</h2>
-<p>
-	In $SENSEI_HOME, do:
-	<pre><code>./bin/kill.sh</code></pre>
-</p>
+<br><br>
+<div class="row">
+	<div class="span6">
+		<h3>Step 5: Tips for distributed deployment</h3>
+		<p>
+		  This section will answer how to deploy SenseiBA in the distributed way
+		</p>
+	</div>
+	<div class="span10">
+		<p>
+		
+		Let's deploy two SenseiBA nodes that will be a part of a single cluster. This deployment needs to happen on two separate machines
+		</p>
+                <p>
+		
+		The deployment would be based on the following  <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/config-example/src/main/resources/config/sensei.properties">sensei.properties</a>  
+		  
+                 </p>
+ <p>On each node  make sure that <pre><code>sensei.search.cluster.zookeeper.url</code> </pre> points to the same url</code> </pre> </p>
 
-<h2>Screenshot</h2>
-<p>
-	See the following screenshot of the tweets example:
-</p>
-<p>
-<img src="images/sensei-tweets-example.png" width="90%" />
-</p>
-<hr/>
-<h2>Hook me up with Sensei</h2>
-<p>
-  Now that you have the demos running, let&apos;s setup your app to work with Sensei by learning about the: <a class="btn primary" href="configuration.html">Configuration &raquo;</a>
-</p>
--->
+                <p>
+                For node1 change <pre><code>sensei.node.partitions</code></pre> to value <pre><code>0-3</code></pre>
+                </p>
+		<p>
+                For node2 change <pre><code>sensei.node.partitions</code></pre> to value <pre><code>4-7</code></pre>
+                </p>
+                <p>
+                For node2 we also need to modify the<pre><code>sensei.node.id</code> to value <code>2</code></pre>
+                </p> 
+                <p>
+                    Now we are ready to start two SenseiBA search instances by running <pre><code>./bin/start-sensei-node.sh examples/config</code></pre>
+                </p>
+	</div>
+</div>
+
