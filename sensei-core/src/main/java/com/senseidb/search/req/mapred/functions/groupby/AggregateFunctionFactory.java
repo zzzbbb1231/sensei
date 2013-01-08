@@ -102,7 +102,7 @@ public class AggregateFunctionFactory {
 
       @Override
       public int compareTo(GroupedValue o) {
-          long val = ((CountGroupedValue) o).count - count;
+          long val = count - ((CountGroupedValue) o).count;
           if (val < 0)
               return -1;
           if (val == 0)
