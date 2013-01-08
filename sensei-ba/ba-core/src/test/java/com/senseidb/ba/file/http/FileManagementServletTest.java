@@ -5,6 +5,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.commons.io.FileUtils;
@@ -27,11 +29,14 @@ public class FileManagementServletTest {
     ZkClient zkClient = new ZkClient("localhost:2181");
     zkClient.deleteRecursive("/sensei-ba/bla");   
     new File(directory).mkdirs();
-    jettyServerHolder.setDirectoryPath(directory);
-    jettyServerHolder.setClusterName("bla");
-    jettyServerHolder.setMaxPartitionId(0);
-    jettyServerHolder.setZkUrl("localhost:2181");
-    jettyServerHolder.setBaseUrl("http://localhost:8088/files/");
+    Map<String, String> config = new HashMap<String, String>();
+    config.put("directory", directory);
+    config.put("clusterName", "bla");
+    config.put("maxPartitionId", "0");
+    config.put("zkUrl", "localhost:2181");
+    config.put("port", "8088");
+    jettyServerHolder.init(config, null);
+  
     jettyServerHolder.start();
   }
   @After

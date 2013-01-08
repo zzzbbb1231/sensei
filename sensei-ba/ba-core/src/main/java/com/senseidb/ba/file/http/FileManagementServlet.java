@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -47,9 +49,11 @@ public class FileManagementServlet extends HttpServlet {
   private static Logger logger = Logger.getLogger(FileManagementServlet.class);  
   private String directory = "/tmp/uploads";
   private String baseUrl;
-  private String clusterName;
+  private String defaultClusterName;
+  //TODO
+  private Map<String, Integer> clustersMaxPartitions = new HashMap<String, Integer>();
   private ZkManager zkManager;
-  private int maxPartition;
+
   private String nasBasePath;
   @Override
   public void init(ServletConfig config) throws ServletException {
@@ -62,7 +66,7 @@ public class FileManagementServlet extends HttpServlet {
     }
    
      nasBasePath = config.getInitParameter("nasBasePath");
-   
+     clustersMaxPartitions  = extractClusterPartitions(config);
     
     baseUrl = config.getInitParameter("baseUrl");
     if (baseUrl == null) {
@@ -82,13 +86,26 @@ public class FileManagementServlet extends HttpServlet {
     }
     String zkUrl = config.getInitParameter("zkUrl");
     Assert.notNull(zkUrl, "zkUrl parameter should be present");
-    clusterName = config.getInitParameter("clusterName");
-    Assert.notNull(clusterName, "clusterName parameter should be present");
-    zkManager = new ZkManager(zkUrl, clusterName);
-    String maxPartitionId = config.getInitParameter("maxPartitionId");
-    Assert.notNull(maxPartition, "maxPartition parameter should be present");
-    maxPartition = Integer.parseInt(maxPartitionId);
+    if (clustersMaxPartitions.size() == 1) {
+      defaultClusterName = clustersMaxPartitions.keySet().iterator().next();
+    }
+    zkManager = new ZkManager(zkUrl, defaultClusterName);
     super.init(config);
+  }
+
+  private Map<String, Integer> extractClusterPartitions(ServletConfig config) {
+    Map<String, Integer>  ret = new HashMap<String, Integer>();
+    Enumeration initParameterNames = config.getInitParameterNames();
+    while (initParameterNames.hasMoreElements()) {
+      String key = (String) initParameterNames.nextElement();
+      if (!key.startsWith("cluster.")) {
+        continue;
+      }
+      String clusterName = key.substring("cluster.".length());
+      String partition = config.getInitParameter(key);
+      ret.put(clusterName, Integer.parseInt(partition));
+    }
+    return ret;
   }
 
   @Override
@@ -151,7 +168,6 @@ public class FileManagementServlet extends HttpServlet {
 
   private void notifyZookeeperNewFileCreated(File file) {
     try {
-    int partitionId = getPartition(file.getName(), maxPartition);
    
       InputStream metadata = TarGzCompressionUtils.unTarOneFile(new FileInputStream(file), GazelleUtils.METADATA_FILENAME);
       PropertiesConfiguration properties = new PropertiesConfiguration();
@@ -163,11 +179,13 @@ public class FileManagementServlet extends HttpServlet {
       if (!segmentMetadata.containsKey("timeCreated")) {
         segmentMetadata.put("timeCreated", "" + System.currentTimeMillis());
       }
-      String clusterName = this.clusterName;
+      String clusterName = this.defaultClusterName;
       if (segmentMetadata.containsKey("segment.cluster.name")) {
         clusterName = segmentMetadata.get("segment.cluster.name");
         logger.info("The deployment cluster name is overriden to - " + clusterName);
       }
+      Assert.state(clustersMaxPartitions.containsKey(clusterName), "The configuration doesn't contain the maxPartitionId entry for the cluster " + clusterName);
+      int partitionId = getPartition(file.getName(), clustersMaxPartitions.get(clusterName));
       if (nasBasePath != null) {
         String path = nasBasePath + clusterName;
         File nasDir = new File(path);

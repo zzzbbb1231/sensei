@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.ScoreDoc;
@@ -24,6 +25,7 @@ import com.browseengine.bobo.facets.filter.FacetRangeFilter;
 import com.browseengine.bobo.facets.filter.RandomAccessFilter;
 import com.browseengine.bobo.sort.DocComparator;
 import com.browseengine.bobo.sort.DocComparatorSource;
+import com.senseidb.ba.file.http.FileManagementServlet;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.IndexSegment;
@@ -37,6 +39,7 @@ import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl;
 import com.senseidb.ba.util.QueryUtils;
 
 public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
+  private static Logger logger = Logger.getLogger(BaFacetHandler.class);  
   private final String bootsrapFacetHandlerName;
   private final String columnName;
   /**
@@ -145,11 +148,17 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         
         int [] rangeIndex = QueryUtils.getRangeIndexes(zeusDataCache, value, values);
         startIndex = rangeIndex[0];
-        endIndex = rangeIndex[1];
         
-        if (startIndex > startIndex) {
+        if (rangeIndex[1] >= zeusDataCache.getDictionary().size()) {
+          logger.warn("Got endIndex more than dictionary size for value " + value);
+          endIndex = zeusDataCache.getDictionary().size() - 1;
+        } else {
+          endIndex = rangeIndex[1];
+        }
+        if (startIndex > endIndex) {
           return EmptyDocIdSet.getInstance();
         }
+       
         if (startIndex == endIndex) {
           return BaFacetHandler.this.getDocIdSet(zeusDataCache, startIndex);
         } else if (zeusDataCache.getForwardIndex() instanceof GazelleForwardIndexImpl) {

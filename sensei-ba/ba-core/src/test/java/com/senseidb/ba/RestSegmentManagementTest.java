@@ -67,13 +67,16 @@ public class RestSegmentManagementTest  extends Assert {
       if (i == 1) {
         indexSegmentImpl.getSegmentMetadata().setEndTime("0");
         indexSegmentImpl.getSegmentMetadata().setTimeType(SegmentTimeType.secondsSinceEpoch);
+        indexSegmentImpl.getSegmentMetadata().setClusterName("testCluster2");
       } else {
         indexSegmentImpl.getSegmentMetadata().setEndTime("" + System.currentTimeMillis());
         indexSegmentImpl.getSegmentMetadata().setTimeType(SegmentTimeType.secondsSinceEpoch);
+        indexSegmentImpl.getSegmentMetadata().setClusterName("testCluster2");
       }
       File compressedFile = TestUtil.createCompressedSegment("segment" + i, indexSegmentImpl, indexDir);
       FileInputStream inputStream = new FileInputStream(compressedFile);
-      FileUploadUtils.sendFile("localhost", "8088", "segment" + i, inputStream, compressedFile.length());
+      String port = i ==0 ? "8088" : "7088";
+      FileUploadUtils.sendFile("localhost", port, "segment" + i, inputStream, compressedFile.length());
       IOUtils.closeQuietly(inputStream);
     }
     SingleNodeStarter.waitTillServerStarts(20000);

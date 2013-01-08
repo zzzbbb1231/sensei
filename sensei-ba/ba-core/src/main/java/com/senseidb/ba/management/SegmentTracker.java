@@ -43,6 +43,8 @@ public class SegmentTracker {
   private static final Counter currentNumberOfDocuments = Metrics.newCounter(SegmentTracker.class, "currentNumberOfDocuments");
   private static final Counter segmentsFailedToLoad = Metrics.newCounter(SegmentTracker.class, "segmentsFailedToLoad");
   private static final Counter numDeletedSegments = Metrics.newCounter(SegmentTracker.class, "numDeletedSegments");
+  private static final Counter segmentDownloadSpeed = Metrics.newCounter(SegmentTracker.class, "segmentDownloadSpeed");
+ 
   private static final Timer bootstrapTimePerPartition = Metrics.newTimer(new MetricName(SegmentTracker.class ,"bootstrapTimePerPartition"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
   private File indexDir;
   private List<String> activeSegments = new ArrayList<String>();
@@ -136,14 +138,16 @@ public class SegmentTracker {
         }
       }    
    
+    long duration = System.currentTimeMillis() - time;
     if (!success) {
       logger.warn("[final]Failed to load the segment - " + segmentId + ", by the collection of uris" + segmentInfo.getPathUrls());
       segmentsFailedToLoad.inc();
-      segmentFailedInstantiateTime.update(System.currentTimeMillis() - time, TimeUnit.MILLISECONDS);
+      segmentFailedInstantiateTime.update(duration, TimeUnit.MILLISECONDS);
       logger.error("[final]Failed to load the segment - " + segmentId + ", by the uris -" + segmentInfo.getPathUrls());
     } else {
       currentNumberOfSegments.inc();
-      segmentSuccesfulInstantiateTime.update(System.currentTimeMillis() - time, TimeUnit.MILLISECONDS);
+      segmentSuccesfulInstantiateTime.update(duration, TimeUnit.MILLISECONDS);
+     
     }
   }
 
@@ -158,7 +162,10 @@ public class SegmentTracker {
           File tempFile = new File(indexDir, segmentId + "tar.gz");
           long downloadTime = System.currentTimeMillis();
           FileUploadUtils.getFile(uri, tempFile);
-          segmentDownloadTime.update(System.currentTimeMillis() - downloadTime, TimeUnit.MILLISECONDS);
+          long duration = System.currentTimeMillis() - downloadTime;
+          segmentDownloadTime.update(duration, TimeUnit.MILLISECONDS);
+          segmentDownloadSpeed.clear();
+          segmentDownloadSpeed.inc((tempFile.length() / (duration * 1000)));
           logger.info("Downloaded file from " + uri);
           uncompressedFiles  = TarGzCompressionUtils.unTar(tempFile, indexDir);
           

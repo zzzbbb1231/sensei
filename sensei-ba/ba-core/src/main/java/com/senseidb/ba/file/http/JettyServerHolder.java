@@ -1,6 +1,7 @@
 package com.senseidb.ba.file.http;
 
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.mortbay.jetty.Server;
@@ -27,6 +28,7 @@ public class JettyServerHolder implements SenseiPlugin {
   private int maxPartitionId;
   private String baseUrl;
   private String nasBasePath;
+  private Map<String, Integer> clustersMaxPartitions;
 
   @Override
   public void init(Map<String, String> config, SenseiPluginRegistry pluginRegistry) {
@@ -35,6 +37,7 @@ public class JettyServerHolder implements SenseiPlugin {
     if (config.get("directory") != null) {
       setDirectoryPath(config.get("directory"));
     }
+    clustersMaxPartitions = extractClusterInfos(config);
     Assert.notNull(directory, "directory parameter should be present");
     if (config.get("port") != null) {
       setPort(Integer.parseInt(config.get("port")));
@@ -59,6 +62,7 @@ public class JettyServerHolder implements SenseiPlugin {
       clusterName = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_NAME);
     }
     Assert.notNull(clusterName, "clusterName parameter should be present");
+    clustersMaxPartitions.put(clusterName, maxPartitionId);
     zkUrl = config.get("zkUrl");         
     if (zkUrl == null) { 
       zkUrl = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_URL);
@@ -66,6 +70,19 @@ public class JettyServerHolder implements SenseiPlugin {
     Assert.notNull(zkUrl, "zkUrl parameter should be present");
     baseUrl = "http://" + hostname + ":" + port + "/files/";
     nasBasePath = config.get("nasBasePath");
+  }
+
+  public static Map<String, Integer> extractClusterInfos(Map<String, String> config) {
+    Map<String, Integer> ret = new HashMap<String, Integer>();
+    for (String key: config.keySet()) {
+      if (!key.startsWith("cluster.")) {
+        continue;
+      }
+      String clusterName = key.substring("cluster.".length());
+      String partition = config.get(key);
+      ret.put(clusterName, Integer.parseInt(partition));
+    }
+    return ret;
   }
 
   public void setPort(int port) {
@@ -95,9 +112,10 @@ public class JettyServerHolder implements SenseiPlugin {
     servletHandler.addServletWithMapping(MasterInfoServlet.class, "/controllers/*");
     for (ServletHolder holder : servletHandler.getServlets()) {
       if (holder.getHeldClass() == FileManagementServlet.class) {
+        for (String cluster : clustersMaxPartitions.keySet()) {
+          holder.setInitParameter("cluster." + cluster, String.valueOf(clustersMaxPartitions.get(cluster)));
+        }
         holder.setInitParameter("directory", directory);
-        holder.setInitParameter("clusterName", clusterName);
-        holder.setInitParameter("maxPartitionId", String.valueOf(maxPartitionId));
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("baseUrl", baseUrl);
         holder.setInitParameter("nasBasePath", nasBasePath);

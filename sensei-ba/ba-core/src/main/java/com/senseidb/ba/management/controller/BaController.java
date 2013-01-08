@@ -83,10 +83,20 @@ public abstract class BaController implements SenseiPlugin {
           checkIfMasterAndExecute();
           
         }
-      }, 1000, executionFrequency , TimeUnit.MILLISECONDS);
+      }, 5, executionFrequency , TimeUnit.SECONDS);
     }
     protected abstract  void doStop();
     public final void stop() {
+      if (isMaster) {      
+        String path = SegmentUtils.getMasterZkPath(clusterName) + "/" + controllerName;
+        if (zkClient.exists(path)) {
+          try {
+            zkClient.deleteRecursive(path);
+          } catch (Exception ex) {
+            logger.error("Couldn't remove the master lock", ex);
+          }
+        }
+      }
       doStop();
       synchronized (executorService) {
       if (!executorService.isShutdown()) {
