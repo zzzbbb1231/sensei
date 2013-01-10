@@ -31,7 +31,7 @@ public class BAStandaloneIntegrationTest extends TestCase {
     FileUtils.copyFileToDirectory(avroFile, indexDir);
     FileUtils.copyFileToDirectory(jsonFile, indexDir);
     FileUtils.copyFileToDirectory(csvFile, indexDir);
-    File ConfDir1 = new File(BASentinelTest.class.getClassLoader().getResource("ba-conf-avro").toURI());
+    File ConfDir1 = new File(BASegmentRecoverTest.class.getClassLoader().getResource("ba-conf-avro").toURI());
     
     SingleNodeStarter.start(ConfDir1, 10000);
   }

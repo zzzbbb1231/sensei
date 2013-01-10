@@ -6,13 +6,15 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 
 public class SegmentMetadata {
+  public static final String SEGMENT_END_TIME = "segment.endTime";
+  public static final String SEGMENT_START_TIME = "segment.startTime";
   private String clusterName;
   private SegmentTimeType timeType;
   private SegmentAggregationLevel aggregationLevel;
   private String startTime;
   private String endTime;
   private HashMap<String, String> addionalEntries = new HashMap<String, String>();
-  private static String[] defaultList = {"segment.cluster.name","segment.time.Type","segment.aggregation","segment.startTime","segment.endTime"};
+  private static String[] defaultList = {"segment.cluster.name","segment.time.Type","segment.aggregation",SEGMENT_START_TIME,SEGMENT_END_TIME};
 
   public void addToConfig(Configuration configuration) {
     if (clusterName != null) {
@@ -28,11 +30,11 @@ public class SegmentMetadata {
     }
     
     if (startTime != null) {
-      configuration.setProperty("segment.startTime", startTime);
+      configuration.setProperty(SEGMENT_START_TIME, startTime);
     }
     
     if (endTime != null) {
-      configuration.setProperty("segment.endTime", endTime);
+      configuration.setProperty(SEGMENT_END_TIME, endTime);
     }
     
     for (String key : addionalEntries.keySet()) {

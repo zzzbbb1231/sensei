@@ -22,7 +22,9 @@ public class TestUtil {
   public static GazelleIndexSegmentImpl createIndexSegment() throws URISyntaxException, Exception {
     File avroFile = new File(TestUtil.class.getClassLoader().getResource("data/sample_data.avro").toURI());
     GazelleIndexSegmentImpl indexSegmentImpl =  AvroSegmentCreator.readFromAvroFile(avroFile);
-     return indexSegmentImpl;
+    indexSegmentImpl.getSegmentMetadata().setEndTime("100");
+    indexSegmentImpl.getSegmentMetadata().setStartTime("50");
+    return indexSegmentImpl;
   }
 
   public static File createCompressedSegment(String segmentId, GazelleIndexSegmentImpl indexSegmentImpl, File tempIndexDir) throws Exception {

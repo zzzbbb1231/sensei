@@ -14,7 +14,7 @@ import org.springframework.util.Assert;
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
 
 public class ZkManager {
-  private static Logger logger = Logger.getLogger(DirectoryBasedFactoryManager.class);    
+  private static Logger logger = Logger.getLogger(ZkManager.class);    
   private ZkClient zkClient;
     private final String clusterName;
    
@@ -53,6 +53,7 @@ public class ZkManager {
           segmentInfo.getPathUrls().add(pathUrl);
         }
         segmentInfo.getConfig().putAll(newConf);
+        segmentInfo.getConfig().put("overriten", String.valueOf(System.currentTimeMillis()));
       } else {
         List<String> pathUrls = new ArrayList<String>();
         pathUrls.add(pathUrl);

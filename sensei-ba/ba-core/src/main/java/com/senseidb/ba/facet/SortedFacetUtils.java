@@ -141,6 +141,9 @@ public class SortedFacetUtils {
             doc++;
           }
           if (doc > currentMaxDoc) {
+            if (currentRegionId + 1>= actualLength) {
+              return NO_MORE_DOCS;
+            }
             if (doc <= maxDocIds[currentRegionId + 1]) {
               currentRegionId += 1;
               currentMaxDoc = maxDocIds[currentRegionId];

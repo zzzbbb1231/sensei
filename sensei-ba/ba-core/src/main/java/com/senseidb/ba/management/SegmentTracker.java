@@ -41,7 +41,7 @@ public class SegmentTracker {
   private static final Timer segmentDownloadTime = Metrics.newTimer(new MetricName(SegmentTracker.class ,"segmentDownloadTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
   private static final Counter currentNumberOfSegments = Metrics.newCounter(SegmentTracker.class, "currentNumberOfSegments");
   private static final Counter currentNumberOfDocuments = Metrics.newCounter(SegmentTracker.class, "currentNumberOfDocuments");
-  private static final Counter segmentsFailedToLoad = Metrics.newCounter(SegmentTracker.class, "segmentsFailedToLoad");
+ 
   private static final Counter numDeletedSegments = Metrics.newCounter(SegmentTracker.class, "numDeletedSegments");
   private static final Counter segmentDownloadSpeed = Metrics.newCounter(SegmentTracker.class, "segmentDownloadSpeed");
  
@@ -85,7 +85,6 @@ public class SegmentTracker {
           if (indexSegment == null) {
             logger.warn("The directory " + file.getAbsolutePath() + " doesn't contain the fully loaded segment");
             FileUtils.deleteDirectory(file);
-            segmentsFailedToLoad.inc();
             continue;
           }
           segmentsMap.put(file.getName(), new SegmentToZoieReaderAdapter(indexSegment, file.getName(), senseiDecorator));
@@ -103,7 +102,7 @@ public class SegmentTracker {
     logger.info("Finished index boostrap. Total time = " + (System.currentTimeMillis() - time) / 1000 + "secs");
   }
 
-  public void addSegment(final String segmentId, final SegmentInfo segmentInfo) {
+  public void addSegment(final String segmentId, final SegmentInfo segmentInfo, final SegmentLoaderListener loaderListener) {
     if (isStopped) {
       logger.warn("Could not add segment, as the tracker is already stopped");
       return;
@@ -113,15 +112,26 @@ public class SegmentTracker {
       @Override
       public void run() {
         try {
-          instantiateSegment(segmentId, segmentInfo);
+          boolean success = instantiateSegment(segmentId, segmentInfo);
+          if (loaderListener ==null) {
+            return;
+          }
+          if (success) {
+            loaderListener.segmentLoadedSuccsfully(segmentId);
+          } else {
+            loaderListener.segmentFailedToLoad(segmentId);
+          }
         } catch (Exception ex) {
           logger.error("Couldn't instantiate the segment", ex);
+          if (loaderListener !=null) {
+            loaderListener.segmentFailedToLoad(segmentId);
+            }
         }
       }
     });
   }
 
-  public void instantiateSegment(String segmentId, SegmentInfo segmentInfo) {
+  public boolean instantiateSegment(String segmentId, SegmentInfo segmentInfo) {
     long time = System.currentTimeMillis();
     List<String> uris = new ArrayList<String>(segmentInfo.getPathUrls());
     boolean success = false;
@@ -141,7 +151,6 @@ public class SegmentTracker {
     long duration = System.currentTimeMillis() - time;
     if (!success) {
       logger.warn("[final]Failed to load the segment - " + segmentId + ", by the collection of uris" + segmentInfo.getPathUrls());
-      segmentsFailedToLoad.inc();
       segmentFailedInstantiateTime.update(duration, TimeUnit.MILLISECONDS);
       logger.error("[final]Failed to load the segment - " + segmentId + ", by the uris -" + segmentInfo.getPathUrls());
     } else {
@@ -149,6 +158,7 @@ public class SegmentTracker {
       segmentSuccesfulInstantiateTime.update(duration, TimeUnit.MILLISECONDS);
      
     }
+    return success;
   }
 
   public boolean instantiateSegmentForUri(String segmentId, String uri) {
@@ -191,8 +201,9 @@ public class SegmentTracker {
         new File(file, "finishedLoading").createNewFile();
         long loadTime = System.currentTimeMillis();
         GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, readMode);
-        
-        logger.info("Loaded the new segment " + segmentId + " with " + indexSegment.getLength() + " elements");
+        if (indexSegment != null) {
+          logger.info("Loaded the new segment " + segmentId + " with " + indexSegment.getLength() + " elements");
+        }
         if (indexSegment == null) {
           FileUtils.deleteDirectory(file);
           throw new IllegalStateException("The directory " + file.getAbsolutePath() + " doesn't contain the fully loaded segment");
@@ -206,6 +217,7 @@ public class SegmentTracker {
           loadingSegments.remove(segmentId);
           referenceCounts.put(segmentId, new AtomicInteger(1));
         }
+        
         return true;
       }
     } catch (Exception ex) {

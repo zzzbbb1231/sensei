@@ -12,6 +12,7 @@ import org.mortbay.jetty.webapp.WebAppContext;
 import org.springframework.util.Assert;
 
 import com.senseidb.ba.management.controller.MasterInfoServlet;
+import com.senseidb.ba.management.controller.validation.ValidationServlet;
 import com.senseidb.conf.SenseiConfParams;
 import com.senseidb.plugin.SenseiPlugin;
 import com.senseidb.plugin.SenseiPluginRegistry;
@@ -29,6 +30,7 @@ public class JettyServerHolder implements SenseiPlugin {
   private String baseUrl;
   private String nasBasePath;
   private Map<String, Integer> clustersMaxPartitions;
+  private String brokerUrl;
 
   @Override
   public void init(Map<String, String> config, SenseiPluginRegistry pluginRegistry) {
@@ -56,7 +58,14 @@ public class JettyServerHolder implements SenseiPlugin {
     } else {
       maxPartitionId = pluginRegistry.getConfiguration().getInt("sensei.index.manager.default.maxpartition.id");
     }
-    
+    brokerUrl = config.get("brokerUrl");
+    if (brokerUrl == null) {
+       String brokerPort = pluginRegistry.getConfiguration().getString(SenseiConfParams.SERVER_BROKER_PORT);
+       if (brokerPort == null) {
+         brokerPort = "8080";
+       }
+       brokerUrl = "http://localhost:" + brokerPort;
+    }
     clusterName = config.get("clusterName");
     if (clusterName == null) {
       clusterName = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_NAME);
@@ -108,6 +117,7 @@ public class JettyServerHolder implements SenseiPlugin {
 
     servletHandler.addServletWithMapping(FileManagementServlet.class, "/files/*");
     servletHandler.addServletWithMapping(RestSegmentServlet.class, "/segments/*");
+    servletHandler.addServletWithMapping(ValidationServlet.class, "/validation/*");
     servletHandler.addServletWithMapping(AllClustersRestSegmentServlet.class, "/allsegments/*");
     servletHandler.addServletWithMapping(MasterInfoServlet.class, "/controllers/*");
     for (ServletHolder holder : servletHandler.getServlets()) {
@@ -130,6 +140,10 @@ public class JettyServerHolder implements SenseiPlugin {
       }else if (holder.getHeldClass() == MasterInfoServlet.class) {
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("clusterName", clusterName);
+      }else if (holder.getHeldClass() == ValidationServlet.class) {
+        holder.setInitParameter("zkUrl", zkUrl);
+        holder.setInitParameter("clusterName", clusterName);
+        holder.setInitParameter("brokerUrl", brokerUrl);
       }
     }
     server.setHandler(servletHandler);

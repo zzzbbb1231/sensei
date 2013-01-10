@@ -1,7 +1,10 @@
 package com.senseidb.ba.management;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.log4j.Logger;
@@ -14,6 +17,17 @@ public class SegmentUtils {
     if (!zkClient.exists(path)) {
       zkClient.createPersistent(path, true);
     }
+  }
+  public static Properties getMetadata(ZkClient zkClient, String clusterName, String segmentId) throws IOException {
+    String segmentInfoPath = getSegmentInfoPath(clusterName,  segmentId);
+    String metadataPath = segmentInfoPath + "/metadata";
+    if (!zkClient.exists(metadataPath)) {
+      return null;
+    }
+    byte[] data = zkClient.readData(metadataPath);
+    Properties properties = new Properties();
+    properties.load(new ByteArrayInputStream(data));
+    return properties;
   }
   public static boolean  removeFromActiveSegments(ZkClient zkClient, String clusterName, int partition, String segmentId) {
     String  path = getActiveSegmentsPath(clusterName, partition, segmentId);

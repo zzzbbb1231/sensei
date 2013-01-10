@@ -10,6 +10,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 
 import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ColumnType;
@@ -19,7 +20,7 @@ import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.gazelle.utils.StreamUtils;
 
 public class MetadataPersistentManager {
-
+  private static Logger logger = Logger.getLogger(MetadataPersistentManager.class);  
   public static void flush(Map<String, ColumnMetadata> metadataMap, SegmentMetadata segmentMetadata, String basePath, FileSystemMode mode, FileSystem fs) throws ConfigurationException, IOException {
     String fileName = basePath + "/" + GazelleUtils.METADATA_FILENAME;
     Path path = new Path(fileName);
@@ -68,6 +69,7 @@ public class MetadataPersistentManager {
   
   public static SegmentMetadata readSegmentMetadata(PropertiesConfiguration config) throws IllegalAccessException {
     SegmentMetadata segmentMetadata = new SegmentMetadata();
+    try {
     Iterator keys = config.getKeys("segment");
     while (keys.hasNext()) {
       String key = keys.next().toString();
@@ -95,7 +97,9 @@ public class MetadataPersistentManager {
     if (config.containsKey("segment.time.Type")) {
       segmentMetadata.setTimeType(config.getString("segment.time.Type"));
     }
-
+    } catch (Exception ex) {
+      logger.error(ex.getMessage(), ex);
+    }
     return segmentMetadata;
   }
 }

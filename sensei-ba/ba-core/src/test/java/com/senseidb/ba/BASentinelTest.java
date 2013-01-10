@@ -31,7 +31,7 @@ public class BASentinelTest  extends Assert {
   @AfterClass
   public static void tearDown() throws Exception {
     SingleNodeStarter.shutdown(); 
-    SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
+    //SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
     FileUtils.deleteDirectory(new File(httpUploadDirectory));
   }
   
@@ -773,5 +773,30 @@ public class BASentinelTest  extends Assert {
     System.out.println(resp.toString(1));
     assertEquals( 784, resp.getInt("numhits"));
   }
+  @Test
+  public void test16AggregateBQLOnFullDataSet() throws Exception {
+    String req = "{\"bql\":\"select sum(met_impressionCount) \"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals( 20000, resp.getInt("numhits"));
+    assertEquals( 49138, resp.getJSONObject("mapReduceResult").getInt("sum"));
+  }
   
+  @Test
+  public void test17RangeQueryBQLOnSortedColumn() throws Exception {
+    String req = "{\"bql\":\"select avg(met_impressionCount),max(met_impressionCount) \"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong", 20000, resp.getInt("numhits"));
+   
+  }
+  @Test
+  public void test18RangeQueryBQLOnSortedColumn() throws Exception {
+   
+    String req = "{\"bql\":\"select * where dim_memberAge > 5000000\"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong", 15278, resp.getInt("numhits"));
+   
+  }
 }

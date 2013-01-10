@@ -76,7 +76,10 @@ public class FileUploadUtils {
     HttpClient httpClient = new HttpClient();
     GetMethod httpget = new GetMethod(url);
     httpClient.executeMethod(httpget);
-    return IOUtils.toString(httpget.getResponseBodyAsStream());
+    InputStream responseBodyAsStream = httpget.getResponseBodyAsStream();
+    String ret = IOUtils.toString(responseBodyAsStream);
+    IOUtils.closeQuietly(responseBodyAsStream);
+    return ret;
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }

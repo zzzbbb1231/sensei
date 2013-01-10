@@ -45,18 +45,15 @@ public class SegmentInfo {
         byte[] data = zkClient.readData(metadataPath);
         Properties properties = new Properties();
         properties.load(new ByteArrayInputStream(data));
-        boolean modified = false;
         for (String key : config.keySet()) {
-          if (!properties.contains(key)) {
-            modified = true;
-          }
+          
           properties.put(key, config.get(key));
         }
-        if (modified) {
+       
           ByteArrayOutputStream metadataBytes = new ByteArrayOutputStream();
           properties.store(metadataBytes, "");
           zkClient.writeData(metadataPath, metadataBytes.toByteArray());
-        }
+       
       } else {
         Properties properties = new Properties();
         for (String key : config.keySet()) {

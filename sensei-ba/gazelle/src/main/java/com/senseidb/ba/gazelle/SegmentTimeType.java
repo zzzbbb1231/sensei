@@ -9,7 +9,10 @@ public enum SegmentTimeType {
         return timeType;
       }
     }
-    throw new IllegalAccessException("UnSupported time type");
+    if ("daySinceEpoch".equalsIgnoreCase(value)) {
+      return daysSinceEpoch;
+    }
+    throw new IllegalAccessException("Unsupported time type");
   }
   public long toMillis(long time) {
     switch (this) {
