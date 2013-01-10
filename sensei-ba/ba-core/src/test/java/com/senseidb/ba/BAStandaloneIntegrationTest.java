@@ -33,7 +33,7 @@ public class BAStandaloneIntegrationTest extends TestCase {
     FileUtils.copyFileToDirectory(csvFile, indexDir);
     File ConfDir1 = new File(BASegmentRecoverTest.class.getClassLoader().getResource("ba-conf-avro").toURI());
     
-    SingleNodeStarter.start(ConfDir1, 10000);
+    SingleNodeStarter.start(ConfDir1, 30000);
   }
   @After
   public void tearDown() throws Exception {
@@ -134,5 +134,13 @@ public class BAStandaloneIntegrationTest extends TestCase {
   public void test2() throws Exception  {
     Thread.sleep(Long.MAX_VALUE);
   }*/
- 
+ public static void main(String[] args) {
+   long historicalId = (int)System.currentTimeMillis();
+       historicalId <<= 32;
+       historicalId |= Integer.MAX_VALUE / 2;//followId
+       System.out.println(Integer.toBinaryString((int)System.currentTimeMillis()));
+       System.out.println(Integer.toBinaryString(Integer.MAX_VALUE / 2));
+       System.out.println(Long.toBinaryString(historicalId));
+       System.out.println("not binary = " + historicalId);
+}
 }

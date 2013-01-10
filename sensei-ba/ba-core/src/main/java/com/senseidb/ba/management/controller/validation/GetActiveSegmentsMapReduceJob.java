@@ -2,13 +2,10 @@ package com.senseidb.ba.management.controller.validation;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import scala.actors.threadpool.Arrays;
 
 import com.browseengine.bobo.api.BoboIndexReader;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;

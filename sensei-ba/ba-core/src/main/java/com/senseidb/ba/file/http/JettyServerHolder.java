@@ -60,10 +60,8 @@ public class JettyServerHolder implements SenseiPlugin {
     }
     brokerUrl = config.get("brokerUrl");
     if (brokerUrl == null) {
-       String brokerPort = pluginRegistry.getConfiguration().getString(SenseiConfParams.SERVER_BROKER_PORT);
-       if (brokerPort == null) {
-         brokerPort = "8080";
-       }
+       String brokerPort = pluginRegistry.getConfiguration().getString(SenseiConfParams.SERVER_BROKER_PORT, "8080");
+       
        brokerUrl = "http://localhost:" + brokerPort;
     }
     clusterName = config.get("clusterName");

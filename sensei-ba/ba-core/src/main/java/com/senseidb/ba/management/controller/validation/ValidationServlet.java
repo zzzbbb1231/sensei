@@ -85,9 +85,12 @@ public class ValidationServlet extends HttpServlet {
       String result = senseiServiceProxy.sendPostRaw(brokerUrl + "sensei", new JSONObject(bql).toString());
       JSONObject jsonResp = new JSONObject(result);
       
-      JSONArray presentSegmentsJson = jsonResp.getJSONObject("mapReduceResult").getJSONArray("result");
+      JSONObject mapReduceResult = jsonResp.optJSONObject("mapReduceResult");
+      if (mapReduceResult != null) {
+      JSONArray presentSegmentsJson = mapReduceResult.getJSONArray("result");
       for (int i = 0; i < presentSegmentsJson.length(); i++) {
         presentSegments.add(presentSegmentsJson.getString(i));
+      }
       }
       List<String> missingSegments = new ArrayList<String>(segments);
       missingSegments.removeAll(presentSegments);

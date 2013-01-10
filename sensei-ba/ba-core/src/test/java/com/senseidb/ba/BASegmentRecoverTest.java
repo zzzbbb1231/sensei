@@ -31,6 +31,9 @@ public class BASegmentRecoverTest  extends Assert {
   public static void tearDown() throws Exception {
     SingleNodeStarter.shutdown(); 
     SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
+    zkManager = new ZkManager("localhost:2181", "testCluster2");
+    zkManager.removePartition(0);
+    zkManager.removePartition(1);
     FileUtils.deleteDirectory(new File(httpUploadDirectory));
   }
   
