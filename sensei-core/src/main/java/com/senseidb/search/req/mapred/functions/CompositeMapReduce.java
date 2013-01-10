@@ -136,9 +136,7 @@ public class CompositeMapReduce implements SenseiMapReduce<Serializable, Seriali
     if (combineResults.size() == 0) {
       return null;
     }
-    if (combineResults.size() == 1) {
-      return combineResults.get(0);
-    }
+   
     HashMap<Key, Serializable> firstResult = (HashMap<Key, Serializable>) combineResults.get(0);
     HashMap<Key, ArrayList<Serializable>> resultsPerFunction = aggregate(combineResults, firstResult.keySet(), false);
     firstResult.clear();

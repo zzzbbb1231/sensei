@@ -74,6 +74,9 @@ public class MinMapReduce implements SenseiMapReduce<MinResult, MinResult> {
   public JSONObject render(MinResult reduceResult) {
     
     try {
+      if (reduceResult == null ) {
+        return new FastJSONObject().put("max", "null");
+      }
       return new FastJSONObject().put("min",  String.format("%1.5f", reduceResult.value)).put("uid", reduceResult.uid);
     } catch (JSONException ex) {
       throw new RuntimeException(ex);
