@@ -110,12 +110,10 @@ public class CompositeMapReduce implements SenseiMapReduce<Serializable, Seriali
 
   @Override
   public List<Serializable> combine(List<Serializable> mapResults, CombinerStage combinerStage) {
-    if (mapResults.size() < 2) {
+    if (mapResults.size() < 1) {
       return mapResults;
     }
-    if (combinerStage == CombinerStage.nodeLevel) {
-      System.out.println();
-    }
+    
     HashMap<Key, Serializable> firstResult = (HashMap<Key, Serializable>) mapResults.get(0);
     
     HashMap<Key, ArrayList<Serializable>> resultsPerFunction = aggregate(mapResults, firstResult.keySet(), combinerStage == CombinerStage.partitionLevel);
