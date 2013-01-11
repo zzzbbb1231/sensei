@@ -88,8 +88,11 @@ public class BASegmentRecoverTest  extends Assert {
     
    
     assertEquals( "{\n" + 
+    		" \"currentDelayInDays\": 15517,\n" + 
     		" \"duplicateSegments\": [\"segment2,segment1\"],\n" + 
     		" \"failedSegments\": [\"segment3\"],\n" + 
+    		" \"maxTime\": 200,\n" + 
+    		" \"minTime\": 50,\n" + 
     		" \"missingPeriods\": [\"101,149\"],\n" + 
     		" \"overlappingPeriods\": [],\n" + 
     		" \"overlappingSegments\": []\n" + 

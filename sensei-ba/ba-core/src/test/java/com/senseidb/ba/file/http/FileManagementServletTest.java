@@ -35,6 +35,7 @@ public class FileManagementServletTest {
     config.put("maxPartitionId", "0");
     config.put("zkUrl", "localhost:2181");
     config.put("port", "8088");
+    config.put("brokerUrl", "bla");
     jettyServerHolder.init(config, null);
   
     jettyServerHolder.start();
