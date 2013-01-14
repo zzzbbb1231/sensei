@@ -139,7 +139,7 @@ public class TestMapReduce extends TestCase {
       assertEquals(8040600, firstObject.getLong("sum"));
     }
     public void test14CountMapReduceBQLWithMultipleGroupBy() throws Exception {      
-      String req = "{\"bql\":\"SELECT color, sum(year), sum(price) FROM cars WHERE color = 'red' GROUP BY category, color limit 10\"}";
+      String req = "{\"bql\":\"SELECT color, sum(year), sum(price),count(*)  FROM cars WHERE color = 'red' GROUP BY category, color limit 10\"}";
       JSONObject res = TestSensei.search(new JSONObject(req));
       System.out.println(res.toString(1));
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");

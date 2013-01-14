@@ -73,7 +73,7 @@ public class GroupByMapReduceJob implements SenseiMapReduce<Serializable, HashMa
 
     @Override
     public Serializable map(IntArray docIds, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountsAccessor) {
-        SingleFieldAccessor singleFieldAccessor = accessor.getSingleFieldAccessor(metric);
+        SingleFieldAccessor singleFieldAccessor = "count".equalsIgnoreCase(function) ? null : accessor.getSingleFieldAccessor(metric);
 
         TermValueList[] dictionaries = new TermValueList[columns.length];
         for (int i = 0; i < columns.length; i++) {
