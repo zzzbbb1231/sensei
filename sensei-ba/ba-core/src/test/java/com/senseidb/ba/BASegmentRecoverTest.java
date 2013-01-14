@@ -83,11 +83,24 @@ public class BASegmentRecoverTest  extends Assert {
    
     assertEquals( 20000, resp.getInt("numhits"));
   }
+  /**
+   * @throws Exception
+   */
   @Test
   public void test2GetValidation() throws Exception {
     
    
-    assertEquals( "{\n" + 
+    String stringResponse = FileUploadUtils.getStringResponse("http://localhost:8088/validation");
+    JSONObject response = new JSONObject(stringResponse);
+    //this value is constantly changing
+    
+    response.remove("currentDelayInDays");
+    assertEquals(200, response.getInt("maxTime"));
+    assertEquals(50, response.getInt("minTime"));
+    assertEquals("[\"101,149\"]", response.getString("missingPeriods"));
+    assertEquals("[\"segment3\"]", response.getString("failedSegments"));
+    assertEquals("[\"segment2,segment1\"]", response.getString("duplicateSegments"));
+    /*assertEquals( "{\n" + 
     		" \"currentDelayInDays\": 15517,\n" + 
     		" \"duplicateSegments\": [\"segment2,segment1\"],\n" + 
     		" \"failedSegments\": [\"segment3\"],\n" + 
@@ -96,6 +109,6 @@ public class BASegmentRecoverTest  extends Assert {
     		" \"missingPeriods\": [\"101,149\"],\n" + 
     		" \"overlappingPeriods\": [],\n" + 
     		" \"overlappingSegments\": []\n" + 
-    		"}", FileUploadUtils.getStringResponse("http://localhost:8088/validation").trim());
+    		"}", stringResponse.trim());*/
   }
 }
