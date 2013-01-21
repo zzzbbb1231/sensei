@@ -51,7 +51,7 @@ public class SegmentAppendableIndex {
       return currenIndex == capacity;
       }
     private RealtimeSnapshotIndexSegment previousSnapshot = null; 
-    public synchronized RealtimeSnapshotIndexSegment getSearchSnapshot() {
+    public synchronized RealtimeSnapshotIndexSegment refreshSearchSnapshot() {
       if (previousSnapshot != null && previousSnapshot.getLength() == currenIndex) {
         return previousSnapshot;
       }

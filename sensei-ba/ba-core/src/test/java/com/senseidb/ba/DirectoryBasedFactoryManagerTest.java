@@ -11,7 +11,7 @@ import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
-import com.senseidb.ba.management.directory.MapBasedIndexFactory;
+import com.senseidb.ba.management.directory.SimpleIndexFactory;
 import com.senseidb.ba.util.TestUtil;
 import com.senseidb.ba.util.Wait;
 import com.senseidb.plugin.SenseiPluginRegistry;
@@ -22,7 +22,7 @@ public class DirectoryBasedFactoryManagerTest extends TestCase {
   private File indexDir = new File("/tmp/static-ba");
   private GazelleIndexSegmentImpl indexSegment; 
   private DirectoryBasedFactoryManager directoryBasedFactoryManager;
-  private MapBasedIndexFactory indexFactory;
+  private SimpleIndexFactory indexFactory;
   public void setUp() throws Exception {
     SingleNodeStarter.rmrf(indexDir);
     indexDir.mkdir();
@@ -36,7 +36,7 @@ public class DirectoryBasedFactoryManagerTest extends TestCase {
      indexDir = directoryBasedFactoryManager.getDirectory();
     directoryBasedFactoryManager.start();
      indexSegment = TestUtil.createIndexSegment();
-     indexFactory = (MapBasedIndexFactory) directoryBasedFactoryManager.getZoieInstance(1, 0);
+     indexFactory = (SimpleIndexFactory) directoryBasedFactoryManager.getZoieInstance(1, 0);
   }
  
   public void tearDown() throws Exception {

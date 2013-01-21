@@ -7,7 +7,7 @@ import java.util.Set;
 
 import com.senseidb.ba.realtime.primitives.FieldRealtimeIndex;
 
-public class AppendableIndexPool {
+public class ReusableIndexObjectsPool {
   private Schema schema;
   private int capacity;
 

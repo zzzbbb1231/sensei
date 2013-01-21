@@ -2,7 +2,7 @@ package com.senseidb.ba.realtime.indexing;
 
 import org.apache.log4j.Logger;
 
-import com.senseidb.ba.realtime.AppendableIndexPool;
+import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.RealtimeSnapshotIndexSegment;
 import com.senseidb.ba.realtime.Schema;
 import com.senseidb.ba.realtime.SegmentAppendableIndex;
@@ -19,7 +19,7 @@ public class RealtimeIndexingManager {
     private int bufferSize = 0;
    
     private long lastRefreshTime;
-    private AppendableIndexPool appendableIndexPool;
+    private ReusableIndexObjectsPool appendableIndexPool;
     private SnapshotRefreshScheduler snapshotRefreshScheduler;
     private RealtimeDataProvider dataProvider;
     private IndexingCoordinator indexingCoordinator;
@@ -27,7 +27,7 @@ public class RealtimeIndexingManager {
       this.schema = schema;
       this.capacity = capacity;
       this.dataProvider = dataProvider;
-      appendableIndexPool = new AppendableIndexPool();
+      appendableIndexPool = new ReusableIndexObjectsPool();
       appendableIndexPool.init(schema, capacity);
     }
     
@@ -36,7 +36,7 @@ public class RealtimeIndexingManager {
       snapshotRefreshScheduler = new SnapshotRefreshScheduler() {
         @Override
         public int refresh() {
-          snapshot = currentIndex.getSearchSnapshot();
+          snapshot = currentIndex.refreshSearchSnapshot();
           indexingCoordinator.segmentSnapshotRefreshed(snapshot);
           return snapshot.getLength();
         }
@@ -75,7 +75,7 @@ public class RealtimeIndexingManager {
       
       SegmentAppendableIndex appendableIndex = appendableIndexPool.getAppendableIndex();
       currentIndex = appendableIndex;
-      indexingCoordinator.segmentRetiredAndNewCreated(currentIndex.getSearchSnapshot(), currentIndex, appendableIndex);
+      indexingCoordinator.segmentRetiredAndNewCreated(currentIndex.refreshSearchSnapshot(), currentIndex, appendableIndex);
       
     }
 }

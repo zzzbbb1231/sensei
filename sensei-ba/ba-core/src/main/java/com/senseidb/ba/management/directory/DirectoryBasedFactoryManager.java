@@ -54,7 +54,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
     protected Object globalLock = new Object();
     private ExecutorService executorService = Executors.newFixedThreadPool(5);
     private Timer timer = new Timer();
-    private Map<Integer, MapBasedIndexFactory> readers = new HashMap<Integer, MapBasedIndexFactory>();
+    private Map<Integer, SimpleIndexFactory> readers = new HashMap<Integer, SimpleIndexFactory>();
     private int maxPartition;
     private AtomicInteger counter = new AtomicInteger();
     private ReadMode readMode;
@@ -126,7 +126,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
         segmentsMap.remove(segmentId);
         path = keyToAbsoluteFilePath.remove(segmentId);
         loadingSegments.remove(segmentId);        
-          for (MapBasedIndexFactory mapBasedIndexFactory : readers.values()) {
+          for (SimpleIndexFactory mapBasedIndexFactory : readers.values()) {
             mapBasedIndexFactory.getReaders().remove(segmentId);
           }
         
@@ -173,15 +173,15 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
         gazelleIndexSegmentImpl = SegmentPersistentManager.read(file, readMode);
       }
       int hash = Math.abs(counter.incrementAndGet()) % maxPartition;
-      MapBasedIndexFactory mapBasedIndexFactory = readers.get(hash);
+      SimpleIndexFactory mapBasedIndexFactory = readers.get(hash);
       SegmentToZoieReaderAdapter adapter = new SegmentToZoieReaderAdapter(gazelleIndexSegmentImpl, segmentId, decorator);
       if (duplicateForAllPartitions) {
         synchronized (globalLock) {        
           segmentsMap.put(segmentId, adapter);
           keyToAbsoluteFilePath.put(segmentId, targetDir.getAbsolutePath());
           loadingSegments.remove(segmentId);
-          for (MapBasedIndexFactory factory : readers.values()) {
-            factory.getReaders().put(segmentId, adapter);
+          for (SimpleIndexFactory factory : readers.values()) {
+            factory.getReaders().add(adapter);
           }
           }
         }
@@ -191,7 +191,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
           keyToAbsoluteFilePath.put(segmentId, targetDir.getAbsolutePath());
           loadingSegments.remove(segmentId);
           if (mapBasedIndexFactory != null) {
-            mapBasedIndexFactory.getReaders().put(segmentId, adapter);
+            mapBasedIndexFactory.getReaders().add(adapter);
           }
         }
       }
@@ -242,7 +242,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
         int[] partitions = SenseiServerBuilder.buildPartitions(partitionArray);
         maxPartition = pluginRegistry.getConfiguration().getInt("sensei.index.manager.default.maxpartition.id", 0) + 1;
         for (int i : partitions) {
-          readers.put(i, new MapBasedIndexFactory(new HashMap<String, SegmentToZoieReaderAdapter>(), globalLock));
+          readers.put(i, new SimpleIndexFactory(new ArrayList<SegmentToZoieReaderAdapter>(), globalLock));
         }
       } catch (ConfigurationException e) {
        throw new RuntimeException();
@@ -262,7 +262,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
       timer.cancel();
       executorService.shutdown();
     }
-    public List<String> getGazelleIndexes(File directory) {
+    public static List<String> getGazelleIndexes(File directory) {
       List<String> ret = new ArrayList<String>();
       for (File file : directory.listFiles() ) {
         if (!file.isDirectory()) {
@@ -274,7 +274,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
       }
       return ret;
     }
-    public List<String> cleanUpIndexesWithoutFinishedLoadingTag(File directory) throws IOException {
+    public static List<String> cleanUpIndexesWithoutFinishedLoadingTag(File directory) throws IOException {
       List<String> ret = new ArrayList<String>();
       for (File file : directory.listFiles() ) {
         if (!file.isDirectory()) {

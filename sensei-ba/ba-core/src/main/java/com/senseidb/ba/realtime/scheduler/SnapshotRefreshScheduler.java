@@ -32,8 +32,9 @@ public abstract class SnapshotRefreshScheduler {
    public void start() {
      lastRefreshedTime = System.currentTimeMillis();     
      historicalRefreshTime = lastRefreshedTime;
-     
-    refreshService.schedule(timeRefreshJob, timeDelay, TimeUnit.MILLISECONDS);
+     if (timeDelay > 0) {
+         refreshService.schedule(timeRefreshJob, timeDelay, TimeUnit.MILLISECONDS);
+     }
    }
    public void stop() {
      synchronized(lock) {
@@ -47,11 +48,12 @@ public abstract class SnapshotRefreshScheduler {
    
    public void sizeUpdated(int newSize) {
      currentSize = newSize;
+     if (batchSize <= 0) {
+         return;
+     }
      if (currentSize -  lastRefreshedSize >= batchSize) {
        refreshService.submit(countRefreshJob);
-     } else if (newSize == capacity) {
-       refreshService.submit(countRefreshJob);
-     }
+     } 
    }
   
    
