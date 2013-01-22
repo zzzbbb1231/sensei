@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,7 +26,7 @@ import com.senseidb.util.Pair;
 
 public class CompositeMapReduce implements SenseiMapReduce<Serializable, Serializable> {
   private List<Pair<String, SenseiMapReduce>> innerFunctions = new ArrayList<Pair<String,SenseiMapReduce>>();
-  private Map<Key, Pair<String, SenseiMapReduce>> innerFunctionsRefs = new HashMap<Key, Pair<String,SenseiMapReduce>>();
+  private Map<Key, Pair<String, SenseiMapReduce>> innerFunctionsRefs = new LinkedHashMap<Key, Pair<String,SenseiMapReduce>>();
   public static class Key implements Serializable {
     private static AtomicLong atomicLong = new AtomicLong();
     private long value;
