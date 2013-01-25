@@ -7,9 +7,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.springframework.util.Assert;
 
 import com.senseidb.ba.gazelle.ColumnType;
-import com.senseidb.ba.realtime.primitives.FieldRealtimeIndex;
-import com.senseidb.ba.realtime.primitives.SingleLongValueIndex;
-import com.senseidb.ba.realtime.primitives.SingleStringValueIndex;
+import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
+import com.senseidb.ba.realtime.domain.primitives.FieldRealtimeIndex;
+import com.senseidb.ba.realtime.domain.primitives.SingleFloatValueIndex;
+import com.senseidb.ba.realtime.domain.primitives.SingleIntValueIndex;
+import com.senseidb.ba.realtime.domain.primitives.SingleLongValueIndex;
+import com.senseidb.ba.realtime.domain.primitives.SingleStringValueIndex;
 
 public class SegmentAppendableIndex {
     private int capacity;
@@ -17,7 +21,7 @@ public class SegmentAppendableIndex {
     private FieldRealtimeIndex[] columnIndexes;
     private Schema schema; 
     volatile private  String version;
-     
+    private String name;
     
     private ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     public void init(Schema schema, int capacity) {
@@ -31,6 +35,10 @@ public class SegmentAppendableIndex {
           columnIndexes[i] = new SingleLongValueIndex(capacity);
         } else if (columnType == ColumnType.STRING) {
           columnIndexes[i] = new SingleStringValueIndex(capacity);
+        } else if (columnType == ColumnType.FLOAT) {
+          columnIndexes[i] = new SingleFloatValueIndex(capacity);
+        } else if (columnType == ColumnType.INT) {
+          columnIndexes[i] = new SingleIntValueIndex(capacity);
         } else {
           throw new UnsupportedOperationException(columnType.toString());
         }
@@ -39,12 +47,12 @@ public class SegmentAppendableIndex {
     public boolean add(Object[] values, String version) {
       Assert.state(values.length == columnIndexes.length);
       try {
-        readWriteLock.readLock().lock();
+        //readWriteLock.readLock().lock();
         for (int i = 0; i < schema.getColumnNames().length; i++) {
           columnIndexes[i].addElement(values[i], readWriteLock);
         }
       } finally {
-        readWriteLock.readLock().unlock();
+        //readWriteLock.readLock().unlock();
       }
       this.version = version;
       currenIndex++;
@@ -52,6 +60,7 @@ public class SegmentAppendableIndex {
       }
     private RealtimeSnapshotIndexSegment previousSnapshot = null; 
     public synchronized RealtimeSnapshotIndexSegment refreshSearchSnapshot() {
+     
       if (previousSnapshot != null && previousSnapshot.getLength() == currenIndex) {
         return previousSnapshot;
       }
@@ -63,6 +72,7 @@ public class SegmentAppendableIndex {
         columnSnapshots.put(column, columnIndexes[i].produceSnapshot(readWriteLock));
       }
       previousSnapshot = new RealtimeSnapshotIndexSegment(currenIndex, columnSnapshots, columnTypes);
+      previousSnapshot.setReferencedSegment(this);
       return previousSnapshot;
 
     }
@@ -72,7 +82,25 @@ public class SegmentAppendableIndex {
     public int getCurrenIndex() {
       return currenIndex;
     }
-  
+    public void recycle() {
+      version = null;
+      name = null;
+      for (FieldRealtimeIndex index :   this.getColumnIndexes()) {
+        index.recycle();
+      }
+    }
+    public String getVersion() {
+      return version;
+    }
+    public String getName() {
+      return name;
+    }
+    public void setVersion(String version) {
+      this.version = version;
+    }
+    public void setName(String name) {
+      this.name = name;
+    }
     
     
 }

@@ -1,65 +1,57 @@
-package com.senseidb.ba.realtime.primitives;
+package com.senseidb.ba.realtime.domain.primitives;
 
 import it.unimi.dsi.fastutil.Swapper;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntComparator;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.longs.Long2IntMap;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap.Entry;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.browseengine.bobo.facets.data.TermStringList;
+import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.creators.DictionaryCreator;
-import com.senseidb.ba.realtime.AbstractSearchSnapshot;
-import com.senseidb.ba.realtime.ColumnSearchSnapshot;
+import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
+import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 
-public class SingleStringValueSearchSnapshot extends  AbstractSearchSnapshot {
-  private IntList permutationArray;
-  private ArrayList<String> unsortedValues;
-  private static ThreadLocal<DecimalFormat> formatter = new ThreadLocal<DecimalFormat>() {
-    final String format = DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(ColumnType.LONG);
-
-    protected DecimalFormat initialValue() {
-      return new DecimalFormat(format);
-    }
-  };
+public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
+  private ObjectList<String> unsortedValues;
+  
 
   public void init(Object2IntMap<String> map, ReadWriteLock lock) {
-    if (unsortedValues != null && unsortedValues.size() == map.size()) {
+    if (unsortedValues != null && unsortedValues.size() == map.size() + 2) {
       // do nothing
       return;
     }
     try {
       lock.readLock().lock();
       if (unsortedValues == null) {
-        unsortedValues = new ArrayList<String>(map.size());
-      } else {
-       int previousSize = unsortedValues.size();       
-        for (Entry<String> entry : map.object2IntEntrySet()) {
+        unsortedValues = new ObjectArrayList<String>(map.size());
+      } 
+      int previousSize = unsortedValues.size(); 
+      unsortedValues.size(map.size()+ 2 );
+       for (Entry<String> entry : map.object2IntEntrySet()) {
           if (entry.getIntValue() >= previousSize) {
             unsortedValues.set(entry.getIntValue(), entry.getKey());
           }
         }
-      }
+      
     } finally {
       lock.readLock().unlock();
     }
     if (permutationArray == null) {
-      permutationArray = new IntArrayList(map.size());
-    } else {
+      permutationArray = new IntArrayList(unsortedValues.size());
+    } 
       permutationArray.clear();
-      permutationArray.size(map.size());
-      for (int i = 0; i < map.size(); i++) {
+      permutationArray.size(unsortedValues.size());
+      for (int i = 0; i < unsortedValues.size(); i++) {
         permutationArray.set(i, i);
       }
-    }
+    
     it.unimi.dsi.fastutil.Arrays.quickSort(0, permutationArray.size(), new IntComparator() {
       @Override
       public int compare(Integer o1, Integer o2) {
@@ -70,6 +62,15 @@ public class SingleStringValueSearchSnapshot extends  AbstractSearchSnapshot {
       public int compare(int k1, int k2) {
         String  val1 = unsortedValues.get(permutationArray.getInt(k1));
         String val2 = unsortedValues.get(permutationArray.getInt(k2));
+        if (val1 == null  ) {
+          if (val2 != null) {
+            return -1;
+          }
+          return 0;
+        }
+        if (val2 == null) {
+          return 1;
+        }
         return val1.compareTo(val2);
       }
     }, new Swapper() {
@@ -84,11 +85,11 @@ public class SingleStringValueSearchSnapshot extends  AbstractSearchSnapshot {
 
   
   /* (non-Javadoc)
-   * @see com.senseidb.ba.realtime.primitives.DictionarySnapshot#getStringValue(int)
+   * @see com.senseidb.ba.realtime.domain.primitives.DictionarySnapshot#getStringValue(int)
    */
   @Override
   public String getStringValue(int unsortedDictId) {
-    return formatter.get().format(getValue(unsortedDictId));
+    return getValue(unsortedDictId);
   }
 
   private String getValue(int unsortedDictId) {
@@ -98,14 +99,14 @@ public class SingleStringValueSearchSnapshot extends  AbstractSearchSnapshot {
     return unsortedValues.get(unsortedDictId);
   }
   /* (non-Javadoc)
-   * @see com.senseidb.ba.realtime.primitives.DictionarySnapshot#getObject(int)
+   * @see com.senseidb.ba.realtime.domain.primitives.DictionarySnapshot#getObject(int)
    */
   @Override
   public Object getObject(int unsortedDictId) {
     return  getValue(unsortedDictId);
   }
   /* (non-Javadoc)
-   * @see com.senseidb.ba.realtime.primitives.DictionarySnapshot#getInt(int)
+   * @see com.senseidb.ba.realtime.domain.primitives.DictionarySnapshot#getInt(int)
    */
   @Override
   public int getIntValue(int unsortedDictId) {
@@ -113,7 +114,7 @@ public class SingleStringValueSearchSnapshot extends  AbstractSearchSnapshot {
   }
 
   /* (non-Javadoc)
-   * @see com.senseidb.ba.realtime.primitives.DictionarySnapshot#getLong(int)
+   * @see com.senseidb.ba.realtime.domain.primitives.DictionarySnapshot#getLong(int)
    */
   @Override
   public long getLongValue(int unsortedDictId) {
@@ -121,7 +122,7 @@ public class SingleStringValueSearchSnapshot extends  AbstractSearchSnapshot {
   }
 
   /* (non-Javadoc)
-   * @see com.senseidb.ba.realtime.primitives.DictionarySnapshot#getDouble(int)
+   * @see com.senseidb.ba.realtime.domain.primitives.DictionarySnapshot#getDouble(int)
    */
   @Override
   public double getDoubleValue(int unsortedDictId) {
@@ -129,7 +130,7 @@ public class SingleStringValueSearchSnapshot extends  AbstractSearchSnapshot {
   }
 
   /* (non-Javadoc)
-   * @see com.senseidb.ba.realtime.primitives.DictionarySnapshot#getFloat(int)
+   * @see com.senseidb.ba.realtime.domain.primitives.DictionarySnapshot#getFloat(int)
    */
   @Override
   public float getFloatValue(int unsortedDictId) {
@@ -137,7 +138,7 @@ public class SingleStringValueSearchSnapshot extends  AbstractSearchSnapshot {
   }
 
   /* (non-Javadoc)
-   * @see com.senseidb.ba.realtime.primitives.DictionarySnapshot#getShort(int)
+   * @see com.senseidb.ba.realtime.domain.primitives.DictionarySnapshot#getShort(int)
    */
   @Override
   public short getShortValue(int unsortedDictId) {
@@ -145,7 +146,7 @@ public class SingleStringValueSearchSnapshot extends  AbstractSearchSnapshot {
   }
 
   /* (non-Javadoc)
-   * @see com.senseidb.ba.realtime.primitives.DictionarySnapshot#getPermutationArray()
+   * @see com.senseidb.ba.realtime.domain.primitives.DictionarySnapshot#getPermutationArray()
    */
   
   @Override
@@ -153,5 +154,42 @@ public class SingleStringValueSearchSnapshot extends  AbstractSearchSnapshot {
     permutationArray.clear();
     unsortedValues.clear();
     
+  }
+
+
+  @Override
+  public TermValueList produceDictionary() {
+    TermStringList termStringList = new TermStringList(permutationArray.size() - 2);
+    termStringList.add(null);
+    for (int i = 2; i < unsortedValues.size(); i++) {
+      
+      int index = permutationArray.getInt(i);
+      if (index <= 1) {
+        throw new IllegalStateException();
+      }
+        String str = unsortedValues.get(index);
+        termStringList.add(str);
+      
+
+    }
+    return termStringList;
+  }
+
+
+  @Override
+  public ComparableToInt comparableValue(String value) {   
+    final String val1 = value;    
+    return new ComparableToInt() {      
+      @Override
+      public int compareTo(int index) {
+        String  val2 = unsortedValues.get(permutationArray.getInt(index));
+        return -val1.compareTo(val2);
+      }
+    };
+  }
+  @Override
+  public String format(Object o) {
+    
+    return o.toString();
   }
 }

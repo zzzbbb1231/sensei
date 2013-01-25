@@ -1,9 +1,10 @@
-package com.senseidb.ba.realtime.primitives;
+package com.senseidb.ba.realtime.domain.primitives;
 
 import java.util.concurrent.locks.ReadWriteLock;
 
 import com.senseidb.ba.gazelle.ColumnType;
-import com.senseidb.ba.realtime.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.SingleValueSearchSnapshot;
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -14,10 +15,7 @@ public class SingleStringValueIndex extends AbstractFieldRealtimeIndex  {
     public SingleStringValueIndex(int capacity) {
       super(capacity);
       dictionary = new Object2IntOpenHashMap<String>(500);
-      //unitialized value
-      dictionary.put("", 0);
-      //null value
-      dictionary.put("", 1);
+     
     }
     
     public void addString(String value, ReadWriteLock lock) {
@@ -29,7 +27,7 @@ public class SingleStringValueIndex extends AbstractFieldRealtimeIndex  {
           lock.writeLock().lock();
           // we leave 0 as reserved value. Because of the possible concurrency issues, this would mean that we hit unitialized field
           //another value is reserved for null
-          dictionaryId = dictionary.size();
+          dictionaryId  = dictionary.size() + 2;
           dictionary.put(value, dictionaryId);
         } finally {
           lock.writeLock().unlock();
@@ -45,25 +43,27 @@ public class SingleStringValueIndex extends AbstractFieldRealtimeIndex  {
       if (value == null) {
         forwardIndex[currentPosition] = NULL_DICTIONARY_ID;
         currentPosition++;
-      }
+      } else {
         addString(value.toString(), readWriteLock);
+      }
       
     }
     public ColumnSearchSnapshot produceSnapshot(ReadWriteLock readWriteLock) {     
 
       try {
         readWriteLock.readLock().lock();
-        if (searchSnapshot != null && searchSnapshot.getPermutationArray() != null && searchSnapshot.getPermutationArray().size() == dictionary.size()) {
+        if (searchSnapshot != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray() != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray().size() == dictionary.size()) {
          
         } else {
-          searchSnapshot = new SingleStringValueSearchSnapshot();
-          ((SingleStringValueSearchSnapshot)searchSnapshot).init(dictionary, readWriteLock);
+          searchSnapshot = new SingleValueSearchSnapshot();
+          StringDictionarySnapshot dictionarySnapshot = new StringDictionarySnapshot();
+          dictionarySnapshot.init(dictionary, readWriteLock);
+          searchSnapshot.init(forwardIndex, currentPosition, ColumnType.STRING, dictionarySnapshot);
         }
       
       } finally {
         readWriteLock.readLock().unlock();
       }
-      searchSnapshot.initForwardIndex(forwardIndex, currentPosition, ColumnType.STRING);
       return searchSnapshot;
     }
 }

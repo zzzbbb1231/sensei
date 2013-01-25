@@ -5,6 +5,7 @@ import org.apache.lucene.search.DocIdSet;
 import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 
 public class ZeusDataCache {
   private FacetDataCache fakeCache;
@@ -15,9 +16,15 @@ public class ZeusDataCache {
     this.forwardIndex = forwardIndex;
     this.invertedIndexes = invertedIndexes;
     dictionary = forwardIndex.getDictionary();
-    fakeCache = createFakeFacetDataCache(forwardIndex);
+    if ((forwardIndex instanceof ColumnSearchSnapshot)) {
+      fakeCache = createRealtimeFakeFacetDataCache(forwardIndex);
+    } else {
+      fakeCache = createFakeFacetDataCache(forwardIndex);
+    }
   }
   
+
+
   public boolean invertedIndexPresent(int dictionaryIndex) {
     return invertedIndexes != null && dictionaryIndex < invertedIndexes.length && invertedIndexes[dictionaryIndex] != null;
   }
@@ -30,7 +37,18 @@ public class ZeusDataCache {
     }    
     return newDataCache;
   }
-  
+  public static final int[] STATIC_FREQS = new int[2];
+  static  {
+    for (int i = 0 ; i < STATIC_FREQS.length; i++) {
+      STATIC_FREQS[i] = 1;
+    }    
+  }
+  private FacetDataCache createRealtimeFakeFacetDataCache(ForwardIndex forwardIndex2) {
+    FacetDataCache newDataCache = new FacetDataCache<String>();
+    newDataCache.valArray = forwardIndex.getDictionary(); 
+    newDataCache.freqs =  STATIC_FREQS;    
+    return newDataCache;
+  }
   public FacetDataCache getFakeCache() {
     return fakeCache;
   }

@@ -1,15 +1,11 @@
-package com.senseidb.ba.realtime;
+package com.senseidb.ba.realtime.domain;
 
-import com.senseidb.ba.gazelle.ColumnType;
-import com.senseidb.ba.gazelle.ForwardIndex;
+import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.search.req.mapred.impl.dictionary.DictionaryNumberAccessor;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 
-public interface ColumnSearchSnapshot extends DictionaryNumberAccessor, ForwardIndex {
-
-  public abstract int size();
-
+public interface DictionarySnapshot extends DictionaryNumberAccessor {
   public abstract String getStringValue(int unsortedDictId);
 
   public abstract Object getObject(int unsortedDictId);
@@ -24,14 +20,11 @@ public interface ColumnSearchSnapshot extends DictionaryNumberAccessor, ForwardI
 
   public abstract short getShortValue(int unsortedDictId);
 
-  public abstract IntList getPermutationArray();
-
-  public void initForwardIndex(int[] forwardIndex, int forwardIndexSize, ColumnType columnType);
-
-  int[] getForwardIndex();
-
-  int getForwardIndexSize();
+  public abstract IntList getDictPermutationArray();
 
   public  void recycle();
-
+  
+  public TermValueList produceDictionary();
+  public int sortedIndexOf(String value);
+  int size();
 }

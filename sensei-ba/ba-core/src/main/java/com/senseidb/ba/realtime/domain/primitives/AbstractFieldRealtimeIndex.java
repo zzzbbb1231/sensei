@@ -1,8 +1,8 @@
-package com.senseidb.ba.realtime.primitives;
+package com.senseidb.ba.realtime.domain.primitives;
 
 import scala.actors.threadpool.Arrays;
 
-import com.senseidb.ba.realtime.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 
 public abstract class AbstractFieldRealtimeIndex implements FieldRealtimeIndex {
   protected final int capacity;
@@ -27,7 +27,7 @@ public abstract class AbstractFieldRealtimeIndex implements FieldRealtimeIndex {
   public void recycle() {
     Arrays.fill(forwardIndex, 0);
     currentPosition = 0;
-    searchSnapshot.recycle();
+    searchSnapshot.getDictionarySnapshot().recycle();
     
   }
 }

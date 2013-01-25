@@ -1,8 +1,8 @@
-package com.senseidb.ba.realtime.primitives;
+package com.senseidb.ba.realtime.domain.primitives;
 
 import java.util.concurrent.locks.ReadWriteLock;
 
-import com.senseidb.ba.realtime.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 
 public interface FieldRealtimeIndex {
   public static final int NULL_DICTIONARY_ID = 1;

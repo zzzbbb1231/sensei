@@ -9,7 +9,7 @@ import proj.zoie.api.ZoieIndexReader;
 import com.browseengine.bobo.api.BoboIndexReader;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.ba.management.directory.AbstractFakeZoie;
-import com.senseidb.ba.realtime.RealtimeSnapshotIndexSegment;
+import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
 public class RealtimeIndexFactory  extends AbstractFakeZoie {
@@ -45,5 +45,8 @@ public class RealtimeIndexFactory  extends AbstractFakeZoie {
         }
        }
    }
-
+  public Object getLock() {
+    return lock;
+  }
+  
 }

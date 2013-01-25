@@ -5,7 +5,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.log4j.Logger;
+
+import com.senseidb.ba.realtime.indexing.RealtimeIndexingManager;
+
 public abstract class SnapshotRefreshScheduler {
+  private static Logger logger = Logger.getLogger(SnapshotRefreshScheduler.class);  
+  
    private ScheduledExecutorService refreshService = Executors.newScheduledThreadPool(1);
    private long lastRefreshedTime;
    private volatile int lastRefreshedSize;
@@ -41,6 +47,11 @@ public abstract class SnapshotRefreshScheduler {
        isCancelled = true;
      }
      refreshService.shutdownNow();
+     try {
+      refreshService.awaitTermination(5, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
    }
    
    public abstract int refresh();
@@ -60,6 +71,7 @@ public abstract class SnapshotRefreshScheduler {
    public final class CountRefreshJob implements Callable<Void> {
      @Override
      public Void call() throws Exception {
+       try {
        if (isCancelled) return null;
        synchronized(lock) {
          if (isCancelled) return null;
@@ -70,6 +82,11 @@ public abstract class SnapshotRefreshScheduler {
        }
        return null;
      }
+     catch (Exception ex) {
+      logger.error(ex.getMessage(), ex); 
+      throw ex;
+     }
+   }
    }
    public final class TimeRefreshJob implements Callable<Void> {
      @Override

@@ -1,26 +1,28 @@
-package com.senseidb.ba.realtime.primitives;
+package com.senseidb.ba.realtime.domain.primitives;
 
 import java.util.concurrent.locks.ReadWriteLock;
 
 import com.senseidb.ba.gazelle.ColumnType;
-import com.senseidb.ba.realtime.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.SingleValueSearchSnapshot;
 
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 
-public class SingleLongValueIndex extends  AbstractFieldRealtimeIndex {
-    private Long2IntOpenHashMap dictionary;
+public class SingleIntValueIndex extends  AbstractFieldRealtimeIndex {
+    private Int2IntOpenHashMap dictionary;
     
     
-    public SingleLongValueIndex(int capacity) {
+    public SingleIntValueIndex(int capacity) {
      super(capacity);
-      dictionary = new Long2IntOpenHashMap(500);
+      dictionary = new Int2IntOpenHashMap(500);
       //unitialized value
-      dictionary.put(Long.MIN_VALUE, 0);
+      dictionary.put(Integer.MIN_VALUE, 0);
       //null value
-      dictionary.put(Long.MIN_VALUE + 1, 1);
+      dictionary.put(Integer.MIN_VALUE + 1, 1);
     }
     
-    public void addLong(long value, ReadWriteLock lock) {
+    public void addInt(int value, ReadWriteLock lock) {
       int dictionaryId;
       if (dictionary.containsKey(value)) {
         dictionaryId = dictionary.get(value);
@@ -47,9 +49,9 @@ public class SingleLongValueIndex extends  AbstractFieldRealtimeIndex {
         forwardIndex[currentPosition] = NULL_DICTIONARY_ID;
         currentPosition++;
       } else if (value instanceof Number) {
-        addLong(((Number) value).longValue(), readWriteLock);
+        addInt(((Number) value).intValue(), readWriteLock);
       } else if (value instanceof String) {
-        addLong(Long.parseLong(value.toString()), readWriteLock);
+        addInt(Integer.parseInt(value.toString()), readWriteLock);
       } else {
         throw new UnsupportedOperationException(value.getClass().toString());
       }
@@ -58,17 +60,21 @@ public class SingleLongValueIndex extends  AbstractFieldRealtimeIndex {
      
       try {
         readWriteLock.readLock().lock();
-        if (searchSnapshot != null && searchSnapshot.getPermutationArray() != null && searchSnapshot.getPermutationArray().size() == dictionary.size()) {
+        if (searchSnapshot != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray() != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray().size() == dictionary.size()) {
          
         } else {
-          searchSnapshot = new SingleLongValueSearchSnapshot();
-          ((SingleLongValueSearchSnapshot)searchSnapshot).init(dictionary, readWriteLock);
+          
+          searchSnapshot = new SingleValueSearchSnapshot();
+          IntDictionarySnapshot dictionarySnapshot = new IntDictionarySnapshot();
+          dictionarySnapshot.init(dictionary, readWriteLock);
+          searchSnapshot.init(forwardIndex, currentPosition, ColumnType.INT, dictionarySnapshot);
+        
         }
       
       } finally {
         readWriteLock.readLock().unlock();
       }
-      searchSnapshot.initForwardIndex(forwardIndex, currentPosition, ColumnType.LONG);
+     
       return searchSnapshot;
     }
     

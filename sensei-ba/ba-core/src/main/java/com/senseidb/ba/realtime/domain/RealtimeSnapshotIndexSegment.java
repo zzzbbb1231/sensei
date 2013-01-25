@@ -1,4 +1,4 @@
-package com.senseidb.ba.realtime;
+package com.senseidb.ba.realtime.domain;
 
 import java.util.Map;
 
@@ -8,11 +8,13 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.IndexSegment;
+import com.senseidb.ba.realtime.SegmentAppendableIndex;
 
 public class RealtimeSnapshotIndexSegment implements IndexSegment {
   private int length;
   private Map<String, ColumnSearchSnapshot> columnSnapshots;
   private Map<String, ColumnType> columnTypes;
+  private SegmentAppendableIndex segmentAppendableIndex;
   
   
   
@@ -41,5 +43,11 @@ public class RealtimeSnapshotIndexSegment implements IndexSegment {
   @Override
   public int getLength() {
     return length;
+  }
+  public void setReferencedSegment(SegmentAppendableIndex segmentAppendableIndex) {
+    this.segmentAppendableIndex = segmentAppendableIndex;
+  }
+  public SegmentAppendableIndex getReferencedSegment() {
+    return segmentAppendableIndex;
   }
 }
