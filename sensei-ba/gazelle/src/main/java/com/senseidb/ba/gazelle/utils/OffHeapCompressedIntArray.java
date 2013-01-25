@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 import org.springframework.util.Assert;
 
-public class OffHeapCompressedIntArray  extends IntArray {
+public class OffHeapCompressedIntArray  implements IntArray {
   private final ByteBuffer buf;
   private int capacity;
   private final int numOfBitsPerElement;
