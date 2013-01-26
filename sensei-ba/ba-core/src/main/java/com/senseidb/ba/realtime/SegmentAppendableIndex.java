@@ -10,10 +10,13 @@ import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
 import com.senseidb.ba.realtime.domain.primitives.FieldRealtimeIndex;
-import com.senseidb.ba.realtime.domain.primitives.SingleFloatValueIndex;
-import com.senseidb.ba.realtime.domain.primitives.SingleIntValueIndex;
-import com.senseidb.ba.realtime.domain.primitives.SingleLongValueIndex;
-import com.senseidb.ba.realtime.domain.primitives.SingleStringValueIndex;
+import com.senseidb.ba.realtime.domain.primitives.MultiFieldRealtimeIndex;
+import com.senseidb.ba.realtime.domain.primitives.SingleFieldRealtimeIndex;
+import com.senseidb.ba.realtime.domain.primitives.dictionaries.FloatRealtimeDictionary;
+import com.senseidb.ba.realtime.domain.primitives.dictionaries.IntRealtimeDictionary;
+import com.senseidb.ba.realtime.domain.primitives.dictionaries.LongRealtimeDictionary;
+import com.senseidb.ba.realtime.domain.primitives.dictionaries.RealtimeDictionary;
+import com.senseidb.ba.realtime.domain.primitives.dictionaries.StringRealtimeDictionary;
 
 public class SegmentAppendableIndex {
     private int capacity;
@@ -29,18 +32,26 @@ public class SegmentAppendableIndex {
       this.capacity = capacity;
       columnIndexes = new FieldRealtimeIndex[schema.getColumnNames().length];
       for (int i = 0; i < schema.getColumnNames().length; i++) {
-        String column = schema.getColumnNames()[i];
         ColumnType columnType = schema.getTypes()[i];
-        if (columnType == ColumnType.LONG) {
-          columnIndexes[i] = new SingleLongValueIndex(capacity);
-        } else if (columnType == ColumnType.STRING) {
-          columnIndexes[i] = new SingleStringValueIndex(capacity);
-        } else if (columnType == ColumnType.FLOAT) {
-          columnIndexes[i] = new SingleFloatValueIndex(capacity);
-        } else if (columnType == ColumnType.INT) {
-          columnIndexes[i] = new SingleIntValueIndex(capacity);
+        RealtimeDictionary dictionary = null;
+        boolean isSingleValue = !columnType.isMulti();
+        if (columnType.getElementType() == ColumnType.LONG) {
+          dictionary = new LongRealtimeDictionary();
+        } else if (columnType.getElementType() == ColumnType.STRING) {
+          dictionary = new StringRealtimeDictionary();
+        } else if (columnType.getElementType() == ColumnType.FLOAT) {
+          dictionary = new FloatRealtimeDictionary();
+        } else if (columnType.getElementType() == ColumnType.INT) {
+          dictionary = new IntRealtimeDictionary();
         } else {
           throw new UnsupportedOperationException(columnType.toString());
+        }
+        
+        dictionary.init();
+        if (isSingleValue) {
+          columnIndexes[i] = new SingleFieldRealtimeIndex(dictionary, columnType, capacity);
+        } else {
+          columnIndexes[i] = new MultiFieldRealtimeIndex(dictionary, columnType, capacity);
         }
       }
     }

@@ -164,6 +164,9 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
   public File getPath(int nodeId, int partitionId) {   
     return null;
   }
+  public IndexConfig getIndexConfig() {
+    return indexConfig;
+  }
 
  
     

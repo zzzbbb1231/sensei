@@ -6,52 +6,39 @@ import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
+import com.browseengine.bobo.util.LazyBigIntArray;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.senseidb.ba.gazelle.utils.multi.MultiFacetIterator;
+import com.senseidb.search.req.mapred.impl.dictionary.DictionaryNumberAccessor;
 
 public class GroupByFacetUtils {
-  public static  class SingleValueLongFacetCountCollector extends DefaultFacetCountCollector {
-    private final SingleValueForwardIndex dimensionForwardIndex;
-    private final TermLongList termLongList;
-    private final SingleValueForwardIndex metricForwardIndex;
-    private final SingleValueRandomReader dimensionReader;
-    private final SingleValueRandomReader metricReader;
 
-    public SingleValueLongFacetCountCollector(String name, FacetDataCache dataCache, int docBase, BrowseSelection sel, FacetSpec ospec, TermLongList termLongList, SingleValueForwardIndex dimensionForwardIndex, SingleValueForwardIndex metricForwardIndex) {
-      super(name, dataCache, docBase, sel, ospec);
-      this.dimensionForwardIndex = dimensionForwardIndex;
-      dimensionReader = dimensionForwardIndex.getReader();
-      metricReader = metricForwardIndex.getReader();
-      this.termLongList = termLongList;
-      this.metricForwardIndex = metricForwardIndex;
-    }
-
-    @Override
-    public void collectAll() {
-      for (int docid=0; docid<dimensionForwardIndex.getLength(); docid++)
-        collect(docid);
-    }
-
-    @Override
-    public void collect(int docid) {
-      _count.add(dimensionReader.getValueIndex(docid),  _count.get(dimensionReader.getValueIndex(docid)) + (int)termLongList.getPrimitiveValue((metricReader.getValueIndex(docid))));
-    }
-  }
-  public static  class MultiValueLongFacetCountCollector extends DefaultFacetCountCollector {
+  public static  class MultiValueFacetCountCollector extends DefaultFacetCountCollector {
     private final MultiValueForwardIndex dimensionForwardIndex;
-    private final TermLongList termLongList;
     private final SingleValueForwardIndex metricForwardIndex;
     private int[] buffer;
     private MultiFacetIterator iterator;
-    private Object dimensionReader;
     private SingleValueRandomReader metricReader;
+    private final DictionaryNumberAccessor numberAccessor;
 
-    public MultiValueLongFacetCountCollector(String name, FacetDataCache dataCache, int docBase, BrowseSelection sel, FacetSpec ospec, TermLongList termLongList, MultiValueForwardIndex dimensionForwardIndex, SingleValueForwardIndex metricForwardIndex) {
+    @SuppressWarnings("rawtypes")
+    public MultiValueFacetCountCollector(String name, FacetDataCache dataCache, int docBase, BrowseSelection sel, FacetSpec ospec, DictionaryNumberAccessor numberAccessor, MultiValueForwardIndex dimensionForwardIndex, SingleValueForwardIndex metricForwardIndex, boolean isRealtime) {
       super(name, dataCache, docBase, sel, ospec);
+      if (isRealtime) {
+        _countlength = dataCache.valArray.size();
+        if (_countlength <= 3096)
+        {
+          _count = new LazyBigIntArray(_countlength);
+        } else
+        {
+          _count = intarraymgr.get(_countlength);
+          intarraylist.add(_count);
+        }
+      }
       this.dimensionForwardIndex = dimensionForwardIndex;
-      this.termLongList = termLongList;
+      this.numberAccessor = numberAccessor;
       this.metricForwardIndex = metricForwardIndex;
       metricReader = metricForwardIndex.getReader();
       iterator = dimensionForwardIndex.getIterator();
@@ -69,7 +56,7 @@ public class GroupByFacetUtils {
       iterator.advance(docid);
       int count = iterator.readValues(buffer);
       int index = -1;
-      int metricValue = (int)termLongList.getPrimitiveValue((metricReader.getValueIndex(docid)));
+      int metricValue = numberAccessor.getIntValue(metricReader.getValueIndex(docid));
       while (++index < count) {
         int valueId = buffer[index];
         _count.add(valueId,  _count.get(valueId) + metricValue);
@@ -77,54 +64,30 @@ public class GroupByFacetUtils {
       
     }
   }
-  public static  class MultiValueIntFacetCountCollector extends DefaultFacetCountCollector {
-    private final MultiValueForwardIndex dimensionForwardIndex;
-    private final TermIntList termIntList;
+  public static class SingleValueFacetCountCollector extends DefaultFacetCountCollector {
     private final SingleValueForwardIndex metricForwardIndex;
-    private int[] buffer;
-    private MultiFacetIterator iterator;
-    private SingleValueRandomReader metricReader;
-
-    public MultiValueIntFacetCountCollector(String name, FacetDataCache dataCache, int docBase, BrowseSelection sel, FacetSpec ospec, TermIntList termIntList, MultiValueForwardIndex dimensionForwardIndex, SingleValueForwardIndex metricForwardIndex) {
-      super(name, dataCache, docBase, sel, ospec);
-      this.dimensionForwardIndex = dimensionForwardIndex;
-      this.termIntList = termIntList;
-      this.metricForwardIndex = metricForwardIndex;
-      metricReader = metricForwardIndex.getReader();
-      iterator = dimensionForwardIndex.getIterator();
-      buffer = new int[dimensionForwardIndex.getMaxNumValuesPerDoc()];
-    }
-
-    @Override
-    public void collectAll() {
-      for (int docid=0; docid<dimensionForwardIndex.getLength(); docid++)
-        collect(docid);
-    }
-
-    @Override
-    public void collect(int docid) {
-      iterator.advance(docid);
-      int count = iterator.readValues(buffer);
-      int index = -1;
-      int metricValue = (int)termIntList.getPrimitiveValue((metricReader.getValueIndex(docid)));
-      while (++index < count) {
-        int valueId = buffer[index];
-        _count.add(valueId,  _count.get(valueId) + metricValue);
-      }
-      
-    }
-  }
-  public static class SingleValueIntFacetCountCollector extends DefaultFacetCountCollector {
-    private final SingleValueForwardIndex metricForwardIndex;
-    private final TermIntList termIntList;
     private final SingleValueForwardIndex dimensionForwardIndex;
     private SingleValueRandomReader dimensionReader;
     private SingleValueRandomReader metricReader;
+    private final DictionaryNumberAccessor numberAccessor;
 
-    public SingleValueIntFacetCountCollector(String name, FacetDataCache dataCache, int docBase, BrowseSelection sel, FacetSpec ospec, TermIntList termIntList, SingleValueForwardIndex dimensionForwardIndex, SingleValueForwardIndex metricForwardIndex) {
+    @SuppressWarnings("rawtypes")
+    public SingleValueFacetCountCollector(String name, FacetDataCache dataCache, int docBase, BrowseSelection sel, FacetSpec ospec, DictionaryNumberAccessor numberAccessor, SingleValueForwardIndex dimensionForwardIndex, SingleValueForwardIndex metricForwardIndex, boolean isRealtime) {
       super(name, dataCache, docBase, sel, ospec);
+      this.numberAccessor = numberAccessor;
+      if (isRealtime) {
+        _countlength = dataCache.valArray.size();
+        if (_countlength <= 3096)
+        {
+          _count = new LazyBigIntArray(_countlength);
+        } else
+        {
+          _count = intarraymgr.get(_countlength);
+          intarraylist.add(_count);
+        }
+      }
       this.metricForwardIndex = metricForwardIndex;
-      this.termIntList = termIntList;
+     
       this.dimensionForwardIndex = dimensionForwardIndex;
       dimensionReader = dimensionForwardIndex.getReader();
       metricReader = metricForwardIndex.getReader();
@@ -138,7 +101,7 @@ public class GroupByFacetUtils {
 
     @Override
     public void collect(int docid) {
-      _count.add(dimensionReader.getValueIndex(docid),  _count.get(dimensionReader.getValueIndex(docid)) + termIntList.getPrimitiveValue((metricReader.getValueIndex(docid))));
+      _count.add(dimensionReader.getValueIndex(docid),   _count.get(dimensionReader.getValueIndex(docid)) + numberAccessor.getIntValue((metricReader.getValueIndex(docid))));
     }
   }
 }

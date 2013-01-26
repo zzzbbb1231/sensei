@@ -1,5 +1,7 @@
 package com.senseidb.ba.gazelle.utils;
 
+import it.unimi.dsi.fastutil.longs.LongList;
+
 import java.util.Comparator;
 
 import com.senseidb.ba.gazelle.SecondarySortedForwardIndex.SortedRegion;
@@ -146,7 +148,29 @@ public class SortUtil {
         ( bc < 0 ? b : ac < 0 ? c : a ) :
         ( bc > 0 ? b : ac > 0 ? c : a ) );
   }
+  public static interface ComparableToInt {
+    public int compareTo(int index);
+  }
   
+  public static int  binarySearch(int fromIndex, int toIndex, ComparableToInt key) {
+    
+    int low = fromIndex;
+    int high = toIndex - 1;
+
+    while (low <= high) {
+      int mid = (low + high) >>> 1;
+     
+      int cmp = key.compareTo(mid);
+
+      if (cmp < 0)
+        low = mid + 1;
+      else if (cmp > 0)
+        high = mid - 1;
+      else
+        return mid; // key found
+    }
+    return -(low + 1); // key not found.
+  }
   public static int  binarySearch(SortedRegion[] a, int fromIndex, int toIndex, int key) {
     
     int low = fromIndex;

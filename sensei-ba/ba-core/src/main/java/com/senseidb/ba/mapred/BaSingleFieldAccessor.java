@@ -25,7 +25,12 @@ public class BaSingleFieldAccessor implements SingleFieldAccessor {
       this.facetHandler = facetHandler;
       this.reader = reader;
       this.forwardIndex = forwardIndex;
-      dictionaryNumberAccessor = AccessorFactory.get(forwardIndex.getDictionary());
+      //true for realtime
+      if (forwardIndex.getDictionary() instanceof DictionaryNumberAccessor) {
+        dictionaryNumberAccessor = (DictionaryNumberAccessor) forwardIndex.getDictionary();
+      } else {
+        dictionaryNumberAccessor = AccessorFactory.get(forwardIndex.getDictionary());
+      }
       valArray = forwardIndex.getDictionary();
       if (forwardIndex instanceof SingleValueForwardIndex) {
         singleValueReader = ((SingleValueForwardIndex)forwardIndex).getReader();

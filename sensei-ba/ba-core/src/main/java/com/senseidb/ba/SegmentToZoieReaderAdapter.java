@@ -71,7 +71,7 @@ public class SegmentToZoieReaderAdapter<R extends IndexReader> extends ZoieSegme
   @Override
   public long getUID(int docid) {
 
-    return segmentHashBase + docid;
+    return segmentHashBase | docid;
   }
 
   @Override

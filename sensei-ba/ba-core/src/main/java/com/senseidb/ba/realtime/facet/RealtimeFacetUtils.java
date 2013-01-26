@@ -34,7 +34,7 @@ public class RealtimeFacetUtils {
         return EmptyDocIdSet.getInstance().iterator();
       }
       final int unsortedValue = forwardIndex.getDictionarySnapshot().getDictPermutationArray().getInt(index);
-      return new SingleValueForwardIndexIterator(forwardIndex.getForwardIndex(), forwardIndex.getForwardIndexSize(), unsortedValue);
+      return new SingleValueForwardIndexIterator((int[])forwardIndex.getForwardIndex(), forwardIndex.getForwardIndexSize(), unsortedValue);
     }
 
     @Override
@@ -48,14 +48,10 @@ public class RealtimeFacetUtils {
     private final int startIndex;
     private final int endIndex;
 
-    public RealtimeRangeSingleValueDocIdSet(SingleValueSearchSnapshot forwardIndex, String value, String[] values) {
-      int [] rangeIndex = QueryUtils.getRangeIndexes(forwardIndex.getDictionarySnapshot(), value, values);
-      startIndex = rangeIndex[0];      
-      if (rangeIndex[1] >= forwardIndex.getDictionarySnapshot().size()) {       
-        endIndex = forwardIndex.getDictionarySnapshot().size() - 1;
-      } else {
-        endIndex = rangeIndex[1];
-      }
+    public RealtimeRangeSingleValueDocIdSet(SingleValueSearchSnapshot forwardIndex, int startIndex, int endIndex) {
+      this.startIndex = startIndex;
+      this.endIndex = endIndex;
+     
       
     }
 
@@ -67,7 +63,7 @@ public class RealtimeFacetUtils {
       if (startIndex == endIndex) {
         return new RealtimeSingleValueDocIdSet(forwardIndex, startIndex).iterator();
       }
-     return new RealtimeRangeForwardIndexIterator(forwardIndex.getForwardIndex(), forwardIndex.getForwardIndexSize(), forwardIndex.getDictionarySnapshot().getDictPermutationArray(), startIndex, endIndex);
+     return new RealtimeRangeForwardIndexIterator((int[])forwardIndex.getForwardIndex(), forwardIndex.getForwardIndexSize(), forwardIndex.getDictionarySnapshot().getDictPermutationArray(), startIndex, endIndex);
     }
 
     @Override
@@ -162,7 +158,7 @@ public class RealtimeFacetUtils {
 
     public RealtimeSingleValueCountCollector(String name, FacetDataCache dataCache, SingleValueSearchSnapshot forwardIndex, int docBase, BrowseSelection sel, FacetSpec ospec) {
       super(name, dataCache, docBase, sel, ospec);
-      this.forwardIndex = forwardIndex.getForwardIndex();
+      this.forwardIndex = (int[])forwardIndex.getForwardIndex();
        forwardIndexSize = forwardIndex.getForwardIndexSize();
     }
 

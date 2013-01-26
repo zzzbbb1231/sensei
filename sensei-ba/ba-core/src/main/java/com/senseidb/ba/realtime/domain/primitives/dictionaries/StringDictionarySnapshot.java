@@ -1,4 +1,4 @@
-package com.senseidb.ba.realtime.domain.primitives;
+package com.senseidb.ba.realtime.domain.primitives.dictionaries;
 
 import it.unimi.dsi.fastutil.Swapper;
 import it.unimi.dsi.fastutil.ints.IntArrayList;

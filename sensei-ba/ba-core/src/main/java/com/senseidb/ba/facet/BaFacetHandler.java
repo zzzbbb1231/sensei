@@ -36,6 +36,10 @@ import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl;
+import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.MultiValueSearchSnapshot;
+import com.senseidb.ba.realtime.domain.SingleValueSearchSnapshot;
+import com.senseidb.ba.realtime.facet.RealtimeFacetUtils;
 import com.senseidb.ba.util.QueryUtils;
 
 public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
@@ -93,6 +97,10 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         if (zeusDataCache == null) {
           return EmptyDocIdSet.getInstance();
         }
+        if (zeusDataCache.getForwardIndex() instanceof SingleValueSearchSnapshot) {
+          return new RealtimeFacetUtils.RealtimeSingleValueDocIdSet((SingleValueSearchSnapshot)zeusDataCache.getForwardIndex(), value);
+        }
+        //realtime multi value can go by usual path
         final int index = zeusDataCache.getDictionary().indexOf(value);
         if (index < 0) {
           return EmptyDocIdSet.getInstance();
@@ -127,6 +135,9 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
     throw new UnsupportedOperationException();
   }
   private RandomAccessFilter getRangeRandomAccessFilter(final String value, final String[] values, Properties selectionProperty) {
+    
+    
+    
     return new RandomAccessFilter() {
       @Override
       public double getFacetSelectivity(BoboIndexReader reader) {
@@ -143,9 +154,16 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         if (zeusDataCache == null) {
           return EmptyDocIdSet.getInstance();
         }
+        if (zeusDataCache.getForwardIndex() instanceof ColumnSearchSnapshot) {
+          return handleRealtimeRangeQuery(value, values, zeusDataCache);
+        }
+        return handleRangeQuery(value, values, zeusDataCache);
+        
+      }
+
+      public RandomAccessDocIdSet handleRangeQuery(final String value, final String[] values, final ZeusDataCache zeusDataCache) {
         final int startIndex;
         final int endIndex;
-        
         int [] rangeIndex = QueryUtils.getRangeIndexes(zeusDataCache, value, values);
         startIndex = rangeIndex[0];
         
@@ -173,7 +191,29 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         } else {
           throw new UnsupportedOperationException();
         }
-        
+      }
+
+      public RandomAccessDocIdSet handleRealtimeRangeQuery(final String value, final String[] values, final ZeusDataCache zeusDataCache) {
+        final int startIndex;
+        final int endIndex;
+        int [] rangeIndex = QueryUtils.getRangeIndexes(((ColumnSearchSnapshot)zeusDataCache.getForwardIndex()).getDictionarySnapshot(), value, values);
+        startIndex = rangeIndex[0]; 
+        if (rangeIndex[1] >= zeusDataCache.getDictionary().size()) {
+          logger.warn("Got endIndex more than dictionary size for value " + value);
+          endIndex = zeusDataCache.getDictionary().size() - 1;
+        } else {
+          endIndex = rangeIndex[1];
+        }
+        if (startIndex > endIndex) {
+          return EmptyDocIdSet.getInstance();
+        }
+        if (zeusDataCache.getForwardIndex() instanceof SingleValueSearchSnapshot) {
+          return new RealtimeFacetUtils.RealtimeRangeSingleValueDocIdSet((SingleValueSearchSnapshot)zeusDataCache.getForwardIndex(), startIndex, endIndex);
+        } else if (zeusDataCache.getForwardIndex() instanceof MultiValueSearchSnapshot) {
+          return new MultiFacetUtils.RangeMultiForwardDocIdSet((MultiValueSearchSnapshot)zeusDataCache.getForwardIndex(), startIndex, endIndex);
+        } else {
+          throw new UnsupportedOperationException();
+        }
       }
     };
 
@@ -220,6 +260,9 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         }
         if (forwardIndex instanceof MultiValueForwardIndex) {
           return new MultiFacetUtils.MultiForwardIndexCountCollector(getName(), dataCache.getFakeCache(), (MultiValueForwardIndex) forwardIndex, docBase, sel, fspec);
+        } 
+        if (forwardIndex instanceof SingleValueSearchSnapshot) {
+          return new RealtimeFacetUtils.RealtimeSingleValueCountCollector(getName(), fakeCache, (SingleValueSearchSnapshot) forwardIndex, docBase, sel, fspec);
         }
         throw new UnsupportedOperationException();
       }

@@ -19,11 +19,10 @@ import com.browseengine.bobo.facets.filter.RandomAccessFilter;
 import com.browseengine.bobo.sort.DocComparatorSource;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
+import com.senseidb.search.req.mapred.impl.dictionary.AccessorFactory;
+import com.senseidb.search.req.mapred.impl.dictionary.DictionaryNumberAccessor;
 
-/**
- * @author Praveen Neppalli Naga <pneppalli@linkedin.com>
- * 
- */
+
 public class SumGroupByFacetHandler extends FacetHandler<Serializable> {
 
   public static final String[] EMPTY_STRING = new String[0];
@@ -82,30 +81,24 @@ public class SumGroupByFacetHandler extends FacetHandler<Serializable> {
 
         final ZeusDataCache sumOverDataCache = (ZeusDataCache) reader.getFacetData(metric);
         final TermNumberList valList = (TermNumberList) sumOverDataCache.getDictionary();
+        boolean isRealtime = false;
+        DictionaryNumberAccessor numberAccessor = null; 
+        if (valList instanceof DictionaryNumberAccessor) {
+          //in case of realtime indexing
+          isRealtime = true;
+          numberAccessor = (DictionaryNumberAccessor) valList;
+        } else {
+          numberAccessor = AccessorFactory.get(valList);
+        }
+        final SingleValueForwardIndex metricForwardIndex = (SingleValueForwardIndex) sumOverDataCache.getForwardIndex();
         if (groupByCache.getForwardIndex() instanceof SingleValueForwardIndex) {
-          final SingleValueForwardIndex metricForwardIndex = (SingleValueForwardIndex) sumOverDataCache.getForwardIndex();
           final SingleValueForwardIndex dimensionForwardIndex = (SingleValueForwardIndex) groupByCache.getForwardIndex();
-          if (valList instanceof TermIntList) {
-            final TermIntList termIntList = (TermIntList) valList;
-            return new GroupByFacetUtils.SingleValueIntFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, termIntList, dimensionForwardIndex, metricForwardIndex);
-          } else if (valList instanceof TermLongList) {
-            final TermLongList termLongList = (TermLongList) valList;
-            return new GroupByFacetUtils.SingleValueLongFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, termLongList, dimensionForwardIndex, metricForwardIndex);
-          } else {
-            throw new UnsupportedOperationException(valList.getClass().toString());
-          }
+            return new GroupByFacetUtils.SingleValueFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, numberAccessor, dimensionForwardIndex, metricForwardIndex, isRealtime);
         } else if (groupByCache.getForwardIndex() instanceof MultiValueForwardIndex) {
-          final SingleValueForwardIndex metricForwardIndex = (SingleValueForwardIndex) sumOverDataCache.getForwardIndex();
+         
           final MultiValueForwardIndex dimensionForwardIndex = (MultiValueForwardIndex) groupByCache.getForwardIndex();
-          if (valList instanceof TermIntList) {
-            final TermIntList termIntList = (TermIntList) valList;
-            return new GroupByFacetUtils.MultiValueIntFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, termIntList, dimensionForwardIndex, metricForwardIndex);
-          } else if (valList instanceof TermLongList) {
-            final TermLongList termLongList = (TermLongList) valList;
-            return new GroupByFacetUtils.MultiValueLongFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, termLongList, dimensionForwardIndex, metricForwardIndex);
-          } else {
-            throw new UnsupportedOperationException(valList.getClass().toString());
-          }
+            return new GroupByFacetUtils.MultiValueFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, numberAccessor, dimensionForwardIndex, metricForwardIndex, isRealtime);
+          
         } else {
           throw new UnsupportedOperationException("Either single or multi column value are supported");
         }

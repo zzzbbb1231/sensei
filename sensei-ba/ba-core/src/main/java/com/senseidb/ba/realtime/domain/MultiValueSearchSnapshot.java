@@ -4,17 +4,20 @@ import it.unimi.dsi.fastutil.ints.IntList;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.gazelle.MultiValueForwardIndex;
+import com.senseidb.ba.gazelle.utils.multi.MultiFacetIterator;
+import com.senseidb.ba.realtime.domain.multi.MultiArray;
 
-public  class SingleValueSearchSnapshot implements ColumnSearchSnapshot<int[]> {
+public  class MultiValueSearchSnapshot implements ColumnSearchSnapshot<MultiArray>, MultiValueForwardIndex {
  
 
-  private volatile int[] forwardIndex;
+  private volatile MultiArray forwardIndex;
   private int forwardIndexSize;
 
   private ColumnType columnType;
   private AbstractDictionarySnapshot dictionarySnapshot;
  
-  public void init(int[] forwardIndex, int forwardIndexSize, ColumnType columnType, AbstractDictionarySnapshot dictionarySnapshot) {   
+  public void init(MultiArray forwardIndex, int forwardIndexSize, ColumnType columnType, AbstractDictionarySnapshot dictionarySnapshot) {   
     this.forwardIndex = forwardIndex;
     this.forwardIndexSize = forwardIndexSize;
     this.columnType = columnType;
@@ -28,7 +31,7 @@ public  class SingleValueSearchSnapshot implements ColumnSearchSnapshot<int[]> {
   }
 
 
-  public int[] getForwardIndex() {
+  public MultiArray getForwardIndex() {
     return forwardIndex;
   }
 
@@ -41,7 +44,7 @@ public  class SingleValueSearchSnapshot implements ColumnSearchSnapshot<int[]> {
   }
   @Override
   public TermValueList<?> getDictionary() {
-   return null;
+   return dictionarySnapshot;
   }
   @Override
   public int getLength() {
@@ -53,6 +56,24 @@ public  class SingleValueSearchSnapshot implements ColumnSearchSnapshot<int[]> {
     return dictionarySnapshot;
   }
   public boolean isSingleValue() {
-    return forwardIndex instanceof int[];
+    return false;
+  }
+
+
+  @Override
+  public MultiFacetIterator getIterator() {
+    return forwardIndex.iterator();
+  }
+
+
+  @Override
+  public int randomRead(int[] buffer, int index) {
+    return forwardIndex.readValues(buffer, index);
+  }
+
+
+  @Override
+  public int getMaxNumValuesPerDoc() {
+    return forwardIndex.getMaxNumValuesPerDoc();
   }
 }

@@ -1,24 +1,26 @@
-package com.senseidb.ba.realtime.domain.primitives;
+package com.senseidb.ba.realtime.domain.primitives.dictionaries;
 
 import java.util.concurrent.locks.ReadWriteLock;
 
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 import com.senseidb.ba.realtime.domain.SingleValueSearchSnapshot;
+import com.senseidb.ba.realtime.domain.primitives.dictionaries.StringDictionarySnapshot;
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
-public class SingleStringValueIndex extends AbstractFieldRealtimeIndex  {
+public class StringRealtimeDictionary implements RealtimeDictionary {  
     private Object2IntOpenHashMap<String> dictionary;
   
-    public SingleStringValueIndex(int capacity) {
-      super(capacity);
+    public void init() {
+     
       dictionary = new Object2IntOpenHashMap<String>(500);
      
     }
     
-    public void addString(String value, ReadWriteLock lock) {
+    public int addString(String value, ReadWriteLock lock) {
       int dictionaryId;
       if (dictionary.containsKey(value)) {
         dictionaryId = dictionary.get(value);
@@ -32,38 +34,38 @@ public class SingleStringValueIndex extends AbstractFieldRealtimeIndex  {
         } finally {
           lock.writeLock().unlock();
         }
-      }
-      forwardIndex[currentPosition] = dictionaryId;
-      currentPosition++;
+      }  
+      return dictionaryId;
     }
 
  
     @Override
-    public void addElement(Object value, ReadWriteLock readWriteLock) {
+    public int addElement(Object value, ReadWriteLock readWriteLock) {
       if (value == null) {
-        forwardIndex[currentPosition] = NULL_DICTIONARY_ID;
-        currentPosition++;
+        return NULL_DICTIONARY_ID;
+       
       } else {
-        addString(value.toString(), readWriteLock);
+        return addString(value.toString(), readWriteLock);
       }
       
     }
-    public ColumnSearchSnapshot produceSnapshot(ReadWriteLock readWriteLock) {     
+    public DictionarySnapshot produceDictSnapshot(ReadWriteLock readWriteLock) {  
 
       try {
         readWriteLock.readLock().lock();
-        if (searchSnapshot != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray() != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray().size() == dictionary.size()) {
-         
-        } else {
-          searchSnapshot = new SingleValueSearchSnapshot();
+      
           StringDictionarySnapshot dictionarySnapshot = new StringDictionarySnapshot();
           dictionarySnapshot.init(dictionary, readWriteLock);
-          searchSnapshot.init(forwardIndex, currentPosition, ColumnType.STRING, dictionarySnapshot);
-        }
+         return dictionarySnapshot;
+        
       
       } finally {
         readWriteLock.readLock().unlock();
       }
-      return searchSnapshot;
+     
     }
+    @Override
+    public int size() {
+      return dictionary.size() + 2;
+    } 
 }

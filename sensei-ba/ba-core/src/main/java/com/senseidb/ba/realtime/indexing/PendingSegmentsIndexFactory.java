@@ -163,7 +163,7 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
       @Override
       public int compare(int k1, int k2) {
         
-        for (ColumnSearchSnapshot index :  indexes) {
+        for (ColumnSearchSnapshot<int[]> index :  indexes) {
           int val1 = index.getDictionarySnapshot().getDictPermutationArray().getInt(index.getForwardIndex()[permArray[k1]]);
           int val2 = index.getDictionarySnapshot().getDictPermutationArray().getInt(index.getForwardIndex()[permArray[k2]]);
           if (val1 > val2) return 1;
@@ -180,7 +180,7 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
       }
     });
     for (String columnName : segmentToProcess.getColumnTypes().keySet()) {
-      ColumnSearchSnapshot searchSnapshot = (ColumnSearchSnapshot) segmentToProcess.getForwardIndex(columnName);
+      ColumnSearchSnapshot<int[]> searchSnapshot = (ColumnSearchSnapshot<int[]>) segmentToProcess.getForwardIndex(columnName);
       int[] forwardIndex = searchSnapshot.getForwardIndex();
       IntList permutationArray = searchSnapshot.getDictionarySnapshot().getDictPermutationArray();
      /* for (int i = 0; i < searchSnapshot.getForwardIndexSize(); i++) {

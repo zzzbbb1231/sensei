@@ -1,8 +1,10 @@
-package com.senseidb.ba.realtime.domain.primitives;
+package com.senseidb.ba.realtime.domain.primitives.dictionaries;
 
 import it.unimi.dsi.fastutil.Swapper;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntComparator;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
@@ -11,6 +13,8 @@ import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.browseengine.bobo.facets.data.TermFloatList;
+import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnType;
@@ -18,19 +22,19 @@ import com.senseidb.ba.gazelle.creators.DictionaryCreator;
 import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
 import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 
-public class LongDictionarySnapshot extends AbstractDictionarySnapshot {
+public class IntDictionarySnapshot extends AbstractDictionarySnapshot {
 
-  private LongList unsortedValues;
+  private IntList unsortedValues;
   
   private static ThreadLocal<DecimalFormat> formatter = new ThreadLocal<DecimalFormat>() {
-    final String format = DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(ColumnType.LONG);
+    final String format = DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(ColumnType.INT);
 
     protected DecimalFormat initialValue() {
       return new DecimalFormat(format);
     }
   };
  
-  public void init(Long2IntMap map, ReadWriteLock lock) {
+  public void init(Int2IntMap map, ReadWriteLock lock) {
     if (unsortedValues != null && unsortedValues.size() == map.size()) {
       // do nothing
       return;
@@ -38,13 +42,13 @@ public class LongDictionarySnapshot extends AbstractDictionarySnapshot {
     try {
       lock.readLock().lock();
       if (unsortedValues == null) {
-        unsortedValues = new LongArrayList(map.size());
+        unsortedValues = new IntArrayList(map.size());
       }
        int previousSize = unsortedValues.size();
         unsortedValues.size(map.size());
-        for (it.unimi.dsi.fastutil.longs.Long2IntMap.Entry entry : map.long2IntEntrySet()) {
+        for (it.unimi.dsi.fastutil.ints.Int2IntMap.Entry entry : map.int2IntEntrySet()) {
           if (entry.getIntValue() >= previousSize) {
-            unsortedValues.set(entry.getIntValue(), entry.getLongKey());
+            unsortedValues.set(entry.getIntValue(), entry.getIntKey());
           }
         }
       
@@ -92,11 +96,11 @@ public class LongDictionarySnapshot extends AbstractDictionarySnapshot {
     return formatter.get().format(getValue(unsortedDictId));
   }
 
-  private long getValue(int unsortedDictId) {
+  private int getValue(int unsortedDictId) {
     if (unsortedDictId < 2) {
       return 0;
     }
-    return unsortedValues.getLong(unsortedDictId);
+    return unsortedValues.getInt(unsortedDictId);
   }
   /* (non-Javadoc)
    * @see com.senseidb.ba.realtime.domain.primitives.DictionarySnapshot#getObject(int)
@@ -157,35 +161,35 @@ public class LongDictionarySnapshot extends AbstractDictionarySnapshot {
   @Override
   public TermValueList produceDictionary() {
     try {
-    final long[] longArr = new long[unsortedValues.size() - 1];
+    final int[] longArr = new int[unsortedValues.size() - 1];
     for (int i = 0; i < unsortedValues.size(); i++) {
       Integer index = permutationArray.get(i);
       if (index == 0) {
         continue;
       }
       if (index == 1) {
-        longArr[0] = TermLongList.VALUE_MISSING;
+        longArr[0] = TermIntList.VALUE_MISSING;
         continue;
       }
-      longArr[index - 1] = unsortedValues.getLong(i);
+      longArr[index - 1] = unsortedValues.getInt(i);
     }
-    TermLongList termLongList =
-        new TermLongList(unsortedValues.size(), DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(ColumnType.LONG)) {
+    TermIntList termIntList =
+        new TermIntList(unsortedValues.size(), DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(ColumnType.INT)) {
           public int size() {
             return longArr.length;
           }
           @Override
-          public Long getRawValue(int index) {
+          public Integer getRawValue(int index) {
             return super.getPrimitiveValue(index);
           }
         };
-    Field longField;
+    Field intField;
    
-      longField = TermLongList.class.getDeclaredField("_elements");
+      intField = TermIntList.class.getDeclaredField("_elements");
     
-    longField.setAccessible(true);
-    longField.set(termLongList, longArr);
-    return termLongList;
+    intField.setAccessible(true);
+    intField.set(termIntList, longArr);
+    return termIntList;
     } catch (Exception e) {
      throw new RuntimeException(e);
     }
@@ -194,11 +198,11 @@ public class LongDictionarySnapshot extends AbstractDictionarySnapshot {
 
   @Override
   public ComparableToInt comparableValue(String value) {   
-    final long val1 = Long.parseLong(value);    
+    final int val1 = Integer.parseInt(value);    
     return new ComparableToInt() {      
       @Override
       public int compareTo(int index) {
-        long val2 = unsortedValues.getLong(permutationArray.getInt(index));
+        int val2 = unsortedValues.getInt(permutationArray.getInt(index));
         if (val1 < val2) {
           return 1;
         }
@@ -209,9 +213,9 @@ public class LongDictionarySnapshot extends AbstractDictionarySnapshot {
       }
     };
   }
-@Override
-public String format(Object o) {
-  
-  return formatter.get().format(o);
-}
+  @Override
+  public String format(Object o) {
+    
+    return formatter.get().format(o);
+  }
 }

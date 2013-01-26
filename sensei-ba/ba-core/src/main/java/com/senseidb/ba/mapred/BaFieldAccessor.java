@@ -17,6 +17,7 @@ import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.ba.facet.ZeusDataCache;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.IndexSegment;
+import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.senseidb.ba.gazelle.impl.MultiValueForwardIndexImpl1;
@@ -74,7 +75,7 @@ public class BaFieldAccessor implements FieldAccessor {
       if (forwardIndex instanceof SingleValueForwardIndex) {
         randomReaders.put(column, ((SingleValueForwardIndex) forwardIndex).getReader());
       } else if (forwardIndex instanceof MultiValueForwardIndexImpl1) {
-        MultiValueForwardIndexImpl1 forwardIndex2 = (MultiValueForwardIndexImpl1) forwardIndex;
+        MultiValueForwardIndex forwardIndex2 = (MultiValueForwardIndex) forwardIndex;
         multiIndexes.put(column, forwardIndex2.getIterator());
         if (maxBufferSize < forwardIndex2.getMaxNumValuesPerDoc()) {
           maxBufferSize = forwardIndex2.getMaxNumValuesPerDoc();
