@@ -33,18 +33,21 @@ public class GenericIndexCreator {
     return filename.toLowerCase().endsWith(".json") || filename.toLowerCase().endsWith(".avro") || filename.toLowerCase().endsWith(".csv")|| filename.toLowerCase().endsWith(".tsv");
   }  
   public static GazelleIndexSegmentImpl create(File file) throws Exception {
-    return create(file, new String[0]);
+    return create(file, new String[0], "");
   }
-  public static GazelleIndexSegmentImpl create(File file, String[] excludedColumns) throws Exception {
+  public static GazelleIndexSegmentImpl create(File file, String invertedIndices) throws Exception {
+	    return create(file, new String[0], invertedIndices);
+	  }
+  public static GazelleIndexSegmentImpl create(File file, String[] excludedColumns, String invertedIndices) throws Exception {
     Assert.state(canCreateSegment(file.getName()));
     if (file.getName().toLowerCase().endsWith(".json")) {
-      return create(new JsonDataSource(file), excludedColumns);
+      return create(new JsonDataSource(file), excludedColumns, invertedIndices);
     }
     if (file.getName().toLowerCase().endsWith(".csv")) {
-      return create(new CSVDataSource(file, ","), excludedColumns);
+      return create(new CSVDataSource(file, ","), excludedColumns, invertedIndices);
     }
     if (file.getName().toLowerCase().endsWith(".tsv")) {
-      return create(new CSVDataSource(file, "\t"), excludedColumns);
+      return create(new CSVDataSource(file, "\t"), excludedColumns, invertedIndices);
     }
     if (file.getName().toLowerCase().endsWith(".avro")) {
       return AvroSegmentCreator.readFromAvroFile(file);
@@ -52,10 +55,10 @@ public class GenericIndexCreator {
     throw new UnsupportedOperationException(file.getName());
   }
   public static GazelleIndexSegmentImpl create(GazelleDataSource gazelleDataSource) throws Exception {
-    return create(gazelleDataSource, new String[0]);
+    return create(gazelleDataSource, new String[0], "");
   }
   
-  public static GazelleIndexSegmentImpl create(GazelleDataSource gazelleDataSource, String[] exludedColumns) throws Exception {
+  public static GazelleIndexSegmentImpl create(GazelleDataSource gazelleDataSource, String[] exludedColumns, String invertedIndices) throws Exception {
         logger.info("Phase 1 getting column types");
         try {
         Map<String, ColumnType> columnTypes = getColumnTypes(gazelleDataSource.newIterator());
@@ -116,6 +119,7 @@ public class GenericIndexCreator {
           indexSegmentImpl.getColumnMetadataMap().put(indexCreator.getColumnName(), indexCreator.produceColumnMetadata());
           indexSegmentImpl.getForwardIndexes().put(indexCreator.getColumnName(), forwardIndex);
         }
+        indexSegmentImpl.initInvertedIndex(invertedIndices);
         indexSegmentImpl.setLength(count);
         logger.info("Phase 3 completed. The segment was created. It contains - " + count + " elements");
         return indexSegmentImpl;
@@ -155,7 +159,7 @@ public class GenericIndexCreator {
         return columnTypes;
     }
     public static GazelleIndexSegmentImpl create(File file, String[] sortedColumns, String[] excludedColumns) throws Exception {
-      GazelleIndexSegmentImpl nonSortedSegment = create(file, excludedColumns);
+      GazelleIndexSegmentImpl nonSortedSegment = create(file, excludedColumns, "");
       if (nonSortedSegment == null) {
         return null;
       }
