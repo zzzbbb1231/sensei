@@ -88,18 +88,12 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 				//Fetch all values that this column could take
 				TermValueList values = termValueListMap.get(column);
 				ForwardIndex fIndex = forwardIndexMap.get(column);
-				
+
 				if(values == null || fIndex == null){
 					return;
 				}
-				
-				//Somehow deal with MultiValueForwardIndexImpl1 instances...
-				if(fIndex instanceof MultiValueForwardIndexImpl1){
-					MultiValueForwardIndexImpl1 mIndex = (MultiValueForwardIndexImpl1) fIndex;
-					MultiFacetIterator mIt = mIndex.getIterator();
-					continue;
-				}
-								
+
+
 				//Create correct number of inverted indices for this column
 				int size = values.size();
 				DocIdSet[] iIndices = new DocIdSet[size];
@@ -107,14 +101,29 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 					String value = values.get(i);
 					iIndices[i] = new GazelleInvertedIndexImpl(fIndex, fIndex.getDictionary().indexOf(value));
 				}
-				
-				size = fIndex.getLength();
-				SingleValueForwardIndex temp = (SingleValueForwardIndex) fIndex;
-				SingleValueRandomReader reader = temp.getReader();
-				
-				//Insert DocID into the correct index.
-				for(int i = 0; i < size; i++){
-					((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).addDoc(i);
+
+				//If it's a MultiValueForwardIndex, we have to deal with it differently.
+				if(fIndex instanceof MultiValueForwardIndexImpl1){
+					MultiValueForwardIndexImpl1 mIndex = (MultiValueForwardIndexImpl1) fIndex;
+					int[] buffer = new int[mIndex.getMaxNumValuesPerDoc()];
+
+					for(int i = 0; i < length; i++) {
+						int count = mIndex.randomRead(buffer, i);
+						for (int j = 0; j < count; j++) {
+							int valueId = buffer[j];
+							((GazelleInvertedIndexImpl)iIndices[valueId]).addDoc(i);
+						}
+					}
+				}
+				else{
+					size = fIndex.getLength();
+					SingleValueForwardIndex temp = (SingleValueForwardIndex) fIndex;
+					SingleValueRandomReader reader = temp.getReader();
+
+					//Insert DocID into the correct index.
+					for(int i = 0; i < size; i++){
+						((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).addDoc(i);
+					}
 				}
 				invertedIndexMap.put(column, iIndices);
 			}			
