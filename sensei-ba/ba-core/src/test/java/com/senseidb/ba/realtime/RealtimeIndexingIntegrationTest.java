@@ -22,6 +22,7 @@ public class RealtimeIndexingIntegrationTest extends BASentinelTest {
   }
   @AfterClass
   public static void tearDown() throws Exception {
+    //Thread.sleep(5000);
     SingleNodeStarter.shutdown(); 
     //SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
     FileUtils.deleteDirectory(new File("ba-index/ba-data"));

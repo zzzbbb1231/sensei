@@ -53,6 +53,7 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
   }
   public void stop() {
     isStoppedFlag = true;
+   
     try {
       persistingThread.join();
     } catch (InterruptedException e) {
@@ -127,6 +128,7 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
         try {
           SegmentAppendableIndex segmentToProcess = segmentQueue.poll();
           if (segmentToProcess == null) {
+            Thread.sleep(100L);
             continue;
           }
           long time = System.currentTimeMillis();
