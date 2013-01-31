@@ -8,6 +8,7 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.IndexSegment;
+import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.SegmentAppendableIndex;
 
 public class RealtimeSnapshotIndexSegment implements IndexSegment {
@@ -15,7 +16,7 @@ public class RealtimeSnapshotIndexSegment implements IndexSegment {
   private Map<String, ColumnSearchSnapshot> columnSnapshots;
   private Map<String, ColumnType> columnTypes;
   private SegmentAppendableIndex segmentAppendableIndex;
-  
+  private boolean isFull = false;
   
   
   public RealtimeSnapshotIndexSegment(int length, Map<String, ColumnSearchSnapshot> columnSnapshots, Map<String, ColumnType> columnTypes) {
@@ -30,7 +31,7 @@ public class RealtimeSnapshotIndexSegment implements IndexSegment {
   }
   @Override
   public TermValueList<?> getDictionary(String column) {
-    throw new UnsupportedOperationException();
+   return columnSnapshots.get(column).getDictionary();
   }
   @Override
   public DocIdSet[] getInvertedIndex(String column) {
@@ -50,4 +51,19 @@ public class RealtimeSnapshotIndexSegment implements IndexSegment {
   public SegmentAppendableIndex getReferencedSegment() {
     return segmentAppendableIndex;
   }
+  public void recycle(ReusableIndexObjectsPool indexObjectsPool) {
+    for (String column : columnSnapshots.keySet()) {
+      ColumnSearchSnapshot columnSearchSnapshot = columnSnapshots.get(column);
+      indexObjectsPool.recycle(columnSearchSnapshot.getDictionarySnapshot(), column);
+      
+    }
+  }
+  public boolean isFull() {
+    return isFull;
+  }
+  public void setFull(boolean isFull) {
+    this.isFull = isFull;
+  }
+  
+  
 }

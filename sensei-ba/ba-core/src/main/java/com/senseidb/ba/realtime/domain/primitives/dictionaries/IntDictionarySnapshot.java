@@ -11,6 +11,7 @@ import it.unimi.dsi.fastutil.longs.LongList;
 
 import java.lang.reflect.Field;
 import java.text.DecimalFormat;
+import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import com.browseengine.bobo.facets.data.TermFloatList;
@@ -19,10 +20,12 @@ import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.creators.DictionaryCreator;
+import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
 import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
+import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 
-public class IntDictionarySnapshot extends AbstractDictionarySnapshot {
+public class IntDictionarySnapshot extends TermIntList implements DictionarySnapshot {
 
   private IntList unsortedValues;
   
@@ -88,6 +91,12 @@ public class IntDictionarySnapshot extends AbstractDictionarySnapshot {
         permutationArray.set(a, tmp);
       }
     });
+    invDictPermArray = new IntArrayList(permutationArray.size());
+    invDictPermArray.size(permutationArray.size());
+      for (int i = 0; i < permutationArray.size(); i++) {
+      
+        invDictPermArray.set(permutationArray.getInt(i), i);
+    }
   }
 
  
@@ -108,6 +117,14 @@ public class IntDictionarySnapshot extends AbstractDictionarySnapshot {
   @Override
   public Object getObject(int unsortedDictId) {
     return  getValue(unsortedDictId);
+  }
+  @Override
+  public Integer getRawValue(int index) {
+    Integer obj =  getIntValue(index);
+    if (obj == null) {
+      return Integer.MIN_VALUE;
+    }
+    return obj;
   }
   /* (non-Javadoc)
    * @see com.senseidb.ba.realtime.domain.primitives.DictionarySnapshot#getInt(int)
@@ -154,7 +171,7 @@ public class IntDictionarySnapshot extends AbstractDictionarySnapshot {
   public void recycle() {
     permutationArray.clear();
     unsortedValues.clear();
-    
+    invDictPermArray.clear();
   }
 
 
@@ -163,7 +180,7 @@ public class IntDictionarySnapshot extends AbstractDictionarySnapshot {
     try {
     final int[] longArr = new int[unsortedValues.size() - 1];
     for (int i = 0; i < unsortedValues.size(); i++) {
-      Integer index = permutationArray.get(i);
+      int index = permutationArray.get(i);
       if (index == 0) {
         continue;
       }
@@ -171,7 +188,7 @@ public class IntDictionarySnapshot extends AbstractDictionarySnapshot {
         longArr[0] = TermIntList.VALUE_MISSING;
         continue;
       }
-      longArr[index - 1] = unsortedValues.getInt(i);
+      longArr[i - 1] = unsortedValues.getInt(index);
     }
     TermIntList termIntList =
         new TermIntList(unsortedValues.size(), DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(ColumnType.INT)) {
@@ -196,7 +213,6 @@ public class IntDictionarySnapshot extends AbstractDictionarySnapshot {
   }
 
 
-  @Override
   public ComparableToInt comparableValue(String value) {   
     final int val1 = Integer.parseInt(value);    
     return new ComparableToInt() {      
@@ -215,7 +231,132 @@ public class IntDictionarySnapshot extends AbstractDictionarySnapshot {
   }
   @Override
   public String format(Object o) {
-    
+    if (o == null) {
+      return "";
+    }
     return formatter.get().format(o);
   }
+
+protected IntList permutationArray;
+private IntArrayList invDictPermArray;
+
+public int size() {
+  return permutationArray.size();
+}
+
+public IntList getDictPermutationArray() {
+  return permutationArray;
+}
+
+public int sortedIndexOf(String value) {
+  if (value == null || value.length() == 0) {
+    return 1;
+  }
+  return SortUtil.binarySearch(2, permutationArray.size(), comparableValue(value));
+}
+
+
+
+public boolean add(Long e) {
+  throw new UnsupportedOperationException();
+}
+
+
+public Object set(int index, Long element) {
+  throw new UnsupportedOperationException();
+}
+
+
+public void add(int index, Long element) {
+  throw new UnsupportedOperationException();
+  
+}
+
+
+protected List buildPrimitiveList(int capacity) {
+  return null;
+}
+
+
+public String format(Long o) {
+  throw new UnsupportedOperationException();
+}
+
+
+public void seal() {
+  throw new UnsupportedOperationException();
+  
+}
+
+
+public boolean add(String o) {
+  throw new UnsupportedOperationException();
+}
+
+
+public boolean addRaw(Object o) {
+  throw new UnsupportedOperationException();
+}
+
+
+public boolean containsWithType(Long val) {
+  throw new UnsupportedOperationException();
+}
+
+public int indexOfWithType(Long o) {
+  return 0;
+}
+@Override
+public int indexOf(Object o) {
+  if (o == null) {
+    return 1;
+  }
+  int indexOf = sortedIndexOf(o.toString());
+  if (indexOf < 0) {
+    return indexOf;
+  }
+  return getDictPermutationArray().getInt(indexOf);
+}
+
+@Override
+public String get(int index) {
+ return format(getObject(index));
+}
+@Override
+public Comparable getComparableValue(int index) {
+  
+  Object object = getObject(index);
+  if (object == null) {
+    return new Comparable<Comparable>() {
+      @Override
+      public int compareTo(Comparable o) {
+       if (o.getClass() == this.getClass())
+        return 0;
+       return -1;
+      }
+    };
+  }
+  return (Comparable)object;
+}
+@Override
+public Class getType() {
+return Integer.class;
+}
+@Override
+public int getPrimitiveValue(int index) {
+ 
+  return getIntValue(index);
+}
+@Override
+protected Object parseString(String o) {
+ throw new UnsupportedOperationException();
+}
+
+
+@Override
+public IntList getInvPermutationArray() {
+  return invDictPermArray;
+}
+
+  
 }

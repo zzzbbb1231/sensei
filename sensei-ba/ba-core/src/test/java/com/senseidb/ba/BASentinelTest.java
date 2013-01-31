@@ -71,7 +71,7 @@ public class BASentinelTest  extends Assert {
     SingleNodeStarter.waitTillServerStarts(20000);
   }
 
-  
+
   @Test
   public void test1FilterAndFacetCountOnNotSortedColumn() throws Exception {
     //Thread.sleep(1000000);
@@ -139,7 +139,9 @@ public class BASentinelTest  extends Assert {
     System.out.println(resp.toString(1));
     assertEquals("numhits is wrong", 4, resp.getInt("numhits"));
   }
-
+ 
+  
+ 
   @Test
   public void test3FilterAndFacetBySortedColumn() throws Exception {
 
@@ -203,6 +205,7 @@ public class BASentinelTest  extends Assert {
     System.out.println(resp.toString(1));
     assertEquals("numhits is wrong", 6, resp.getInt("numhits"));
   }
+ 
 
   @Test
   public void test5FacetByMultiColumn() throws Exception {
@@ -225,6 +228,7 @@ public class BASentinelTest  extends Assert {
      for (int i = 0; i < 2; i ++) {
        resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
      }
+     System.out.println(resp.toString(1));
      JSONObject facetValue = resp.getJSONObject("facets").getJSONArray("dim_skills").getJSONObject(0);
      assertEquals("0000000003", facetValue.getString("value"));
      assertEquals(6, facetValue.getInt("count"));
@@ -287,7 +291,7 @@ public class BASentinelTest  extends Assert {
     System.out.println(resp.toString(1));
     assertEquals("numhits is wrong",4444 , resp.getInt("numhits"));
   }
-  
+
   @Test
   public void test3RangeQueryOnSingleValuedColumn() throws Exception {
     String req = "{" + 
@@ -345,7 +349,7 @@ public class BASentinelTest  extends Assert {
     System.out.println(resp.toString(1));
     assertEquals("numhits is wrong",20000 , resp.getInt("numhits"));
   }
-  
+ 
   @Test
   public void test5RangeQueryOnSingleValuedColumn() throws Exception {
     String req = "{" + 
@@ -550,7 +554,7 @@ public class BASentinelTest  extends Assert {
     System.out.println(resp.toString(1));
     assertEquals("all documents are a part of the hit",6 , resp.getInt("numhits"));
   }
-  
+ 
   @Test
   public void test4RangeQueryOnMultivaluedColumn() throws Exception {
     String req = "{" + 
@@ -579,7 +583,7 @@ public class BASentinelTest  extends Assert {
     System.out.println(resp.toString(1));
     assertEquals("all documents are a part of the hit",19994 , resp.getInt("numhits"));
   }
-  
+ 
   @Test
   public void test6SumGroupBy() throws Exception {
   
@@ -617,13 +621,15 @@ public class BASentinelTest  extends Assert {
     assertEquals("2", resp.getJSONObject("facets").getJSONArray("sumGroupBy").getJSONObject(3).getString("count"));
     assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));
   }
+ 
+  
   @Test
   public void test6SumGroupByMultiValue() throws Exception {
   
   String req = "{" + 
       "  " + 
       "    \"from\": 0," + 
-      "    \"size\": 10,\n" + 
+      "    \"size\": 0,\n" + 
       "    \"selections\": [" + 
       "    {" + 
       "        \"terms\": {" + 
@@ -653,6 +659,8 @@ public class BASentinelTest  extends Assert {
     assertEquals("0000000002", resp.getJSONObject("facets").getJSONArray("sumGroupBy").getJSONObject(3).getString("value"));
     assertEquals("numhits is wrong", 13222, resp.getInt("numhits"));
   }
+  
+ 
   @Test
   public void test7Sum() throws Exception {
   
@@ -717,8 +725,9 @@ public class BASentinelTest  extends Assert {
       
       JSONObject res = TestUtil.search(new URL("http://localhost:8075/sensei"), req);
       JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
+      
       assertEquals(53, Double.valueOf(Double.parseDouble(mapReduceResult.getString("max"))).longValue());
-      assertEquals(3204, Long.parseLong(mapReduceResult.getString("uid")));
+      
     
   }
   @Test
@@ -792,7 +801,7 @@ public class BASentinelTest  extends Assert {
   }
   @Test
   public void test18RangeQueryBQLOnSortedColumn() throws Exception {
-   
+   Thread.sleep(5000);
     String req = "{\"bql\":\"select * where dim_memberAge > 5000000\"}";
     JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
     System.out.println(resp.toString(1));

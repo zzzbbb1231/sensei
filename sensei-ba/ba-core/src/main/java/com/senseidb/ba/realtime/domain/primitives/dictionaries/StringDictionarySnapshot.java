@@ -3,6 +3,7 @@ package com.senseidb.ba.realtime.domain.primitives.dictionaries;
 import it.unimi.dsi.fastutil.Swapper;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntComparator;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
@@ -20,6 +21,7 @@ import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 
 public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
   private ObjectList<String> unsortedValues;
+
   
 
   public void init(Object2IntMap<String> map, ReadWriteLock lock) {
@@ -81,6 +83,13 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
         permutationArray.set(a, tmp);
       }
     });
+    invPermutationArray = new IntArrayList(permutationArray.size());
+    invPermutationArray.size(permutationArray.size());
+      for (int i = 0; i < permutationArray.size(); i++) {
+      
+        invPermutationArray.set(permutationArray.getInt(i), i);
+    }
+     
   }
 
   
@@ -91,7 +100,14 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
   public String getStringValue(int unsortedDictId) {
     return getValue(unsortedDictId);
   }
-
+  @Override
+  public Object getRawValue(int index) {
+    Object obj =  getObject(index);
+    if (obj == null) {
+      return "";
+    }
+    return obj;
+  }
   private String getValue(int unsortedDictId) {
     if (unsortedDictId < 2) {
       return "";
@@ -153,7 +169,7 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
   public void recycle() {
     permutationArray.clear();
     unsortedValues.clear();
-    
+    invPermutationArray.clear();
   }
 
 
@@ -172,10 +188,12 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
       
 
     }
+    
     return termStringList;
+    
   }
-
-
+   
+ 
   @Override
   public ComparableToInt comparableValue(String value) {   
     final String val1 = value;    
@@ -189,7 +207,13 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
   }
   @Override
   public String format(Object o) {
-    
+    if (o == null) {
+      return "";
+    }
     return o.toString();
   }
+
+
+  
+  
 }

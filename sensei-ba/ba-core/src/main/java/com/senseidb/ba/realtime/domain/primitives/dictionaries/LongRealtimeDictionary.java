@@ -5,6 +5,8 @@ import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
+import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 import com.senseidb.ba.realtime.domain.SingleValueSearchSnapshot;
@@ -54,12 +56,17 @@ public class LongRealtimeDictionary implements RealtimeDictionary {
       throw new UnsupportedOperationException(value.getClass().toString());
     }
   }
-  public DictionarySnapshot produceDictSnapshot(ReadWriteLock readWriteLock) {     
+  public DictionarySnapshot produceDictSnapshot(ReadWriteLock readWriteLock, ReusableIndexObjectsPool indexObjectsPool, String column) {     
    
     try {
       readWriteLock.readLock().lock();
-    
-        LongDictionarySnapshot dictionarySnapshot = new LongDictionarySnapshot();
+      LongDictionarySnapshot dictionarySnapshot = null;
+      DictionarySnapshot snapshotFromPool = indexObjectsPool.getDictSnapshot(column);
+      if (snapshotFromPool != null) {
+        dictionarySnapshot = (LongDictionarySnapshot) snapshotFromPool;
+      } else {
+        dictionarySnapshot =  new LongDictionarySnapshot();
+      }  
         dictionarySnapshot.init(dictionary, readWriteLock);
         return dictionarySnapshot;
       

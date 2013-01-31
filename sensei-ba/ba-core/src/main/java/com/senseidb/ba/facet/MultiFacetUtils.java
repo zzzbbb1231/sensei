@@ -13,7 +13,7 @@ import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.utils.multi.MultiFacetIterator;
 
 public class MultiFacetUtils {
-  public static final class MultiForwardIndexCountCollector extends DefaultFacetCountCollector {
+  public static  class MultiForwardIndexCountCollector extends DefaultFacetCountCollector {
     private final MultiFacetIterator iterator;
     private final int[] buffer;
     private final MultiValueForwardIndex forwardIndex;

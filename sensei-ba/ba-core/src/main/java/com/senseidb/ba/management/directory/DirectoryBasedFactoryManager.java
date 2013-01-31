@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -127,7 +128,13 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
         path = keyToAbsoluteFilePath.remove(segmentId);
         loadingSegments.remove(segmentId);        
           for (SimpleIndexFactory mapBasedIndexFactory : readers.values()) {
-            mapBasedIndexFactory.getReaders().remove(segmentId);
+            Iterator<SegmentToZoieReaderAdapter> iterator = mapBasedIndexFactory.getReaders().iterator();
+            while (iterator.hasNext()) {
+              if (iterator.next().getSegmentId().equals(segmentId)) {
+                iterator.remove();
+              }
+            }
+           
           }
         
       }

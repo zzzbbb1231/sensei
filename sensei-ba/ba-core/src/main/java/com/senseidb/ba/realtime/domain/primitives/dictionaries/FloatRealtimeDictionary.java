@@ -4,6 +4,8 @@ import it.unimi.dsi.fastutil.floats.Float2IntOpenHashMap;
 
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
+import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 
 public class FloatRealtimeDictionary implements RealtimeDictionary {
@@ -14,9 +16,9 @@ public class FloatRealtimeDictionary implements RealtimeDictionary {
   
     dictionary = new Float2IntOpenHashMap(500);
     //unitialized value
-    dictionary.put(Float.MIN_VALUE, 0);
+    dictionary.put(Float.NEGATIVE_INFINITY, 0);
     //null value
-    dictionary.put(Float.MIN_VALUE + 1, 1);
+    dictionary.put(-1000000, 1);
   }
   
   public int addFloat(float value, ReadWriteLock lock) {
@@ -51,12 +53,17 @@ public class FloatRealtimeDictionary implements RealtimeDictionary {
       throw new UnsupportedOperationException(value.getClass().toString());
     }
   }
-  public DictionarySnapshot produceDictSnapshot(ReadWriteLock readWriteLock) {     
+  public DictionarySnapshot produceDictSnapshot(ReadWriteLock readWriteLock, ReusableIndexObjectsPool indexObjectsPool, String column) {     
    
     try {
       readWriteLock.readLock().lock();
-    
-        FloatDictionarySnapshot dictionarySnapshot = new FloatDictionarySnapshot();
+        FloatDictionarySnapshot dictionarySnapshot = null;
+        DictionarySnapshot snapshotFromPool = indexObjectsPool.getDictSnapshot(column);
+        if (snapshotFromPool != null) {
+          dictionarySnapshot = (FloatDictionarySnapshot) snapshotFromPool;
+        } else {
+          dictionarySnapshot =  new FloatDictionarySnapshot();
+        }  
         dictionarySnapshot.init(dictionary, readWriteLock);
         return dictionarySnapshot;
       

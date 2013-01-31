@@ -85,7 +85,7 @@ public class FacetUtils {
       while (true) {
         doc++;
         if (length <= doc)
-          return NO_MORE_DOCS;
+          return NO_MORE_DOCS;       
         if (compressedIntArray.getInt(doc) == index) {
           return doc;
         }

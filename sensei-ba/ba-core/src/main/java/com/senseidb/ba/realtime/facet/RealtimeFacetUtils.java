@@ -11,8 +11,13 @@ import com.browseengine.bobo.api.FacetSpec;
 import com.browseengine.bobo.docidset.EmptyDocIdSet;
 import com.browseengine.bobo.docidset.RandomAccessDocIdSet;
 import com.browseengine.bobo.facets.data.FacetDataCache;
+import com.browseengine.bobo.util.LazyBigIntArray;
+import com.senseidb.ba.facet.MultiFacetUtils;
 import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.DictionarySnapshot;
+import com.senseidb.ba.realtime.domain.MultiValueSearchSnapshot;
 import com.senseidb.ba.realtime.domain.SingleValueSearchSnapshot;
+import com.senseidb.ba.realtime.domain.primitives.dictionaries.StringDictionarySnapshot;
 import com.senseidb.ba.util.QueryUtils;
 
 public class RealtimeFacetUtils {
@@ -49,9 +54,10 @@ public class RealtimeFacetUtils {
     private final int endIndex;
 
     public RealtimeRangeSingleValueDocIdSet(SingleValueSearchSnapshot forwardIndex, int startIndex, int endIndex) {
+      this.forwardIndex = forwardIndex;
       this.startIndex = startIndex;
       this.endIndex = endIndex;
-     
+       
       
     }
 
@@ -63,7 +69,8 @@ public class RealtimeFacetUtils {
       if (startIndex == endIndex) {
         return new RealtimeSingleValueDocIdSet(forwardIndex, startIndex).iterator();
       }
-     return new RealtimeRangeForwardIndexIterator((int[])forwardIndex.getForwardIndex(), forwardIndex.getForwardIndexSize(), forwardIndex.getDictionarySnapshot().getDictPermutationArray(), startIndex, endIndex);
+     
+      return new RealtimeRangeForwardIndexIterator((int[])forwardIndex.getForwardIndex(), forwardIndex.getForwardIndexSize(), forwardIndex.getDictionarySnapshot(), startIndex, endIndex);
     }
 
     @Override
@@ -78,12 +85,12 @@ public class RealtimeFacetUtils {
     private int startIndex;
     private int endIndex;
     private int forwardIndexSize;
-    private IntList dictPermutationArray;
+    private IntList invPermutationArray;
     
-    public RealtimeRangeForwardIndexIterator(final int[] forwardIndex, int forwardIndexSize, IntList dictPermutationArray, final int startIndex, final int endIndex) {
+    public RealtimeRangeForwardIndexIterator(final int[] forwardIndex, int forwardIndexSize, DictionarySnapshot dictionarySnapshot, final int startIndex, final int endIndex) {
       this.forwardIndex = forwardIndex;
       this.forwardIndexSize = forwardIndexSize;
-      this.dictPermutationArray = dictPermutationArray;
+      invPermutationArray = dictionarySnapshot.getInvPermutationArray();
       this.startIndex = startIndex;
       this.endIndex = endIndex;
     }
@@ -101,7 +108,7 @@ public class RealtimeFacetUtils {
         if (nextValueIndexed == 0) {
           return NO_MORE_DOCS;
         }
-        if (dictPermutationArray.get(nextValueIndexed) >= startIndex && dictPermutationArray.get(nextValueIndexed) <= endIndex) {
+        if (invPermutationArray.get(nextValueIndexed) >= startIndex && invPermutationArray.get(nextValueIndexed) <= endIndex) {
           return doc;
         }
       }
@@ -177,5 +184,22 @@ public class RealtimeFacetUtils {
       }
 
     }
+  }
+  public static final class RealtimeMultiValueCountCollector extends MultiFacetUtils.MultiForwardIndexCountCollector {
+  
+
+    public RealtimeMultiValueCountCollector(String name, FacetDataCache dataCache, MultiValueSearchSnapshot forwardIndex, int docBase, BrowseSelection sel, FacetSpec ospec) {
+      super(name, dataCache, forwardIndex, docBase, sel, ospec);
+      _countlength = dataCache.valArray.size();
+      if (_countlength <= 3096)
+      {
+        _count = new LazyBigIntArray(_countlength);
+      } else
+      {
+        _count = intarraymgr.get(_countlength);
+        intarraylist.add(_count);
+      }
+    }
+  
   }
 }

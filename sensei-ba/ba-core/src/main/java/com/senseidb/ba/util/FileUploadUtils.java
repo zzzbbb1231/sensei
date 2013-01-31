@@ -115,7 +115,7 @@ public class FileUploadUtils {
     }
 }
   public static void main(String[] args) throws Exception {
-  /*  JettyServerHolder jettyServerHolder = new JettyServerHolder();
+  /*  ControllerHttpHolder jettyServerHolder = new ControllerHttpHolder();
     jettyServerHolder.setPort(8088);*/
    /* String directory = "/tmp/fileUpload";
     FileUtils.deleteDirectory(new File(directory));

@@ -13,7 +13,7 @@ public class RealtimeIndexingManager {
  
     private volatile SegmentAppendableIndex currentIndex;
     private volatile RealtimeSnapshotIndexSegment snapshot;
-    
+    private volatile boolean  waitTillSegmentPersisted = false;
     
     private SnapshotRefreshScheduler snapshotRefreshScheduler;
     private RealtimeDataProvider dataProvider;
@@ -31,7 +31,7 @@ public class RealtimeIndexingManager {
       snapshotRefreshScheduler = new SnapshotRefreshScheduler() {
         @Override
         public int refresh() {
-          snapshot = currentIndex.refreshSearchSnapshot();
+          snapshot = currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool());
           indexingCoordinator.segmentSnapshotRefreshed(snapshot);
           return snapshot.getLength();
         }
@@ -44,7 +44,11 @@ public class RealtimeIndexingManager {
       public void run() {
         while (!stopped) {
           try {
+            while(waitTillSegmentPersisted) {
+              Thread.sleep(100L);
+            }
             DataWithVersion next = dataProvider.next();
+            
             if (next == null) {
               Thread.sleep(100L);
               continue;
@@ -55,10 +59,11 @@ public class RealtimeIndexingManager {
             }*/
             if (isFull) {
               retireAndCreateNewSegment();
+              waitTillSegmentPersisted = true;
             } else {
               snapshotRefreshScheduler.sizeUpdated(currentIndex.getCurrenIndex());
             }
-          } catch (Throwable ex) {
+          } catch (Exception ex) {
             logger.error("error in indexing thread", ex);
           }
         }
@@ -68,6 +73,7 @@ public class RealtimeIndexingManager {
     
     
     public void stop() {
+      waitTillSegmentPersisted = false;
       snapshotRefreshScheduler.stop();
       stopped = true;
       try {
@@ -80,13 +86,21 @@ public class RealtimeIndexingManager {
     protected void retireAndCreateNewSegment() {
       
       SegmentAppendableIndex appendableIndex = indexConfig.getIndexObjectsPool().getAppendableIndex();
-      indexingCoordinator.segmentFullAndNewCreated(currentIndex.refreshSearchSnapshot(), currentIndex, appendableIndex);
+      indexingCoordinator.segmentFullAndNewCreated(currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool()), currentIndex, appendableIndex);
       currentIndex = appendableIndex;
       
     }
 
     public RealtimeDataProvider getDataProvider() {
       return dataProvider;
+    }
+
+    public boolean isWaitTillSegmentPersisted() {
+      return waitTillSegmentPersisted;
+    }
+
+    public void setWaitTillSegmentPersisted(boolean waitTillSegmentPersisted) {
+      this.waitTillSegmentPersisted = waitTillSegmentPersisted;
     }
     
 }

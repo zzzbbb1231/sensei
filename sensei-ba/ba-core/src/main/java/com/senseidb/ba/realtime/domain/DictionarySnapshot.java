@@ -26,5 +26,6 @@ public interface DictionarySnapshot extends DictionaryNumberAccessor {
   
   public TermValueList produceDictionary();
   public int sortedIndexOf(String value);
+  public IntList getInvPermutationArray();
   int size();
 }

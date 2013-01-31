@@ -5,9 +5,9 @@ import com.senseidb.ba.gazelle.ForwardIndex;
 
 public interface ColumnSearchSnapshot<T> extends  ForwardIndex {
 
-  public AbstractDictionarySnapshot getDictionarySnapshot();
+  public DictionarySnapshot getDictionarySnapshot();
 
-  public void init(T forwardIndex, int forwardIndexSize, ColumnType columnType, AbstractDictionarySnapshot dictionarySnapshot);
+  public void init(T forwardIndex, int forwardIndexSize, ColumnType columnType, DictionarySnapshot dictionarySnapshot);
 
   T getForwardIndex();
 

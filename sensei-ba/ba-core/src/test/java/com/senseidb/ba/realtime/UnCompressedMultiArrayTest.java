@@ -2,6 +2,7 @@ package com.senseidb.ba.realtime;
 
 import static org.junit.Assert.*;
 
+import it.unimi.dsi.fastutil.ints.AbstractIntList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
@@ -74,6 +75,9 @@ public class UnCompressedMultiArrayTest {
     
      assertTrue(iterator.advance(i));
       int length = i % 10;
+      if (length == 1) {
+        length = 0;
+      }
       if (length != iterator.readValues(buffer)) {
         System.out.println();
       }
@@ -137,7 +141,7 @@ public class UnCompressedMultiArrayTest {
       iterator.count(counts, i);
     }
     assertEquals(0, counts.get(0));
-    assertEquals(1000, counts.get(1));
+    assertEquals(0, counts.get(1));
     assertEquals(5000, counts.get(5));
     assertEquals(9000, counts.get(9));
   }

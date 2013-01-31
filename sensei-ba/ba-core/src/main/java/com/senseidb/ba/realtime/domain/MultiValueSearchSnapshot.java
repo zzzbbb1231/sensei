@@ -15,9 +15,9 @@ public  class MultiValueSearchSnapshot implements ColumnSearchSnapshot<MultiArra
   private int forwardIndexSize;
 
   private ColumnType columnType;
-  private AbstractDictionarySnapshot dictionarySnapshot;
+  private DictionarySnapshot dictionarySnapshot;
  
-  public void init(MultiArray forwardIndex, int forwardIndexSize, ColumnType columnType, AbstractDictionarySnapshot dictionarySnapshot) {   
+  public void init(MultiArray forwardIndex, int forwardIndexSize, ColumnType columnType, DictionarySnapshot dictionarySnapshot) {   
     this.forwardIndex = forwardIndex;
     this.forwardIndexSize = forwardIndexSize;
     this.columnType = columnType;
@@ -44,7 +44,7 @@ public  class MultiValueSearchSnapshot implements ColumnSearchSnapshot<MultiArra
   }
   @Override
   public TermValueList<?> getDictionary() {
-   return dictionarySnapshot;
+   return (TermValueList<?>) dictionarySnapshot;
   }
   @Override
   public int getLength() {
@@ -52,7 +52,7 @@ public  class MultiValueSearchSnapshot implements ColumnSearchSnapshot<MultiArra
   }
 
 
-  public AbstractDictionarySnapshot getDictionarySnapshot() {
+  public DictionarySnapshot getDictionarySnapshot() {
     return dictionarySnapshot;
   }
   public boolean isSingleValue() {
@@ -62,7 +62,7 @@ public  class MultiValueSearchSnapshot implements ColumnSearchSnapshot<MultiArra
 
   @Override
   public MultiFacetIterator getIterator() {
-    return forwardIndex.iterator();
+    return forwardIndex.iterator(dictionarySnapshot.getInvPermutationArray());
   }
 
 

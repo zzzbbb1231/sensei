@@ -1,5 +1,6 @@
 package com.senseidb.ba.realtime.domain.multi;
 
+import it.unimi.dsi.fastutil.ints.AbstractIntList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
 import java.util.ArrayList;
@@ -62,6 +63,7 @@ public class MultiArray {
       
     }
     public void recycle() {
+      currentIndex = 0;
       chunkIndex = -1;
       currentChunkPosition = 0;
       currentChunk = null;
@@ -74,7 +76,7 @@ public class MultiArray {
       int i = 0;
       int globalPosition = indexArray[docId];
       int[] currentChunk = chunks.get(globalPosition / capacity);
-      int localPosition = globalPosition - globalPosition % capacity;      
+      int localPosition = (globalPosition - (globalPosition / capacity) * capacity)  ;      
       int val = currentChunk[localPosition];
       if (val == Integer.MIN_VALUE) {
         return 0;
@@ -93,6 +95,10 @@ public class MultiArray {
       int _currentChunkStart = 0;
       int _currentIndex = 0;
       int _currentPosition = 0;
+      final IntList invPermutationArray;
+      public MultiArrayIterator(IntList invPermutationArray) {
+        this.invPermutationArray = invPermutationArray;
+      }
       @Override
       public boolean advance(int index) {
         if (_currentIndex == index) {
@@ -105,7 +111,7 @@ public class MultiArray {
         if (position >= _currentChunkStart + capacity) {
           _chunkIndex = position /capacity;
           _currentChunk = chunks.get(_chunkIndex);
-          _currentChunkStart = position - position % capacity  ;
+          _currentChunkStart = (position - position % capacity)  ;
         }
         _currentIndex = index;
         _currentPosition = position;
@@ -121,7 +127,7 @@ public class MultiArray {
           return 0;
         }
         val &= Integer.MAX_VALUE;
-        while (val > 0 && localPosition < capacity - 1) {
+        while (val > 1 && localPosition < capacity - 1) {
           buffer[i] = val; 
           i++;
           val = _currentChunk[++localPosition];
@@ -148,7 +154,8 @@ public class MultiArray {
           if (val < 0) {
             val &= Integer.MAX_VALUE;
             index++;
-          }
+          }          
+          val = invPermutationArray.getInt(val);          
           if (val >= startIndex && val <= endIndex) {
             return index;
           }
@@ -210,7 +217,7 @@ public class MultiArray {
           return;
         }
         val &= Integer.MAX_VALUE;
-        while (val > 0 && localPosition < capacity - 1) {
+        while (val > 1 && localPosition < capacity - 1) {
           counts.add(val, counts.get(val) + 1);
           val = _currentChunk[++localPosition];
         }
@@ -218,14 +225,35 @@ public class MultiArray {
       
     }
     public MultiArrayIterator iterator() {
-      return new MultiArrayIterator();
+      return new MultiArrayIterator( new AbstractIntList() {
+      
+      @Override
+      public int getInt(int index) {
+        return index;
+      }
+      
+      @Override
+      public int size() {      
+        return Integer.MAX_VALUE;
+      }
+    });
     }
     
+    
+    public int[] getIndexArray() {
+      return indexArray;
+    }
+    public int getCurrentIndex() {
+      return currentIndex;
+    }
     public int getMaxNumValuesPerDoc() {
       return maxNumValuesPerDoc;
     }
     public static void main(String[] args) {
       System.out.println(Integer.toBinaryString(Integer.MIN_VALUE));
+    }
+    public MultiFacetIterator iterator(IntList invPermutationArray) {
+      return new MultiArrayIterator(invPermutationArray);
     }
     
 }

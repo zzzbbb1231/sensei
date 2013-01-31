@@ -8,8 +8,10 @@ import java.util.concurrent.locks.ReadWriteLock;
 import scala.actors.threadpool.Arrays;
 
 import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 import com.senseidb.ba.realtime.domain.MultiValueSearchSnapshot;
 import com.senseidb.ba.realtime.domain.SingleValueSearchSnapshot;
 import com.senseidb.ba.realtime.domain.multi.MultiArray;
@@ -54,7 +56,7 @@ public class MultiFieldRealtimeIndex implements FieldRealtimeIndex {
       forwardIndex.addNumbers(buffer);
     } else {
       for (Object element : (Object[]) value) {
-        int dictionaryId = realtimeDictionary.addElement(value, readWriteLock);
+        int dictionaryId = realtimeDictionary.addElement(element, readWriteLock);
         buffer.add(dictionaryId);
       }
       forwardIndex.addNumbers(buffer);
@@ -62,12 +64,12 @@ public class MultiFieldRealtimeIndex implements FieldRealtimeIndex {
     currentPosition++;
   }
   @Override
-  public ColumnSearchSnapshot produceSnapshot(ReadWriteLock readWriteLock) {
+  public ColumnSearchSnapshot produceSnapshot(ReadWriteLock readWriteLock, ReusableIndexObjectsPool reusableIndexObjectsPool, String columnName) {
     if (searchSnapshot != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray() != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray().size() == realtimeDictionary.size()) {
       searchSnapshot.setForwardIndexSize(currentPosition);
     } else {
       MultiValueSearchSnapshot multiValueSearchSnapshot = new MultiValueSearchSnapshot();
-      multiValueSearchSnapshot.init(forwardIndex, currentPosition, columnType, (AbstractDictionarySnapshot)realtimeDictionary.produceDictSnapshot(readWriteLock));
+      multiValueSearchSnapshot.init(forwardIndex, currentPosition, columnType, (DictionarySnapshot)realtimeDictionary.produceDictSnapshot(readWriteLock, reusableIndexObjectsPool,columnName));
      searchSnapshot = multiValueSearchSnapshot;
     }
     return searchSnapshot;

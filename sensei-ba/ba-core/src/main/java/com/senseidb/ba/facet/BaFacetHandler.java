@@ -197,12 +197,16 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         final int startIndex;
         final int endIndex;
         int [] rangeIndex = QueryUtils.getRangeIndexes(((ColumnSearchSnapshot)zeusDataCache.getForwardIndex()).getDictionarySnapshot(), value, values);
-        startIndex = rangeIndex[0]; 
+       startIndex = rangeIndex[0];
+        
         if (rangeIndex[1] >= zeusDataCache.getDictionary().size()) {
           logger.warn("Got endIndex more than dictionary size for value " + value);
           endIndex = zeusDataCache.getDictionary().size() - 1;
         } else {
           endIndex = rangeIndex[1];
+        }
+        if (startIndex > endIndex) {
+          return EmptyDocIdSet.getInstance();
         }
         if (startIndex > endIndex) {
           return EmptyDocIdSet.getInstance();
@@ -258,6 +262,9 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         if (forwardIndex instanceof GazelleForwardIndexImpl) {
           return new FacetUtils.ForwardIndexCountCollector(getName(), dataCache.getFakeCache(), (GazelleForwardIndexImpl) forwardIndex, docBase, sel, fspec);
         }
+        if (forwardIndex instanceof MultiValueSearchSnapshot) {
+          return new RealtimeFacetUtils.RealtimeMultiValueCountCollector(getName(), fakeCache, (MultiValueSearchSnapshot) forwardIndex, docBase, sel, fspec);
+        }
         if (forwardIndex instanceof MultiValueForwardIndex) {
           return new MultiFacetUtils.MultiForwardIndexCountCollector(getName(), dataCache.getFakeCache(), (MultiValueForwardIndex) forwardIndex, docBase, sel, fspec);
         } 
@@ -301,7 +308,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
       }
       return ret;
     }
-    throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException(forwardIndex.getClass().toString());
   }
 
   @Override
@@ -329,7 +336,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
           }
           return new SortedFacetUtils.SortedDocComparator();
         }
-        if (zeusDataCache.getForwardIndex() instanceof GazelleForwardIndexImpl) {
+        if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
           final SingleValueRandomReader randomReader =
               ((SingleValueForwardIndex) zeusDataCache.getForwardIndex()).getReader();
           if (currentColumnTypes.size() > 1) {
@@ -366,7 +373,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         if (zeusDataCache.getForwardIndex() instanceof MultiValueForwardIndex) {
           throw new UnsupportedOperationException("Sorts are not supported for multi value columns");
         }
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(zeusDataCache.getForwardIndex().getClass().toString());
       }
     };
   }

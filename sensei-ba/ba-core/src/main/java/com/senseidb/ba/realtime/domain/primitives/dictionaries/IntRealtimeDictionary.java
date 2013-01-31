@@ -4,6 +4,8 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
+import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 
 public class IntRealtimeDictionary implements RealtimeDictionary {
@@ -51,12 +53,18 @@ public class IntRealtimeDictionary implements RealtimeDictionary {
       throw new UnsupportedOperationException(value.getClass().toString());
     }
   }
-  public DictionarySnapshot produceDictSnapshot(ReadWriteLock readWriteLock) {     
+  public DictionarySnapshot produceDictSnapshot(ReadWriteLock readWriteLock, ReusableIndexObjectsPool indexObjectsPool, String column) {     
    
     try {
       readWriteLock.readLock().lock();
-    
-        IntDictionarySnapshot dictionarySnapshot = new IntDictionarySnapshot();
+      IntDictionarySnapshot dictionarySnapshot = null;
+      DictionarySnapshot snapshotFromPool = (DictionarySnapshot) indexObjectsPool.getDictSnapshot(column);
+      if (snapshotFromPool != null) {
+        dictionarySnapshot = (IntDictionarySnapshot) snapshotFromPool;
+      } else {
+        dictionarySnapshot =  new IntDictionarySnapshot();
+      }  
+     
         dictionarySnapshot.init(dictionary, readWriteLock);
         return dictionarySnapshot;
       

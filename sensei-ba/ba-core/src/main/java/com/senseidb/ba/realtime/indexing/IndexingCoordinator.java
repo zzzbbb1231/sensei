@@ -41,6 +41,8 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
   private File directory;
   private ZeusIndexReaderDecorator decorator;
   private RealtimeIndexingManager indexingManager;
+  private Metadata metadata;
+  private RealtimeDataProvider realtimeDataProvider;
   public IndexingCoordinator() {
     super(null, null, null, null, null);
   }
@@ -49,15 +51,19 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     indexingManager = new RealtimeIndexingManager();
     String dataProviderName = config.get("dataProvider");
     Assert.notNull(dataProviderName, "Property dataProvider should be defined");
-    RealtimeDataProvider realtimeDataProvider = pluginRegistry.getBeanByName(dataProviderName, RealtimeDataProvider.class);
+     realtimeDataProvider = pluginRegistry.getBeanByName(dataProviderName, RealtimeDataProvider.class);
     Assert.notNull(realtimeDataProvider, "realtimeDataProvider No dataProvider instance with name - " + dataProviderName);
-    indexConfig = IndexConfig.valueOf(config,  pluginRegistry, realtimeDataProvider.getSchema());
+    indexConfig = IndexConfig.valueOf(config,  pluginRegistry);
+    metadata = new Metadata(indexConfig.getIndexDir());
     directory = new File(indexConfig.getIndexDir());
     if (!directory.exists()) {
       directory.mkdirs();
     }
+    metadata.init();
+    //TODO implement versioning
+    realtimeDataProvider.init(indexConfig.getSchema(), metadata.version);
     decorator = new ZeusIndexReaderDecorator(pluginRegistry.resolveBeansByListKey(SenseiPluginRegistry.FACET_CONF_PREFIX, FacetHandler.class));
-    realtimeIndexFactory = new RealtimeIndexFactory(decorator);
+    realtimeIndexFactory = new RealtimeIndexFactory(decorator, indexConfig);
     pendingSegmentsIndexFactory = new PendingSegmentsIndexFactory(this, indexConfig);
     for (int partition = 0; partition < indexConfig.getNumServingPartitions(); partition++) {
       staticIndexFactories.put(partition, new SimpleIndexFactory(new ArrayList<SegmentToZoieReaderAdapter>(), new Object()));
@@ -70,10 +76,12 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     realtimeIndexFactory.start();
     pendingSegmentsIndexFactory.start();
     indexingManager.start();
+    realtimeDataProvider.start();
     
   }
   @Override
   public void stop() {
+    realtimeDataProvider.stop();
     try {
       indexingManager.stop();
     } catch (Exception ex) {
@@ -87,16 +95,16 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
   }
   
     public void segmentSnapshotRefreshed(RealtimeSnapshotIndexSegment indexSegment) {
-      logger.info("RealtimeSegment  refreshed with count " +  indexSegment.getReferencedSegment().getCurrenIndex());
+      logger.debug("RealtimeSegment  refreshed with count " +  indexSegment.getReferencedSegment().getCurrenIndex());
       realtimeIndexFactory.setSnapshot(indexSegment);
     }
      public void segmentFullAndNewCreated(RealtimeSnapshotIndexSegment fullExisingSnapshot, SegmentAppendableIndex oldSegment, SegmentAppendableIndex newSegment) {
-       try {
-       oldSegment.setName(indexConfig.getClusterName() + "_" + new SimpleDateFormat("ddMMMyy-HH:mm:ss").format(new Date(System.currentTimeMillis())));
+       try {      
+       oldSegment.setName(indexConfig.getClusterName() + "_" + new SimpleDateFormat("ddMMMyy-HH:mm:ss:SSS").format(new Date(System.currentTimeMillis())));
        logger.info("Segment  " +  oldSegment.getName() + " is full. Containing " + oldSegment.getCurrenIndex() + " elements");
        synchronized(realtimeIndexFactory.getLock()) {
          synchronized(pendingSegmentsIndexFactory.getLock()) {
-           realtimeIndexFactory.setSnapshot(newSegment.refreshSearchSnapshot());
+           realtimeIndexFactory.setSnapshot(newSegment.refreshSearchSnapshot(indexConfig.getIndexObjectsPool()));
            pendingSegmentsIndexFactory.addSegment(oldSegment, fullExisingSnapshot, decorator);
          }
        }
@@ -107,6 +115,7 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     }
     @Override
     public void onSegmentPersisted(SegmentAppendableIndex segmentToProcess, GazelleIndexSegmentImpl persistedSegment) {
+      
       logger.info("Segment  " +  segmentToProcess.getName() + " is persisted");
       int partition = Math.abs(segmentToProcess.getName().hashCode()) % indexConfig.getNumServingPartitions();
         SimpleIndexFactory indexFactory = staticIndexFactories.get(partition);
@@ -114,8 +123,8 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
         synchronized(indexFactory.getGlobalLock()) {
             indexFactory.getReaders().add(new SegmentToZoieReaderAdapter(persistedSegment, segmentToProcess.getName(), decorator));
         }
-        //TODO what to do with commitCurrentOffsets in KAfka?
         indexingManager.getDataProvider().commit(segmentToProcess.getVersion());
+        indexingManager.setWaitTillSegmentPersisted(false);
         } catch (IOException e) {
           throw new RuntimeException("Should never happen", e);
         }
@@ -166,6 +175,11 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
   }
   public IndexConfig getIndexConfig() {
     return indexConfig;
+  }
+  @Override
+  public Metadata getMetadata() {
+    // TODO Auto-generated method stub
+    return metadata;
   }
 
  

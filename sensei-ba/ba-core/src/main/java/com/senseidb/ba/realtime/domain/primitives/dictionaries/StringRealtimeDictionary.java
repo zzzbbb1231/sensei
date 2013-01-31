@@ -3,6 +3,8 @@ package com.senseidb.ba.realtime.domain.primitives.dictionaries;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
+import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 import com.senseidb.ba.realtime.domain.SingleValueSearchSnapshot;
@@ -49,12 +51,18 @@ public class StringRealtimeDictionary implements RealtimeDictionary {
       }
       
     }
-    public DictionarySnapshot produceDictSnapshot(ReadWriteLock readWriteLock) {  
+    public DictionarySnapshot produceDictSnapshot(ReadWriteLock readWriteLock, ReusableIndexObjectsPool indexObjectsPool, String column) {  
 
       try {
         readWriteLock.readLock().lock();
-      
-          StringDictionarySnapshot dictionarySnapshot = new StringDictionarySnapshot();
+        StringDictionarySnapshot dictionarySnapshot = null;
+        AbstractDictionarySnapshot snapshotFromPool = (AbstractDictionarySnapshot) indexObjectsPool.getDictSnapshot(column);
+        if (snapshotFromPool != null) {
+          dictionarySnapshot = (StringDictionarySnapshot) snapshotFromPool;
+        } else {
+          dictionarySnapshot =  new StringDictionarySnapshot();
+        }  
+         
           dictionarySnapshot.init(dictionary, readWriteLock);
          return dictionarySnapshot;
         

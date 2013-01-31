@@ -70,7 +70,7 @@ public class SegmentAppendableIndex {
       return currenIndex == capacity;
       }
     private RealtimeSnapshotIndexSegment previousSnapshot = null; 
-    public synchronized RealtimeSnapshotIndexSegment refreshSearchSnapshot() {
+    public synchronized RealtimeSnapshotIndexSegment refreshSearchSnapshot(ReusableIndexObjectsPool reusableIndexObjectsPool) {
      
       if (previousSnapshot != null && previousSnapshot.getLength() == currenIndex) {
         return previousSnapshot;
@@ -80,7 +80,7 @@ public class SegmentAppendableIndex {
       for (int i = 0; i < schema.getColumnNames().length; i++) {
         String column = schema.getColumnNames()[i];
         columnTypes.put(column, schema.getTypes()[i]);
-        columnSnapshots.put(column, columnIndexes[i].produceSnapshot(readWriteLock));
+        columnSnapshots.put(column, columnIndexes[i].produceSnapshot(readWriteLock, reusableIndexObjectsPool,  column));
       }
       previousSnapshot = new RealtimeSnapshotIndexSegment(currenIndex, columnSnapshots, columnTypes);
       previousSnapshot.setReferencedSegment(this);
@@ -96,6 +96,7 @@ public class SegmentAppendableIndex {
     public void recycle() {
       version = null;
       name = null;
+      currenIndex = 0;
       for (FieldRealtimeIndex index :   this.getColumnIndexes()) {
         index.recycle();
       }

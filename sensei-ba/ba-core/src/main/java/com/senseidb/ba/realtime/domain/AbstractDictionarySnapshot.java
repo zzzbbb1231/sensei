@@ -2,6 +2,7 @@ package com.senseidb.ba.realtime.domain;
 
 import java.util.List;
 
+import com.browseengine.bobo.facets.data.TermNumberList;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
@@ -9,9 +10,9 @@ import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
 import it.unimi.dsi.fastutil.Size64;
 import it.unimi.dsi.fastutil.ints.IntList;
 
-public abstract class AbstractDictionarySnapshot extends TermValueList implements DictionarySnapshot {
+public abstract class AbstractDictionarySnapshot extends TermNumberList implements DictionarySnapshot {
   protected IntList permutationArray;
-  
+  protected IntList invPermutationArray;
   @Override
   public int size() {
     return permutationArray.size();
@@ -90,10 +91,37 @@ public abstract class AbstractDictionarySnapshot extends TermValueList implement
     }
     return getDictPermutationArray().getInt(indexOf);
   }
+  
   @Override
-  public Object getRawValue(int index) {
-   return getObject(index);
+  public String get(int index) {
+   return format(getObject(index));
   }
- 
- 
+  @Override
+  public Comparable getComparableValue(int index) {
+    
+    Object object = getObject(index);
+    if (object == null) {
+      return new Comparable<Comparable>() {
+        @Override
+        public int compareTo(Comparable o) {
+         if (o.getClass() == this.getClass())
+          return 0;
+         return -1;
+        }
+      };
+    }
+    return (Comparable)object;
+  }
+ public IntList getInvPermutationArray() {
+   return invPermutationArray;
+ }
+  
+  @Override
+public Class getType() {
+  return Object.class;
+}
+ @Override
+ protected Object parseString(String o) {
+   throw new UnsupportedOperationException();
+ }
 }

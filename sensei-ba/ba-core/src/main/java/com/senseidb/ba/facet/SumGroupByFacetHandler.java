@@ -15,6 +15,7 @@ import com.browseengine.bobo.facets.FacetHandler;
 import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.data.TermNumberList;
+import com.browseengine.bobo.facets.data.TermValueList;
 import com.browseengine.bobo.facets.filter.RandomAccessFilter;
 import com.browseengine.bobo.sort.DocComparatorSource;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
@@ -80,7 +81,7 @@ public class SumGroupByFacetHandler extends FacetHandler<Serializable> {
         ZeusDataCache groupByCache = (ZeusDataCache) reader.getFacetData(dimension);
 
         final ZeusDataCache sumOverDataCache = (ZeusDataCache) reader.getFacetData(metric);
-        final TermNumberList valList = (TermNumberList) sumOverDataCache.getDictionary();
+        final TermValueList valList = (TermValueList) sumOverDataCache.getDictionary();
         boolean isRealtime = false;
         DictionaryNumberAccessor numberAccessor = null; 
         if (valList instanceof DictionaryNumberAccessor) {

@@ -93,16 +93,23 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
       if(counter.decrementAndGet() == 0) {
         if (toRemove == null) {
           toRemove = new ArrayList<SegmentAppendableIndex>();
+          
+        }
+        if (adaptersToRemove == null) {
           adaptersToRemove = new ArrayList<SegmentToZoieReaderAdapter>();
         }
         toRemove.add(referencedSegment);
         adaptersToRemove.add(adapter);
       }
     }  
-    counters.keySet().removeAll(adaptersToRemove);
+    if (adaptersToRemove != null) {
+      counters.keySet().removeAll(adaptersToRemove);
+    }
     //ZoieSegments are removed in persisting thread
-    for (SegmentAppendableIndex segment : toRemove) {
+    if (toRemove != null) {
+      for (SegmentAppendableIndex segment : toRemove) {
       indexConfig.getIndexObjectsPool().recycle(segment);
+    }
     }
     }
     
@@ -123,11 +130,12 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
             continue;
           }
           long time = System.currentTimeMillis();
-          GazelleIndexSegmentImpl persistedSegment = sortAndPersistSegment(segmentToProcess.refreshSearchSnapshot());
+          GazelleIndexSegmentImpl persistedSegment = sortAndPersistSegment(segmentToProcess.refreshSearchSnapshot(indexConfig.getIndexObjectsPool()));
           logger.info("The segment has been persisted and sorted in " + (System.currentTimeMillis() - time) + " ms");
           if (persistedSegment == null) {
             continue;
           }
+          listener.getMetadata().update(segmentToProcess.getVersion());
           synchronized (lock) {
             SegmentToZoieReaderAdapter<BoboIndexReader> segmentAdapter = zoieSegments.remove(segmentToProcess);
             listener.onSegmentPersisted(segmentToProcess, persistedSegment);
@@ -164,8 +172,9 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
       public int compare(int k1, int k2) {
         
         for (ColumnSearchSnapshot<int[]> index :  indexes) {
-          int val1 = index.getDictionarySnapshot().getDictPermutationArray().getInt(index.getForwardIndex()[permArray[k1]]);
-          int val2 = index.getDictionarySnapshot().getDictPermutationArray().getInt(index.getForwardIndex()[permArray[k2]]);
+          IntList invPermutationArray = index.getDictionarySnapshot().getInvPermutationArray();
+          int val1 = invPermutationArray.getInt(index.getForwardIndex()[permArray[k1]]);
+          int val2 = invPermutationArray.getInt(index.getForwardIndex()[permArray[k2]]);
           if (val1 > val2) return 1;
           if (val2 > val1) return -1;
         }
@@ -180,9 +189,7 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
       }
     });
     for (String columnName : segmentToProcess.getColumnTypes().keySet()) {
-      ColumnSearchSnapshot<int[]> searchSnapshot = (ColumnSearchSnapshot<int[]>) segmentToProcess.getForwardIndex(columnName);
-      int[] forwardIndex = searchSnapshot.getForwardIndex();
-      IntList permutationArray = searchSnapshot.getDictionarySnapshot().getDictPermutationArray();
+      ColumnSearchSnapshot searchSnapshot = (ColumnSearchSnapshot) segmentToProcess.getForwardIndex(columnName);
      /* for (int i = 0; i < searchSnapshot.getForwardIndexSize(); i++) {
         int swapValue = permArray[i];
         if (i < swapValue) {
@@ -193,11 +200,13 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
         
         forwardIndex[i] = permutationArray.getInt(forwardIndex[i]);
       }*/
-      ForwardIndex builtIndex = OnePassIndexCreator.build(forwardIndex, permArray, searchSnapshot.getDictionarySnapshot().getDictPermutationArray(), searchSnapshot.getDictionarySnapshot().produceDictionary(), segmentToProcess.getColumnTypes().get(columnName), columnName, forwardIndex.length);
+    
+      ForwardIndex builtIndex = OnePassIndexCreator.build(searchSnapshot, permArray, searchSnapshot.getDictionarySnapshot(), searchSnapshot.getDictionarySnapshot().produceDictionary(), segmentToProcess.getColumnTypes().get(columnName), columnName, searchSnapshot.getForwardIndexSize());
+      Assert.state(builtIndex.getLength() == searchSnapshot.getForwardIndexSize());
       gazelleIndexSegmentImpl.getForwardIndexes().put(columnName, builtIndex);
       gazelleIndexSegmentImpl.getDictionaries().put(columnName, builtIndex.getDictionary());
       gazelleIndexSegmentImpl.getColumnTypes().put(columnName, builtIndex.getColumnType());
-      gazelleIndexSegmentImpl.setLength(forwardIndex.length);
+      gazelleIndexSegmentImpl.setLength(searchSnapshot.getForwardIndexSize());
       gazelleIndexSegmentImpl.getColumnMetadataMap().put(columnName, ((MetadataAware)builtIndex).getColumnMetadata());
     }
     File dir = new File(indexConfig.getIndexDir(), segmentToProcess.getReferencedSegment().getName());
@@ -215,6 +224,7 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
   }
   public static interface SegmentPersistedListener {
     public void onSegmentPersisted(SegmentAppendableIndex segmentToProcess, GazelleIndexSegmentImpl persistedSegment);
+    public Metadata getMetadata();
   }
   
 }
