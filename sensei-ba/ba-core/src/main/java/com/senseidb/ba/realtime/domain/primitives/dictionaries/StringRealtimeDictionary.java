@@ -76,4 +76,9 @@ public class StringRealtimeDictionary implements RealtimeDictionary {
     public int size() {
       return dictionary.size() + 2;
     } 
+    @Override
+    public void recycle() {
+      dictionary.clear();
+      
+    } 
 }

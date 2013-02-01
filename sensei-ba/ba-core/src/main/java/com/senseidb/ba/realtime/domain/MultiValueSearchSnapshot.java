@@ -12,7 +12,7 @@ public  class MultiValueSearchSnapshot implements ColumnSearchSnapshot<MultiArra
  
 
   private volatile MultiArray forwardIndex;
-  private int forwardIndexSize;
+  private  int forwardIndexSize;
 
   private ColumnType columnType;
   private DictionarySnapshot dictionarySnapshot;

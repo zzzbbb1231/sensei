@@ -1,5 +1,7 @@
 package com.senseidb.ba.realtime.indexing;
 
+import org.springframework.util.Assert;
+
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
@@ -28,12 +30,13 @@ public class OnePassIndexCreator {
       boolean isSorted = true;
       int prevBiggerThanNextCount = 0;
       int numberOfChanges = 0;
+      int dictionarySize = dictionary.size();
       boolean isSecondarySorted = false;
       IntList dictPermutationArray = dictionarySnapshot.getDictPermutationArray();
       IntList invPermutationArray = dictionarySnapshot.getInvPermutationArray();
       if (searchSnapshot instanceof SingleValueSearchSnapshot) {
         int[] forwardIndex = (int[]) searchSnapshot.getForwardIndex();
-     
+      Assert.state(forwardIndex.length == count, "Count = " + count);
       for (int i = 0; i < forwardIndex.length - 1; i++) {
         int val1 = invPermutationArray.getInt(forwardIndex[permArray[i]]);
         int val2 = invPermutationArray.getInt(forwardIndex[permArray[i + 1]]);
@@ -49,14 +52,24 @@ public class OnePassIndexCreator {
         SortedForwardIndexImpl sortedForwardIndexImpl = new SortedForwardIndexImpl(dictionary, new int[dictionary.size()], new int[dictionary.size()], count, MetadataCreator.createMetadata(columnName, dictionary, columnType, count, true));
         sortedForwardIndexImpl.setLength(count);
         for (int i = 0; i < forwardIndex.length ; i++) {
-          sortedForwardIndexImpl.add(i, invPermutationArray.getInt(forwardIndex[permArray[i]]) - 1);
+         
+            int dictionaryValueId = invPermutationArray.getInt(forwardIndex[permArray[i]]) - 1;
+            if (dictionaryValueId >= dictionarySize) {
+              throw new IllegalStateException();
+            }
+            sortedForwardIndexImpl.add(i, dictionaryValueId);
+          
         }
         sortedForwardIndexImpl.seal();
         return sortedForwardIndexImpl;
       } else if (isSecondarySorted) {
         SecondarySortedForwardIndexImpl secondarySortedForwardIndexImpl = new SecondarySortedForwardIndexImpl(dictionary);
         for (int i = 0; i < forwardIndex.length ; i++) {
-          secondarySortedForwardIndexImpl.add(i, invPermutationArray.getInt(forwardIndex[permArray[i]]) - 1);
+          int dictionaryValueId = invPermutationArray.getInt(forwardIndex[permArray[i]]) - 1;
+          if (dictionaryValueId >= dictionarySize) {
+            throw new IllegalStateException();
+          }
+          secondarySortedForwardIndexImpl.add(i, dictionaryValueId);
         }
         ColumnMetadata metadata = MetadataCreator.createSecondarySortMetadata(columnName, dictionary, columnType, count);
         secondarySortedForwardIndexImpl.seal(metadata);
@@ -64,13 +77,18 @@ public class OnePassIndexCreator {
       } else {
         HeapCompressedIntArray heapCompressedIntArray = new HeapCompressedIntArray(count, OffHeapCompressedIntArray.getNumOfBits(dictionary.size()));
         for (int i = 0; i < forwardIndex.length ; i++) {
-          heapCompressedIntArray.setInt(i, invPermutationArray.getInt(forwardIndex[permArray[i]]) - 1);
+          int dictionaryValueId = invPermutationArray.getInt(forwardIndex[permArray[i]]) - 1;
+          if (dictionaryValueId >= dictionarySize) {
+            throw new IllegalStateException();
+          }
+          heapCompressedIntArray.setInt(i, dictionaryValueId);
         }
         ColumnMetadata metadata = MetadataCreator.createMetadata(columnName, dictionary, columnType, count, false);
         return new GazelleForwardIndexImpl(columnName, heapCompressedIntArray, dictionary, metadata);
       }
       } else {
         MultiArray multiArray = (MultiArray) searchSnapshot.getForwardIndex();
+        Assert.state(searchSnapshot.getForwardIndexSize() == count, "Count = " + count);
         long initialSize = multiArray.getIndexArray()[multiArray.getCurrentIndex() - 1] + multiArray.getMaxNumValuesPerDoc();
         if (initialSize > Integer.MAX_VALUE) {
           initialSize = Integer.MAX_VALUE;

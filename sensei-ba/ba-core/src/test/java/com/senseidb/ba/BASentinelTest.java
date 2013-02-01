@@ -801,7 +801,7 @@ public class BASentinelTest  extends Assert {
   }
   @Test
   public void test18RangeQueryBQLOnSortedColumn() throws Exception {
-   Thread.sleep(5000);
+  
     String req = "{\"bql\":\"select * where dim_memberAge > 5000000\"}";
     JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
     System.out.println(resp.toString(1));

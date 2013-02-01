@@ -78,5 +78,11 @@ public class IntRealtimeDictionary implements RealtimeDictionary {
   public int size() {
     return dictionary.size();
   } 
-
+  @Override
+  public void recycle() {
+    dictionary.clear();
+    dictionary.put(Integer.MIN_VALUE, 0);
+    //null value
+    dictionary.put(Integer.MIN_VALUE + 1, 1);
+  } 
 }

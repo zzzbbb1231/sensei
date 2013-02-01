@@ -78,6 +78,18 @@
 							<outputDirectory>${project.build.directory}/config-standalone/ext</outputDirectory>
 						</configuration>
 					</execution>
+					       <execution>
+                        <id>copy3</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        
+                        <configuration>
+                        <includeArtifactIds>sensei-ba-core, sensei-ba-gazelle, commons-compress, zkclient, avro, jackson-core-asl, jackson-mapper-asl, commons-fileupload,sensei-java-client, joda-time</includeArtifactIds>
+                            <outputDirectory>${project.build.directory}/realtime-config/ext</outputDirectory>
+                        </configuration>
+                    </execution>
 				</executions>
 			</plugin>			
 		</plugins>

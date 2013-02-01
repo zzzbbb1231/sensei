@@ -73,7 +73,16 @@ public class SegmentAppendableIndex {
     public synchronized RealtimeSnapshotIndexSegment refreshSearchSnapshot(ReusableIndexObjectsPool reusableIndexObjectsPool) {
      
       if (previousSnapshot != null && previousSnapshot.getLength() == currenIndex) {
-        return previousSnapshot;
+        boolean stillNeedToRefresh = false;
+        for (int i = 0; i < schema.getColumnNames().length; i++) {
+          if (previousSnapshot.getForwardIndex(schema.getColumnNames()[i]).getForwardIndexSize() != currenIndex) {
+            stillNeedToRefresh = true;
+            break;
+          }
+        }
+        if (!stillNeedToRefresh) {
+          return previousSnapshot;
+        }
       }
       Map<String, ColumnSearchSnapshot> columnSnapshots = new HashMap<String, ColumnSearchSnapshot>();
       Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();

@@ -46,6 +46,7 @@ public class MultiFieldRealtimeIndex implements FieldRealtimeIndex {
     forwardIndex.recycle();
     currentPosition = 0;
     searchSnapshot.getDictionarySnapshot().recycle();
+    realtimeDictionary.recycle();
   }
   @Override
   public void addElement(Object value, ReadWriteLock readWriteLock) {

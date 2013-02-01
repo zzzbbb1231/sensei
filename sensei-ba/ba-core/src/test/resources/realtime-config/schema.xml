@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://javasoze.github.com/sensei/schema/sensei-schema.xsd">
+
+  
+  <table uid="id">
+	<column name="advertiserId" type="long" />
+    <column name="campaignId" type="int" />
+    <column name="campaignType" type="string" />
+    <column name="creativeId" type="int" />
+    <column name="time" type="int" />
+    <column name="memberFunctions" type="string" multi="true"/>
+    <column name="memberIndustries" type="string" multi="true"/>
+    <column name="memberRegion" type="string" />
+    <column name="memberSeniority" type="string" />
+    <column name="memberTitles" type="string" multi="true"/>
+    <column name="clickCount" type="int" />
+    
+  </table>
+
+   <!-- 
+     valid types are:
+      simple - corresponds to com.browseengine.bobo.facets.impl.SimpleFacetHandler
+      path - corresponds to com.browseengine.bobo.facets.impl.PathFacetHandler
+      range - corresponds to com.browseengine.bobo.facets.impl.RangeFacetHandler
+      multi - corresponds to com.browseengine.bobo.facets.impl.MultiFacetHandler
+      compact-multi - corresponds to com.browseengine.bobo.facets.impl.CompactMultiFacetHandler
+      custom - custom facet handler, name must be defined in a spring bean in custom-facets.xml
+   -->
+   <facets>
+	 
+   </facets>
+</schema>

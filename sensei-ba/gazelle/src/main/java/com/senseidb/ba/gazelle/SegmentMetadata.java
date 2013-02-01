@@ -6,6 +6,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 
 public class SegmentMetadata {
+  public static final String SEGMENT_CLUSTER_NAME = "segment.cluster.name";
   public static final String SEGMENT_END_TIME = "segment.endTime";
   public static final String SEGMENT_START_TIME = "segment.startTime";
   private String clusterName;
@@ -14,11 +15,11 @@ public class SegmentMetadata {
   private String startTime;
   private String endTime;
   private HashMap<String, String> addionalEntries = new HashMap<String, String>();
-  private static String[] defaultList = {"segment.cluster.name","segment.time.Type","segment.aggregation",SEGMENT_START_TIME,SEGMENT_END_TIME};
+  private static String[] defaultList = {SEGMENT_CLUSTER_NAME,"segment.time.Type","segment.aggregation",SEGMENT_START_TIME,SEGMENT_END_TIME};
 
   public void addToConfig(Configuration configuration) {
     if (clusterName != null) {
-      configuration.setProperty("segment.cluster.name", clusterName);
+      configuration.setProperty(SEGMENT_CLUSTER_NAME, clusterName);
     }
     
     if (timeType != null) {

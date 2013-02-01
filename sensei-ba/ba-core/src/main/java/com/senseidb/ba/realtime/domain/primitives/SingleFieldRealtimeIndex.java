@@ -41,6 +41,7 @@ public  class SingleFieldRealtimeIndex implements FieldRealtimeIndex {
     Arrays.fill(forwardIndex, 0);
     currentPosition = 0;
     searchSnapshot.getDictionarySnapshot().recycle();
+    realtimeDictionary.recycle();
   }
   @Override
   public void addElement(Object value, ReadWriteLock readWriteLock) {

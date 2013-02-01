@@ -77,5 +77,13 @@ public class FloatRealtimeDictionary implements RealtimeDictionary {
   @Override
   public int size() {
     return dictionary.size();
+  }
+
+  @Override
+  public void recycle() {
+    dictionary.clear();
+    dictionary.put(Float.NEGATIVE_INFINITY, 0);
+    //null value
+    dictionary.put(-1000000, 1);
   } 
 }

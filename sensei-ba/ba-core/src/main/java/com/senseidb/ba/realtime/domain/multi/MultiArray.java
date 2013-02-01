@@ -249,9 +249,7 @@ public class MultiArray {
     public int getMaxNumValuesPerDoc() {
       return maxNumValuesPerDoc;
     }
-    public static void main(String[] args) {
-      System.out.println(Integer.toBinaryString(Integer.MIN_VALUE));
-    }
+    
     public MultiFacetIterator iterator(IntList invPermutationArray) {
       return new MultiArrayIterator(invPermutationArray);
     }

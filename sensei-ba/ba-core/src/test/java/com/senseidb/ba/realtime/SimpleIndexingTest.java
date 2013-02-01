@@ -46,12 +46,14 @@ protected void setUp() throws Exception {
 @Override
   protected void tearDown() throws Exception {
   senseiPluginRegistry.stop();
+  String indexingDirectory = "baRealtimeIndexing";
+  FileUtils.deleteDirectory(new File(indexingDirectory));
   }
 public void test1() throws Exception  {
   
  
   final Zoie zoieInstance = indexingCoordinator.getZoieInstance(1, 0);
-  new Wait(5000) {
+  new Wait() {
     
     @Override
     public boolean until() throws Exception {

@@ -12,4 +12,5 @@ public interface RealtimeDictionary {
   public DictionarySnapshot produceDictSnapshot(ReadWriteLock readWriteLock, ReusableIndexObjectsPool reusableIndexObjectsPool, String columnName);
   public int addElement(Object element, ReadWriteLock readWriteLock);
   public int size();
+  public void recycle();
 }

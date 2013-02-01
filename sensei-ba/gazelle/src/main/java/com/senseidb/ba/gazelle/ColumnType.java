@@ -19,7 +19,7 @@ public enum ColumnType {
     return valueOf(name);
   }
   public static ColumnType valueOf(Class<?> cls) {
-    if (cls == int.class || cls == Integer.class) {
+    if (cls == int.class || cls == Integer.class || cls == short.class || cls == Short.class) {
       return INT;
     }
     if (cls == long.class || cls == Long.class) {
@@ -82,8 +82,11 @@ public enum ColumnType {
       return name().endsWith("_ARRAY");
   }
   public ColumnType getElementType() {
-      Assert.state(isMulti());
-      return valueOfStr(name().substring(0, name().indexOf("_ARRAY")));
+     if (isMulti()) {
+       return valueOfStr(name().substring(0, name().indexOf("_ARRAY")));
+     } else {
+       return this;
+     }
   }
   public static ColumnType getColumnType(Object obj) {
       if (obj == null) {

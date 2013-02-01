@@ -38,7 +38,7 @@ public class RealtimeSnapshotIndexSegment implements IndexSegment {
     return null;
   }
   @Override
-  public ForwardIndex getForwardIndex(String column) {
+  public ColumnSearchSnapshot getForwardIndex(String column) {
     return columnSnapshots.get(column);
   }
   @Override

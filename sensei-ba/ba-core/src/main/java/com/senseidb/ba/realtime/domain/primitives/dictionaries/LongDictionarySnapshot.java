@@ -169,7 +169,7 @@ public class LongDictionarySnapshot extends TermLongList implements DictionarySn
 
 
   public TermValueList produceDictionary() {
-    try {
+    try {    
     final long[] longArr = new long[unsortedValues.size() - 1];
     for (int i = 0; i < unsortedValues.size(); i++) {
       int index = permutationArray.get(i);

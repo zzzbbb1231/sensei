@@ -5,7 +5,9 @@ import org.apache.log4j.Logger;
 import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.Schema;
 import com.senseidb.ba.realtime.SegmentAppendableIndex;
+import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
+import com.senseidb.ba.realtime.domain.primitives.FieldRealtimeIndex;
 import com.senseidb.ba.realtime.scheduler.SnapshotRefreshScheduler;
 
 public class RealtimeIndexingManager {
@@ -86,7 +88,18 @@ public class RealtimeIndexingManager {
     protected void retireAndCreateNewSegment() {
       
       SegmentAppendableIndex appendableIndex = indexConfig.getIndexObjectsPool().getAppendableIndex();
-      indexingCoordinator.segmentFullAndNewCreated(currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool()), currentIndex, appendableIndex);
+     /* System.out.flush();
+      for (FieldRealtimeIndex fieldRealtimeIndex : currentIndex.getColumnIndexes()) {
+        System.out.println("fieldRealtimeIndex size = " + fieldRealtimeIndex.getCurrentSize());
+      }
+      System.out.flush();*/
+      RealtimeSnapshotIndexSegment refreshedSearchSnapshot = currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool());
+      /*for (String columnName : refreshedSearchSnapshot.getColumnTypes().keySet()) {
+        ColumnSearchSnapshot forwardIndex = refreshedSearchSnapshot.getForwardIndex(columnName);
+        System.out.println("snapshot's size = " + forwardIndex.getLength());
+      }
+      System.out.flush();*/
+      indexingCoordinator.segmentFullAndNewCreated(refreshedSearchSnapshot, currentIndex, appendableIndex);
       currentIndex = appendableIndex;
       
     }

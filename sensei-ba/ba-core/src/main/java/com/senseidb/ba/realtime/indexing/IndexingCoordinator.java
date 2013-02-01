@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -17,12 +18,14 @@ import proj.zoie.impl.indexing.ZoieConfig;
 
 import com.browseengine.bobo.facets.FacetHandler;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
+import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
 import com.senseidb.ba.management.directory.SimpleIndexFactory;
 import com.senseidb.ba.plugins.ZeusIndexReaderDecorator;
 import com.senseidb.ba.realtime.SegmentAppendableIndex;
+import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
 import com.senseidb.ba.realtime.indexing.PendingSegmentsIndexFactory.SegmentPersistedListener;
 import com.senseidb.conf.ZoieFactoryFactory;
@@ -73,6 +76,7 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
   }
  
   public void start() {
+    bootstrap();
     realtimeIndexFactory.start();
     pendingSegmentsIndexFactory.start();
     indexingManager.start();
@@ -131,15 +135,22 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     }
   public void bootstrap() {
     try {
+    long time = System.currentTimeMillis();
+    logger.info("Bootstrapping indexes from the directory - " + directory);
     DirectoryBasedFactoryManager.cleanUpIndexesWithoutFinishedLoadingTag(directory);
-    for (String gazelleSegment : DirectoryBasedFactoryManager.getGazelleIndexes(directory)) {
+    List<String> gazelleIndexes = DirectoryBasedFactoryManager.getGazelleIndexes(directory);
+    logger.info("There are  " + gazelleIndexes.size() + " indexes to bootstrap");
+    long numDocs = 0;
+    for (String gazelleSegment : gazelleIndexes) {
       GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(new File(directory, gazelleSegment), indexConfig.getReadMode());
+      numDocs += segment.getLength();
       int partition = Math.abs(gazelleSegment.hashCode()) % indexConfig.getNumServingPartitions();
       SimpleIndexFactory indexFactory = staticIndexFactories.get(partition);
       synchronized(indexFactory.getGlobalLock()) {
         indexFactory.getReaders().add(new SegmentToZoieReaderAdapter(segment, gazelleSegment, decorator));
       }
     }
+    logger.info("Boostrapping finished. It took " + (System.currentTimeMillis() - time) + " ms to load  " + numDocs + " docs");
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }

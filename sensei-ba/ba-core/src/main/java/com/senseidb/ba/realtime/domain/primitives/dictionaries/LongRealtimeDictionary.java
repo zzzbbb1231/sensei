@@ -81,6 +81,12 @@ public class LongRealtimeDictionary implements RealtimeDictionary {
   public int size() {
     return dictionary.size();
   } 
- 
+  @Override
+  public void recycle() {
+    dictionary.clear();
+    dictionary.put(Long.MIN_VALUE, 0);
+    //null value
+    dictionary.put(Long.MIN_VALUE + 1, 1);
+  } 
 
 }
