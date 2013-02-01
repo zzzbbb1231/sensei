@@ -291,10 +291,12 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
         return new String[] { forwardIndex.getDictionary().get(dictionaryValueId) };
       }
     }
+    
     if (forwardIndex instanceof SingleValueForwardIndex) {
       SingleValueForwardIndex forwardIndex2 =
           (SingleValueForwardIndex) forwardIndex;
-      return new String[] { forwardIndex2.getDictionary().get(forwardIndex2.getReader().getValueIndex(id)) };
+      int valueIndex = forwardIndex2.getReader().getValueIndex(id);      
+      return new String[] { forwardIndex2.getDictionary().get(valueIndex) };
     }
     if (forwardIndex instanceof MultiValueForwardIndex) {
       MultiValueForwardIndex forwardIndex2 =

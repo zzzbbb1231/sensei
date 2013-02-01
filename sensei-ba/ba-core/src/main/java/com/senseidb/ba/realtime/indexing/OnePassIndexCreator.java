@@ -75,13 +75,19 @@ public class OnePassIndexCreator {
         secondarySortedForwardIndexImpl.seal(metadata);
         return secondarySortedForwardIndexImpl;
       } else {
-        HeapCompressedIntArray heapCompressedIntArray = new HeapCompressedIntArray(count, OffHeapCompressedIntArray.getNumOfBits(dictionary.size()));
+        OffHeapCompressedIntArray heapCompressedIntArray = new OffHeapCompressedIntArray(count, OffHeapCompressedIntArray.getNumOfBits(dictionary.size()));
         for (int i = 0; i < forwardIndex.length ; i++) {
-          int dictionaryValueId = invPermutationArray.getInt(forwardIndex[permArray[i]]) - 1;
-          if (dictionaryValueId >= dictionarySize) {
+          int dictionaryValueId = invPermutationArray.getInt(forwardIndex[permArray[i]]) - 1;          
+          if (dictionaryValueId >= dictionarySize || dictionaryValueId < 0) {
             throw new IllegalStateException();
           }
           heapCompressedIntArray.setInt(i, dictionaryValueId);
+        }
+        for (int i = 0; i < forwardIndex.length ; i++) {
+          int dictionaryValueId = heapCompressedIntArray.getInt(i);
+          if (dictionaryValueId >= dictionarySize) {
+            throw new IllegalStateException();
+          }        
         }
         ColumnMetadata metadata = MetadataCreator.createMetadata(columnName, dictionary, columnType, count, false);
         return new GazelleForwardIndexImpl(columnName, heapCompressedIntArray, dictionary, metadata);

@@ -28,6 +28,7 @@ import com.senseidb.ba.realtime.SegmentAppendableIndex;
 import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
 import com.senseidb.ba.realtime.indexing.PendingSegmentsIndexFactory.SegmentPersistedListener;
+import com.senseidb.ba.realtime.indexing.ShardingStrategy.AcceptAllShardingStrategy;
 import com.senseidb.conf.ZoieFactoryFactory;
 import com.senseidb.plugin.SenseiPlugin;
 import com.senseidb.plugin.SenseiPluginRegistry;
@@ -46,6 +47,10 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
   private RealtimeIndexingManager indexingManager;
   private Metadata metadata;
   private RealtimeDataProvider realtimeDataProvider;
+
+  private ShardingStrategy shardingStrategy;
+
+  private ShardBalancingStrategy shardBalancingStrategy;
   public IndexingCoordinator() {
     super(null, null, null, null, null);
   }
@@ -57,6 +62,12 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
      realtimeDataProvider = pluginRegistry.getBeanByName(dataProviderName, RealtimeDataProvider.class);
     Assert.notNull(realtimeDataProvider, "realtimeDataProvider No dataProvider instance with name - " + dataProviderName);
     indexConfig = IndexConfig.valueOf(config,  pluginRegistry);
+    if (indexConfig.getShardedColumn() == null) {
+      shardingStrategy = new ShardingStrategy.AcceptAllShardingStrategy();
+    } else {
+      shardingStrategy = new FieldShardingStrategy();
+      ((FieldShardingStrategy)shardingStrategy).init(indexConfig.getSchema(), indexConfig.getMaxPartitionId(), indexConfig.getShardedColumn());
+    }
     metadata = new Metadata(indexConfig.getIndexDir());
     directory = new File(indexConfig.getIndexDir());
     if (!directory.exists()) {
@@ -71,8 +82,8 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     for (int partition = 0; partition < indexConfig.getNumServingPartitions(); partition++) {
       staticIndexFactories.put(partition, new SimpleIndexFactory(new ArrayList<SegmentToZoieReaderAdapter>(), new Object()));
     }
-   
-    indexingManager.init(indexConfig, realtimeDataProvider, this);
+    shardBalancingStrategy = new ShardBalancingStrategy(indexConfig.getNumServingPartitions());
+    indexingManager.init(indexConfig, realtimeDataProvider, this, shardingStrategy);
   }
  
   public void start() {
@@ -121,7 +132,7 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     public void onSegmentPersisted(SegmentAppendableIndex segmentToProcess, GazelleIndexSegmentImpl persistedSegment) {
       
       logger.info("Segment  " +  segmentToProcess.getName() + " is persisted");
-      int partition = Math.abs(segmentToProcess.getName().hashCode()) % indexConfig.getNumServingPartitions();
+      int partition = shardBalancingStrategy.chooseShard(persistedSegment);
         SimpleIndexFactory indexFactory = staticIndexFactories.get(partition);
         try {
         synchronized(indexFactory.getGlobalLock()) {
@@ -144,7 +155,7 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     for (String gazelleSegment : gazelleIndexes) {
       GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(new File(directory, gazelleSegment), indexConfig.getReadMode());
       numDocs += segment.getLength();
-      int partition = Math.abs(gazelleSegment.hashCode()) % indexConfig.getNumServingPartitions();
+       int partition = shardBalancingStrategy.chooseShard(segment);
       SimpleIndexFactory indexFactory = staticIndexFactories.get(partition);
       synchronized(indexFactory.getGlobalLock()) {
         indexFactory.getReaders().add(new SegmentToZoieReaderAdapter(segment, gazelleSegment, decorator));
@@ -189,7 +200,6 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
   }
   @Override
   public Metadata getMetadata() {
-    // TODO Auto-generated method stub
     return metadata;
   }
 

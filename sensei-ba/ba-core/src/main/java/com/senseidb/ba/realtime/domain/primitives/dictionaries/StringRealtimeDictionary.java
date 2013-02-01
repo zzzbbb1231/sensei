@@ -19,7 +19,8 @@ public class StringRealtimeDictionary implements RealtimeDictionary {
     public void init() {
      
       dictionary = new Object2IntOpenHashMap<String>(500);
-     
+      dictionary.put(Character.MIN_VALUE + "", 0);
+      dictionary.put("\n", 1);
     }
     
     public int addString(String value, ReadWriteLock lock) {
@@ -31,7 +32,7 @@ public class StringRealtimeDictionary implements RealtimeDictionary {
           lock.writeLock().lock();
           // we leave 0 as reserved value. Because of the possible concurrency issues, this would mean that we hit unitialized field
           //another value is reserved for null
-          dictionaryId  = dictionary.size() + 2;
+          dictionaryId  = dictionary.size();
           dictionary.put(value, dictionaryId);
         } finally {
           lock.writeLock().unlock();
@@ -74,11 +75,13 @@ public class StringRealtimeDictionary implements RealtimeDictionary {
     }
     @Override
     public int size() {
-      return dictionary.size() + 2;
+      return dictionary.size();
     } 
     @Override
     public void recycle() {
       dictionary.clear();
-      
+      dictionary.put(Character.MIN_VALUE + "", 0);
+      dictionary.put("", 1);
     } 
+   
 }

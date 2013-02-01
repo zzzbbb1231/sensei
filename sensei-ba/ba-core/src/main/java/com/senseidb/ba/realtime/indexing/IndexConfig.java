@@ -32,12 +32,14 @@ public class IndexConfig {
   private Schema schema;
   private ReusableIndexObjectsPool indexObjectsPool;
   private String indexDir;
-  private String clusterName = "";;
+  private String clusterName = "";
   private int numServingPartitions;
   private String[] sortedColumns;
   private ReadMode readMode;
   private SenseiSchema senseiSchema;
-
+  private String shardedColumn;
+  private int maxPartitionId;
+  private int partition;
   public IndexConfig(int capacity, long refreshTime, int bufferSize, Schema schema, String indexDir, String clusterName,
       int numServingPartitions, String[] sortedColumns) {
     super();
@@ -179,7 +181,9 @@ public class IndexConfig {
     } else {
       ret.readMode = ReadMode.Heap;
     }
-    
+    ret.shardedColumn = getStringConfig(config, "shardedColumn", false);;
+    ret.maxPartitionId = pluginRegistry.getConfiguration().getInt("sensei.index.manager.default.maxpartition.id");
+    ret.partition = pluginRegistry.getConfiguration().getInt("sensei.node.partitions");
     String schemaPath = getStringConfig(config, "schemaPath", false);
     File schemaFile = null;
     if (schemaPath != null) {
@@ -264,4 +268,28 @@ public class IndexConfig {
     return Integer.parseInt(ret);
   }
 
+  public String getShardedColumn() {
+    return shardedColumn;
+  }
+
+  public int getMaxPartitionId() {
+    return maxPartitionId;
+  }
+
+  public int getPartition() {
+    return partition;
+  }
+
+  public void setShardedColumn(String shardedColumn) {
+    this.shardedColumn = shardedColumn;
+  }
+
+  public void setMaxPartitionId(int maxPartitionId) {
+    this.maxPartitionId = maxPartitionId;
+  }
+
+  public void setPartition(int partition) {
+    this.partition = partition;
+  }
+  
 }

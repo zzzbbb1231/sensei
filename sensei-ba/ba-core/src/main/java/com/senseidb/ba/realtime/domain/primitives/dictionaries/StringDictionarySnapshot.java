@@ -25,7 +25,7 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
   
 
   public void init(Object2IntMap<String> map, ReadWriteLock lock) {
-    if (unsortedValues != null && unsortedValues.size() == map.size() + 2) {
+    if (unsortedValues != null && unsortedValues.size() == map.size()) {
       // do nothing
       return;
     }
@@ -35,7 +35,7 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
         unsortedValues = new ObjectArrayList<String>(map.size());
       } 
       int previousSize = unsortedValues.size(); 
-      unsortedValues.size(map.size()+ 2 );
+      unsortedValues.size(map.size() );
        for (Entry<String> entry : map.object2IntEntrySet()) {
           if (entry.getIntValue() >= previousSize) {
             unsortedValues.set(entry.getIntValue(), entry.getKey());
@@ -54,7 +54,7 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
         permutationArray.set(i, i);
       }
     
-    it.unimi.dsi.fastutil.Arrays.quickSort(0, permutationArray.size(), new IntComparator() {
+    it.unimi.dsi.fastutil.Arrays.quickSort(2, permutationArray.size(), new IntComparator() {
       @Override
       public int compare(Integer o1, Integer o2) {
         return compare(o1.intValue(), o2.intValue());

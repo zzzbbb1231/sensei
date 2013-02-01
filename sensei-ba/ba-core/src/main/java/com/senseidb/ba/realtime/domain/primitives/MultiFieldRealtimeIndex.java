@@ -70,7 +70,8 @@ public class MultiFieldRealtimeIndex implements FieldRealtimeIndex {
       searchSnapshot.setForwardIndexSize(currentPosition);
     } else {
       MultiValueSearchSnapshot multiValueSearchSnapshot = new MultiValueSearchSnapshot();
-      multiValueSearchSnapshot.init(forwardIndex, currentPosition, columnType, (DictionarySnapshot)realtimeDictionary.produceDictSnapshot(readWriteLock, reusableIndexObjectsPool,columnName));
+      int position = currentPosition;
+      multiValueSearchSnapshot.init(forwardIndex, position, columnType, (DictionarySnapshot)realtimeDictionary.produceDictSnapshot(readWriteLock, reusableIndexObjectsPool,columnName));
      searchSnapshot = multiValueSearchSnapshot;
     }
     return searchSnapshot;

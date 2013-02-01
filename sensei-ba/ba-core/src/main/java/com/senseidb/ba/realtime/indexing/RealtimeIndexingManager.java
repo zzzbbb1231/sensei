@@ -22,10 +22,13 @@ public class RealtimeIndexingManager {
     private IndexingCoordinator indexingCoordinator;
     private volatile boolean stopped = false;
     private IndexConfig indexConfig;
-    public void init(IndexConfig indexConfig, RealtimeDataProvider dataProvider, IndexingCoordinator indexingCoordinator) {
+
+    private ShardingStrategy shardingStrategy;
+    public void init(IndexConfig indexConfig, RealtimeDataProvider dataProvider, IndexingCoordinator indexingCoordinator, ShardingStrategy shardingStrategy) {
       this.indexConfig = indexConfig;    
       this.dataProvider = dataProvider;
       this.indexingCoordinator = indexingCoordinator;
+      this.shardingStrategy = shardingStrategy;
    }
     
     public void start() {
@@ -40,6 +43,7 @@ public class RealtimeIndexingManager {
       };
       snapshotRefreshScheduler.init(indexConfig.getBufferSize(), indexConfig.getCapacity(), indexConfig.getRefreshTime());
       snapshotRefreshScheduler.start();
+      indexingThread.setDaemon(true);
       indexingThread.start();
     }
     private Thread indexingThread = new Thread() {
@@ -53,6 +57,9 @@ public class RealtimeIndexingManager {
             
             if (next == null) {
               Thread.sleep(100L);
+              continue;
+            }
+            if (shardingStrategy.calculateShard(next) != indexConfig.getPartition()) {
               continue;
             }
             boolean isFull = currentIndex.add(next.getValues(), next.getVersion());
@@ -75,6 +82,7 @@ public class RealtimeIndexingManager {
     
     
     public void stop() {
+      System.out.println("Stopping");
       waitTillSegmentPersisted = false;
       snapshotRefreshScheduler.stop();
       stopped = true;

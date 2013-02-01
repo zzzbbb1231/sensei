@@ -27,6 +27,7 @@ import com.senseidb.ba.gazelle.MetadataAware;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
+import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.management.directory.AbstractFakeZoie;
 import com.senseidb.ba.realtime.SegmentAppendableIndex;
@@ -49,7 +50,9 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
     this.indexConfig = indexConfig;
   }
   public void start() {
+    persistingThread.setDaemon(true);
     persistingThread.start();
+    
   }
   public void stop() {
     isStoppedFlag = true;
@@ -213,6 +216,10 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
     }
     File dir = new File(indexConfig.getIndexDir(), segmentToProcess.getReferencedSegment().getName());
     SegmentPersistentManager.flushToDisk(gazelleIndexSegmentImpl, dir);
+   /* GazelleIndexSegmentImpl gazelleIndexSegmentImpl2 = SegmentPersistentManager.read(dir, ReadMode.Heap);
+    for (String columnName : segmentToProcess.getColumnTypes().keySet()) {
+      Assert.state(gazelleIndexSegmentImpl.getDictionaries().size() == gazelleIndexSegmentImpl2.getDictionaries().size());
+    }*/
     new File(dir, "finishedLoading").createNewFile();
    
     } catch (Exception ex) {

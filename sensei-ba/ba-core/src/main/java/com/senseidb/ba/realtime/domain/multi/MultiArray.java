@@ -32,7 +32,7 @@ public class MultiArray {
     }
     public void addNumbers(IntList values) {
       if (values.size() == 0) {
-        values.add(0);
+        values.add(1);
       }
       Assert.state(values.size() <= capacity);
       if (maxNumValuesPerDoc < values.size()) {
@@ -110,8 +110,8 @@ public class MultiArray {
         int position = indexArray[index];
         if (position >= _currentChunkStart + capacity) {
           _chunkIndex = position /capacity;
-          _currentChunk = chunks.get(_chunkIndex);
-          _currentChunkStart = (position - position % capacity)  ;
+          _currentChunk = chunks.get(_chunkIndex);          
+          _currentChunkStart = (position - position % capacity) ;
         }
         _currentIndex = index;
         _currentPosition = position;
@@ -145,11 +145,12 @@ public class MultiArray {
         while(true) {
           int val = _currentChunk[localPosition];
           if (val == 0) {
-            if (!advance(index + 1)) {
+            return -1;
+            /*if (!advance(index + 1)) {
               return -1;
             }  
             localPosition = _currentPosition - _currentChunkStart;
-            val = _currentChunk[localPosition];
+            val = _currentChunk[localPosition];*/
           }
           if (val < 0) {
             val &= Integer.MAX_VALUE;
@@ -181,11 +182,12 @@ public class MultiArray {
         while(true) {
           int val = _currentChunk[localPosition];
           if (val == 0) {
-            if (!advance(index + 1)) {
+            return -1;
+            /*if (!advance(index + 1)) {
               return -1;
             }  
             localPosition = _currentPosition - _currentChunkStart;
-            val = _currentChunk[localPosition];
+            val = _currentChunk[localPosition];*/
           }
           if (val < 0) {
             //change the sign
