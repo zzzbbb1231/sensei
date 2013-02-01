@@ -8,7 +8,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
-import com.kamikaze.docidset.impl.PForDeltaDocIdSet;
+import com.senseidb.ba.gazelle.utils.PForDeltaDocIdSet;
 
 /**
  * Implementation of an InvertedIndex for SenseiBA. We don't store all docIDs in
@@ -293,6 +293,10 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			currentMin = -1;
 			lastDoc = -1;
 			lowerBound = -1;
+			
+			if(docCount > 0){
+				currentMin = PForDIt.nextDoc();
+			}
 
 		}
 
@@ -312,7 +316,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			// If we decided to not keep any doc in the inverted iterator or if
 			// there are any docs that are between -1 and the current min, return
 			// from the forward iterator.
-			if (lastDoc == -1 || docCount == 0 || lastDoc != currentMin) {
+			if (docCount == 0 || lastDoc != currentMin) {
 				lastDoc = getFromForwardIndex(lastDoc);
 			}
 
