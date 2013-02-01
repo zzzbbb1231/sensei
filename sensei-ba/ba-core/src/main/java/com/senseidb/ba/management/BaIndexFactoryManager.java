@@ -35,7 +35,7 @@ public class BaIndexFactoryManager implements SenseiPlugin, ZoieFactoryFactory {
 	private SenseiPluginRegistry pluginRegistry;
 	private ZeusIndexReaderDecorator zeusIndexReaderDecorator;
 	private ReadMode readMode;
-	private String invertedColumn;
+	private String[] invertedColumns;
 	@SuppressWarnings( { "unchecked", "rawtypes" })
 	@Override
 	public SenseiZoieFactory<?> getZoieFactory(final File idxDir, ZoieIndexableInterpreter<?> interpreter, final SenseiIndexReaderDecorator decorator,
@@ -43,7 +43,7 @@ public class BaIndexFactoryManager implements SenseiPlugin, ZoieFactoryFactory {
 		return new SenseiZoieFactory( idxDir, null, interpreter, decorator, config) {
 			@Override
 			public Zoie getZoieInstance(int nodeId, int partitionId) {
-				return new BaIndexFactory(SenseiZoieFactory.getPath(idxDir, nodeId, partitionId), clusterName, zeusIndexReaderDecorator, zkClient, fileSystem, readMode,nodeId, partitionId, executorService);
+				return new BaIndexFactory(SenseiZoieFactory.getPath(idxDir, nodeId, partitionId), clusterName, zeusIndexReaderDecorator, zkClient, fileSystem, readMode,nodeId, partitionId, executorService, invertedColumns);
 			}
 			@Override
 			public File getPath(int nodeId, int partitionId) {
@@ -87,7 +87,7 @@ public class BaIndexFactoryManager implements SenseiPlugin, ZoieFactoryFactory {
 			String invertedIndexStr = config.get("invertedColumns");
 			if (invertedIndexStr != null) {
 
-				invertedColumn = invertedIndexStr;
+				invertedColumns = invertedIndexStr.split(",");
 				logger.info("Initialized the Inverted Index from the configuration - " + invertedIndexStr);
 			} 
 			

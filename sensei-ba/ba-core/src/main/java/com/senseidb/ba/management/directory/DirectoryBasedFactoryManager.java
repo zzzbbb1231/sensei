@@ -58,7 +58,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
 	private int maxPartition;
 	private AtomicInteger counter = new AtomicInteger();
 	private ReadMode readMode;
-	private String invertedColumns;
+	private String[] invertedColumns;
 	public DirectoryBasedFactoryManager() {
 		super(null, null, null, null, null);
 	}
@@ -151,7 +151,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
 				Assert.state(gazelleIndexSegmentImpl != null, "Couldn't create the index segment out of " + file.getAbsolutePath());
 				SegmentPersistentManager.flushToDisk(gazelleIndexSegmentImpl, targetDir);
 				new File(targetDir, "finishedLoading").createNewFile();
-				gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, readMode);
+				gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, readMode, invertedColumns);
 			} else if (fileType == FileType.COMPRESSED_GAZELLE) {
 				List<File> uncompressedFiles = TarGzCompressionUtils.unTar(file, explodeDirectory);       
 				Thread.sleep(100);
@@ -168,10 +168,10 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
 					}
 				}
 				new File(targetDir, "finishedLoading").createNewFile();
-				gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, readMode);
+				gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, readMode, invertedColumns);
 			} else if (fileType == FileType.GAZELLE){
 				targetDir = file;
-				gazelleIndexSegmentImpl = SegmentPersistentManager.read(file, readMode);
+				gazelleIndexSegmentImpl = SegmentPersistentManager.read(file, readMode, invertedColumns);
 			}
 			int hash = Math.abs(counter.incrementAndGet()) % maxPartition;
 			MapBasedIndexFactory mapBasedIndexFactory = readers.get(hash);
@@ -261,7 +261,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
 		String invertedIndexStr = config.get("invertedColumns");
 		if (invertedIndexStr != null) {
 
-			invertedColumns = invertedIndexStr;
+			invertedColumns = invertedIndexStr.split(",");
 			logger.info("Initialized the Inverted Index from the configuration - " + invertedIndexStr);
 		} 
 	}

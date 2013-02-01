@@ -25,9 +25,10 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private int length;
 	private Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();
 	private SegmentMetadata segmentMetadata;
+	private String[] invertedColumns;
 
 	@SuppressWarnings("rawtypes")
-	public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr, TermValueList[] termValueListArr, ColumnMetadata[] columnMetadataArr, SegmentMetadata segmentMetadata, int length) {
+	public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr, TermValueList[] termValueListArr, ColumnMetadata[] columnMetadataArr, SegmentMetadata segmentMetadata, int length) throws IOException {
 		this.length = length;
 		for (int i = 0; i < forwardIndexArr.length; i++) {
 			forwardIndexMap.put(columnMetadataArr[i].getName(), forwardIndexArr[i]);
@@ -38,7 +39,19 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 		this.segmentMetadata = segmentMetadata;
 	}
 	@SuppressWarnings("rawtypes")
-	public GazelleIndexSegmentImpl(Map<String, ColumnMetadata> metadataMap, Map<String, ForwardIndex> forwardIndexMap, Map<String, TermValueList> termValueListMap, SegmentMetadata segmentMetadata, int length) {
+	public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr, TermValueList[] termValueListArr, ColumnMetadata[] columnMetadataArr, SegmentMetadata segmentMetadata, int length, String[] invertedColumns) throws IOException {
+		this.length = length;
+		for (int i = 0; i < forwardIndexArr.length; i++) {
+			forwardIndexMap.put(columnMetadataArr[i].getName(), forwardIndexArr[i]);
+			termValueListMap.put(columnMetadataArr[i].getName(), termValueListArr[i]);
+			columnMetatdaMap.put(columnMetadataArr[i].getName(), columnMetadataArr[i]);
+		}
+		this.invertedColumns = invertedColumns;
+		init();
+		this.segmentMetadata = segmentMetadata;
+	}
+	@SuppressWarnings("rawtypes")
+	public GazelleIndexSegmentImpl(Map<String, ColumnMetadata> metadataMap, Map<String, ForwardIndex> forwardIndexMap, Map<String, TermValueList> termValueListMap, SegmentMetadata segmentMetadata, int length) throws IOException {
 		this.forwardIndexMap = forwardIndexMap;
 		this.columnMetatdaMap = metadataMap;
 		this.termValueListMap = termValueListMap;
@@ -46,14 +59,25 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 		this.length = length;
 		init();
 	}
+	@SuppressWarnings("rawtypes")
+	public GazelleIndexSegmentImpl(Map<String, ColumnMetadata> metadataMap, Map<String, ForwardIndex> forwardIndexMap, Map<String, TermValueList> termValueListMap, SegmentMetadata segmentMetadata, int length, String[] invertedColumns) throws IOException {
+		this.forwardIndexMap = forwardIndexMap;
+		this.columnMetatdaMap = metadataMap;
+		this.termValueListMap = termValueListMap;
+		this.segmentMetadata = segmentMetadata;
+		this.length = length;
+		this.invertedColumns = invertedColumns;
+		init();
+	}
 	public GazelleIndexSegmentImpl() {
 		segmentMetadata = new SegmentMetadata();
 	}
-	private void init() {
+	private void init() throws IOException {
 		columnTypes = new HashMap<String, ColumnType>();
 		for (String columnName : columnMetatdaMap.keySet()) {
 			columnTypes.put(columnName, columnMetatdaMap.get(columnName).getColumnType());      
-		}    
+		}
+		initInvertedIndex(invertedColumns);
 	}
 
 
@@ -81,10 +105,9 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	 * @param columns --> Specifies the column on which we want to build inverted indices on
 	 * @throws IOException --> Comes from addDoc
 	 */
-	public void initInvertedIndex(String columns) throws IOException{
-		if(columns != null && columns != ""){
-			String[] list = columns.split(",");
-			for(String column : list){
+	public void initInvertedIndex(String[] columns) throws IOException{
+		if(columns != null){
+			for(String column : columns){
 				//Fetch all values that this column could take
 				TermValueList values = termValueListMap.get(column);
 				ForwardIndex fIndex = forwardIndexMap.get(column);
@@ -93,13 +116,16 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 					return;
 				}
 
-
 				//Create correct number of inverted indices for this column
 				int size = values.size();
 				DocIdSet[] iIndices = new DocIdSet[size];
+				
+				//We estimate the jump value for one dictionary value and assume it will work for the others (Otherwise, we waste too much time
+				//on estimation of the jump value.
+				int optVal = GazelleInvertedIndexImpl.estimateOptimalMinJump(fIndex, fIndex.getDictionary().indexOf(values.get(0)));				
 				for(int i = 1; i < size; i++){
 					String value = values.get(i);
-					iIndices[i] = new GazelleInvertedIndexImpl(fIndex, fIndex.getDictionary().indexOf(value));
+					iIndices[i] = new GazelleInvertedIndexImpl(fIndex, fIndex.getDictionary().indexOf(value), optVal);
 				}
 
 				//If it's a MultiValueForwardIndex, we have to deal with it differently.
