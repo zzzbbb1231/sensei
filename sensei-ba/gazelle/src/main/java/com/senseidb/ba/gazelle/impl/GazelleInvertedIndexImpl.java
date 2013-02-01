@@ -8,7 +8,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
-import com.senseidb.ba.gazelle.utils.PForDeltaDocIdSet;
+import com.kamikaze.docidset.impl.PForDeltaDocIdSet;
 
 /**
  * Implementation of an InvertedIndex for SenseiBA. We don't store all docIDs in
