@@ -1,11 +1,6 @@
 package com.senseidb.ba.gazelle;
 
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-
-import java.util.Arrays;
 
 import org.springframework.util.Assert;
 
@@ -17,9 +12,9 @@ public interface SecondarySortedForwardIndex extends MetadataAware {
     public SortedRegion[] getSortedRegions();
     public int numberOfSortedRegions();
     public static class SortedRegion {
-      private IntArrayList tempMinDocIds = new IntArrayList();
-      private IntArrayList tempMaxDocIds = new IntArrayList();
-      private IntArrayList tempdicts = new IntArrayList();
+      private IntArrayList tempMinDocIds;
+      private IntArrayList tempMaxDocIds;
+      private IntArrayList tempdicts;
       private int lastDictId = -1;
       private int currentDictIndex = -1;
       public int[] dictionaryIds;
@@ -33,6 +28,12 @@ public interface SecondarySortedForwardIndex extends MetadataAware {
         super();       
       }
       public void add(int dictionaryValueId, int docId) {
+        if (tempMinDocIds == null) {
+           tempMinDocIds = new IntArrayList();
+           tempMaxDocIds = new IntArrayList();
+           tempdicts = new IntArrayList();
+        }
+        
         if (lastDictId == dictionaryValueId) {
          
           if (tempMinDocIds.get(currentDictIndex) > docId) {

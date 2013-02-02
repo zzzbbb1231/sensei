@@ -182,8 +182,8 @@ public class IndexConfig {
       ret.readMode = ReadMode.Heap;
     }
     ret.shardedColumn = getStringConfig(config, "shardedColumn", false);;
-    ret.maxPartitionId = pluginRegistry.getConfiguration().getInt("sensei.index.manager.default.maxpartition.id");
-    ret.partition = pluginRegistry.getConfiguration().getInt("sensei.node.partitions");
+    ret.maxPartitionId = pluginRegistry.getConfiguration().getInt("sensei.index.manager.default.maxpartition.id", 0);
+    ret.partition = pluginRegistry.getConfiguration().getInt("sensei.node.partitions", 0);
     String schemaPath = getStringConfig(config, "schemaPath", false);
     File schemaFile = null;
     if (schemaPath != null) {
