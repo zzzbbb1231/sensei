@@ -879,6 +879,27 @@ public class TestSensei extends TestCase {
     assertEquals("inner score for second is not correct." , true, secondScore == 10000f);
   }
   
+  public void testRelevanceStaticRandomField() throws Exception
+  {
+    logger.info("executing test case testRelevanceStaticRandomField");
+    
+    String req1 = "{\"sort\":[\"_score\"],\"query\":{\"query_string\":{\"query\":\"\",\"relevance\":{\"model\":{\"function_params\":[\"_INNER_SCORE\",\"year\",\"goodYear\",\"_NOW\",\"now\"],\"facets\":{\"int\":[\"year\",\"mileage\"],\"long\":[\"groupid\"]},\"function\":\" return _RANDOM.nextFloat()   ;\",\"variables\":{\"set_int\":[\"goodYear\"],\"int\":[\"thisYear\"],\"long\":[\"now\"]}},\"values\":{\"thisYear\":2001,\"now\":"+ System.currentTimeMillis() +",\"goodYear\":[1996]}}}},\"fetchStored\":false,\"from\":0,\"explain\":false,\"size\":6}";
+    JSONObject res1 = search(new JSONObject(req1));
+    JSONArray hits1 = res1.getJSONArray("hits");
+    JSONObject firstHit = hits1.getJSONObject(0); 
+    
+    String req2 = "{\"sort\":[\"_score\"],\"query\":{\"query_string\":{\"query\":\"\",\"relevance\":{\"model\":{\"function_params\":[\"_INNER_SCORE\",\"year\",\"goodYear\",\"_NOW\",\"now\"],\"facets\":{\"int\":[\"year\",\"mileage\"],\"long\":[\"groupid\"]},\"function\":\" return _RANDOM.nextInt(10) + 10.0f   ;\",\"variables\":{\"set_int\":[\"goodYear\"],\"int\":[\"thisYear\"],\"long\":[\"now\"]}},\"values\":{\"thisYear\":2001,\"now\":"+ System.currentTimeMillis() +",\"goodYear\":[1996]}}}},\"fetchStored\":false,\"from\":0,\"explain\":false,\"size\":6}";
+    JSONObject res2 = search(new JSONObject(req2));
+    JSONArray hits2 = res2.getJSONArray("hits");
+    JSONObject secondHit = hits2.getJSONObject(1);
+    
+    double firstScore = firstHit.getDouble("_score");      //  0.0f (inclusive) to 1.0f (exclusive)
+    double secondScore = secondHit.getDouble("_score");   //  10.0f (inclusive) to 20.0f (exclusive)
+    
+    assertEquals("inner score for first is not correct." , true, (firstScore >= 0f && firstScore <1f) );
+    assertEquals("inner score for second is not correct." , true, (secondScore >= 10f && secondScore < 20f));
+  }
+  
   public void testRelevanceHashMapInt2Float() throws Exception
   {
     logger.info("executing test case testRelevanceHashMapInt2Float");
@@ -1212,6 +1233,27 @@ public class TestSensei extends TestCase {
   }
   
 
+  public void testRelevanceWeightedMulti() throws Exception
+  {
+    logger.info("executing test case testRelevanceNOW");
+    // Assume that the difference between request side "now" and node side "_NOW" is less than 2000ms.
+    String req = "{\"sort\":[\"_score\"],\"query\":{\"query_string\":{\"query\":\"\",\"relevance\":{\"model\":{\"function_params\":[\"_INNER_SCORE\",\"wtags\",\"goodtag\"],\"facets\":{\"wmstring\":[\"wtags\"]},\"function\":\" if(wtags.hasWeight(goodtag))    _INNER_SCORE = wtags.getWeight();  return  _INNER_SCORE;\",\"variables\":{\"string\":[\"goodtag\"]}},\"values\":{\"goodtag\":\"reliable\"}}}},\"fetchStored\":true,\"from\":0,\"explain\":true,\"size\":10}";
+    JSONObject res = search(new JSONObject(req));
+    int numhits = res.getInt("numhits");
+    assertTrue("numhits is wrong. get "+ numhits, res.getInt("numhits") == 15000);
+    logger.info("request:" + req + "\nresult:" + res);
+    
+    
+    JSONArray hits = res.getJSONArray("hits");
+    JSONObject firstHit = hits.getJSONObject(0);
+    JSONObject secondHit = hits.getJSONObject(1);
+    
+    double firstScore = firstHit.getDouble("_score");
+    double secondScore = secondHit.getDouble("_score");
+    assertEquals("inner score for first is not correct." , true, Math.abs(firstScore - 999) < 1 );
+    assertEquals("inner score for second is not correct." , true, Math.abs(secondScore - 1) < 0.1 );
+  }
+  
   private boolean containsString(JSONArray array, String target) throws JSONException
   {
     for(int i=0; i<array.length(); i++)
@@ -1244,6 +1286,7 @@ public class TestSensei extends TestCase {
       sb.append(line);
     String res = sb.toString();
     // System.out.println("res: " + res);
+    res = res.replace('\u0000', '*');  // replace the seperator for test case;
     JSONObject ret = new JSONObject(res);
     if (ret.opt("totaldocs") !=null){
      // assertEquals(15000L, ret.getLong("totaldocs"));
