@@ -69,7 +69,7 @@ public class SingleNodeStarter {
       if (totalDocs >= expectedDocs) {
         break;
       }
-      Thread.sleep(300);
+      Thread.sleep(1000);
       counter++;
     }
   }
