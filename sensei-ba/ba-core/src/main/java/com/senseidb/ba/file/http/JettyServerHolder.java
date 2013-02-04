@@ -31,7 +31,7 @@ public class JettyServerHolder implements SenseiPlugin {
   private String nasBasePath;
   private Map<String, Integer> clustersMaxPartitions;
   private String brokerUrl;
-  private WebAppContext webApp = new WebAppContext();;
+
 
   @Override
   public void init(Map<String, String> config, SenseiPluginRegistry pluginRegistry) {
@@ -112,7 +112,8 @@ public class JettyServerHolder implements SenseiPlugin {
   @Override
   public void start() {
     server = new Server(port);
-    
+    WebAppContext webApp = new WebAppContext();;
+
     ServletHandler servletHandler = new ServletHandler();
 
     servletHandler.addServletWithMapping(FileManagementServlet.class, "/files/*");
