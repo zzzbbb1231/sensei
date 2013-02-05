@@ -3,8 +3,8 @@ package com.senseidb.ba.gazelle.impl;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.search.DocIdSet;
 
 import com.browseengine.bobo.facets.data.TermValueList;
@@ -15,7 +15,9 @@ import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.ba.gazelle.SegmentMetadata;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
-import com.senseidb.ba.gazelle.utils.multi.MultiFacetIterator;
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.MetricName;
+import com.yammer.metrics.core.Timer;
 
 public class GazelleIndexSegmentImpl implements IndexSegment {
 	private Map<String, ColumnMetadata> columnMetatdaMap = new HashMap<String, ColumnMetadata>();
@@ -30,6 +32,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private int invertedDocCount = 0;
 	private int invertedCompressedSize = 0;
 	private int invertedTotalDocCount = 0;
+	public static Timer invertedIndicesCreationTime = Metrics.newTimer(new MetricName(GazelleIndexSegmentImpl.class ,"invertedIndicesCreationTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
 
 	@SuppressWarnings("rawtypes")
 	public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr, TermValueList[] termValueListArr, ColumnMetadata[] columnMetadataArr, SegmentMetadata segmentMetadata, int length) throws IOException {
@@ -111,6 +114,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	 */
 	public void initInvertedIndex(String[] columns) throws IOException{
 		if(columns != null){
+			long elapsedTime = System.currentTimeMillis();
 			for(String column : columns){
 				//Fetch all values that this column could take
 				TermValueList values = termValueListMap.get(column);
@@ -162,7 +166,8 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 					}
 				}
 				invertedIndexMap.put(column, iIndices);
-			}			
+			}
+			invertedIndicesCreationTime.update(System.currentTimeMillis() - elapsedTime, TimeUnit.MILLISECONDS); 
 		}
 	}
 

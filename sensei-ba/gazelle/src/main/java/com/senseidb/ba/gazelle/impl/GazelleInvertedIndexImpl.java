@@ -9,7 +9,7 @@ import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
-import com.kamikaze.docidset.impl.PForDeltaDocIdSet;
+import com.senseidb.ba.gazelle.utils.PForDeltaDocIdSet;
 
 /**
  * Implementation of an InvertedIndex for SenseiBA. We don't store all docIDs in
@@ -53,14 +53,6 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		finalDoc = id;
 
 		if (id - lastCandidate > minJumpValue) {
-
-			//Kamikaze doesn't not support duplicate values in the DocIdSet. If we want to support that (We may end up sacrificing compression for iteration time)
-			//We could just change kamikaze's implementation.
-			if (lastCandidate == lastAdded) {
-				lastCandidate = id;
-				totalDocCount++;
-				return;
-			}
 
 			pForDSet.addDoc(lastCandidate);
 			pForDSet.addDoc(id);
