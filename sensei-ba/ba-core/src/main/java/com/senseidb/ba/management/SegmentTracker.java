@@ -44,6 +44,9 @@ public class SegmentTracker {
   private static final Counter segmentsFailedToLoad = Metrics.newCounter(SegmentTracker.class, "segmentsFailedToLoad");
   private static final Counter numDeletedSegments = Metrics.newCounter(SegmentTracker.class, "numDeletedSegments");
   private static final Counter segmentDownloadSpeed = Metrics.newCounter(SegmentTracker.class, "segmentDownloadSpeed");
+  private static final Counter documentsStoredInInvertedIndex = Metrics.newCounter(SegmentTracker.class, "documentsStoredInInvertedIndex");
+  private static final Counter invertedIndexCompressionRate = Metrics.newCounter(SegmentTracker.class, "invertedIndexCompressionRate");  
+  private static final Counter totalDocumentsStoredInInvertedIndex = Metrics.newCounter(SegmentTracker.class, "totalDocumentsStoredInInvertedIndex");
  
   private static final Timer bootstrapTimePerPartition = Metrics.newTimer(new MetricName(SegmentTracker.class ,"bootstrapTimePerPartition"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
   private File indexDir;
@@ -89,7 +92,7 @@ public class SegmentTracker {
           }
           long elapsedTime = System.currentTimeMillis();
           GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, readMode, invertedColumns);
-          segmentBootstrapTime.update(System.currentTimeMillis() - elapsedTime, TimeUnit.MILLISECONDS);
+          segmentBootstrapTime.update(System.currentTimeMillis() - elapsedTime, TimeUnit.MILLISECONDS); 
           if (indexSegment == null) {
             logger.warn("The directory " + file.getAbsolutePath() + " doesn't contain the fully loaded segment");
             FileUtils.deleteDirectory(file);
@@ -99,6 +102,9 @@ public class SegmentTracker {
           segmentsMap.put(file.getName(), new SegmentToZoieReaderAdapter(indexSegment, file.getName(), senseiDecorator));
           currentNumberOfSegments.inc();
           currentNumberOfDocuments.inc(indexSegment.getLength());
+          totalDocumentsStoredInInvertedIndex.inc(indexSegment.getTotalInvertedDocCount());
+          documentsStoredInInvertedIndex.inc(indexSegment.getInvertedDocCount());
+          invertedIndexCompressionRate.inc(indexSegment.getInvertedCompressionRate()/8);
           activeSegments.add(file.getName());
           referenceCounts.put(file.getName(), new AtomicInteger(1));
           logger.info("Bootstrapped the  segment " + file.getName() + " with " + indexSegment.getLength() + " elements");
@@ -198,8 +204,7 @@ public class SegmentTracker {
         }
         new File(file, "finishedLoading").createNewFile();
         long loadTime = System.currentTimeMillis();
-        GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, readMode, invertedColumns);
-        
+        GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, readMode, invertedColumns);        
         logger.info("Loaded the new segment " + segmentId + " with " + indexSegment.getLength() + " elements");
         if (indexSegment == null) {
           FileUtils.deleteDirectory(file);
@@ -207,6 +212,9 @@ public class SegmentTracker {
         }
         segmentLoadIntoMemoryTime.update(System.currentTimeMillis() - loadTime, TimeUnit.MILLISECONDS);
         currentNumberOfDocuments.inc(indexSegment.getLength());
+        totalDocumentsStoredInInvertedIndex.inc(indexSegment.getTotalInvertedDocCount());
+        documentsStoredInInvertedIndex.inc(indexSegment.getInvertedDocCount());
+        invertedIndexCompressionRate.inc(indexSegment.getInvertedCompressionRate()/8);
         synchronized (globalLock) {
           
           segmentsMap.put(segmentId, new SegmentToZoieReaderAdapter(indexSegment, segmentId, senseiDecorator));

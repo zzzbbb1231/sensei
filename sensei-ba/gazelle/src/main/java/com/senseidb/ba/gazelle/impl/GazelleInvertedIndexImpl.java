@@ -199,8 +199,12 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 				}
 			}
 		}
-		
-		return (int) ((int) mean + ((int) (Math.sqrt(stdTemp/(numVals - 1))) * Z_VALUE));
+		if((mean +  (Math.sqrt(stdTemp/(numVals - 1))) * Z_VALUE) > 50){
+			return 50;
+		}
+		else{
+			return (int) ((int) mean + ((int) (Math.sqrt(stdTemp/(numVals - 1))) * Z_VALUE));
+		}
 	}
 
 	/** 

@@ -26,6 +26,10 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();
 	private SegmentMetadata segmentMetadata;
 	private String[] invertedColumns;
+	
+	private int invertedDocCount = 0;
+	private int invertedCompressedSize = 0;
+	private int invertedTotalDocCount = 0;
 
 	@SuppressWarnings("rawtypes")
 	public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr, TermValueList[] termValueListArr, ColumnMetadata[] columnMetadataArr, SegmentMetadata segmentMetadata, int length) throws IOException {
@@ -150,6 +154,12 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 					for(int i = 0; i < size; i++){
 						((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).addDoc(i);
 					}
+					
+					for(int i = 0; i < size; i++){
+						invertedTotalDocCount += ((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).getCount();
+						invertedDocCount += ((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).getTrueCount();
+						invertedCompressedSize += ((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).getCompSize();
+					}
 				}
 				invertedIndexMap.put(column, iIndices);
 			}			
@@ -180,6 +190,15 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	}
 	public void setLength(int length) {
 		this.length = length;
+	}
+	public long getInvertedDocCount() {
+		return invertedDocCount;
+	}
+	public long getInvertedCompressionRate() {
+		return invertedCompressedSize;
+	}
+	public long getTotalInvertedDocCount() {
+		return invertedTotalDocCount;
 	}
 
 }
