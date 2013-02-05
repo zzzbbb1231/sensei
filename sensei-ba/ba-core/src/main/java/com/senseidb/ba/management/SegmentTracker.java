@@ -204,8 +204,12 @@ public class SegmentTracker {
         }
         new File(file, "finishedLoading").createNewFile();
         long loadTime = System.currentTimeMillis();
-        GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, readMode, invertedColumns);        
-        logger.info("Loaded the new segment " + segmentId + " with " + indexSegment.getLength() + " elements");
+        GazelleIndexSegmentImpl indexSegment = SegmentPersistentManager.read(file, readMode, invertedColumns);
+        
+        if (indexSegment != null) {
+            logger.info("Loaded the new segment " + segmentId + " with " + indexSegment.getLength() + " elements");
+        }
+        
         if (indexSegment == null) {
           FileUtils.deleteDirectory(file);
           throw new IllegalStateException("The directory " + file.getAbsolutePath() + " doesn't contain the fully loaded segment");
