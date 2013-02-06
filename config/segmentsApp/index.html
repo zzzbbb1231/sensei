@@ -1,0 +1,281 @@
+<html>
+<head>
+  <title>Segment Management</title>
+</head>
+<body>
+
+<link href="css/bootstrap.min.css" media="screen" rel="stylesheet" type="text/css" />
+<link href="css/bootstrap-responsive.min.css" media="screen" rel="stylesheet" type="text/css" />
+<link href="js/lib/jquery-ui-1.9.2.custom/css/ui-lightness/images.css" media="screen" rel="stylesheet" type="text/css" />
+<link href="js/lib/jquery-ui-1.9.2.custom/css/ui-lightness/jquery-ui-1.9.2.custom.css" media="screen" rel="stylesheet" type="text/css" />
+<link href="js/lib/jquery-ui-1.9.2.custom/css/ui-lightness/jquery-ui-1.9.2.custom.min.css" media="screen" rel="stylesheet" type="text/css" />
+<link href="css/segments.css?1355883142" media="screen" rel="stylesheet" type="text/css" />
+<script src="js/lib/jquery-1.6.2.min.js" type="text/javascript"></script>
+<script src="js/lib/jquery-ui-1.9.2.custom/js/jquery-ui-1.9.2.custom.min.js" type="text/javascript"></script>
+<script src="js/lib/json2.js" type="text/javascript"></script>
+<script src="js/lib/underscore.js" type="text/javascript"></script>
+<script src="js/lib/backbone.js" type="text/javascript"></script>
+<script src="js/lib/handlebars.js" type="text/javascript"></script>
+<script src="js/lib/jquery.timeago.js" type="text/javascript"></script>
+<script src="js/lib/li.js" type="text/javascript"></script>
+<script src="js/lib/custom-spin.js" type="text/javascript"></script>
+<script src="js/app/util/backboneDeepToJSON.js" type="text/javascript"></script>
+<script src="js/lib/prettyprint.js" type="text/javascript"></script>
+<script src="js/lib/raphael-min.js" type="text/javascript"></script>
+<script src="js/lib/g.raphael-min.js" type="text/javascript"></script>
+<script src="js/lib/highcharts.js" type="text/javascript"></script>
+<script src="js/lib/highcharts.src.js" type="text/javascript"></script>
+<script src="js/lib/highcharts-more.js" type="text/javascript"></script>
+<script src="js/lib/spin.min.js" type="text/javascript"></script>
+
+<script src="js/templates/fileUpload.js" type="text/x-handlebars-template"></script>
+<script src="js/templates/partitions.js" type="text/x-handlebars-template"></script>
+<script src="js/templates/segment.js" type="text/x-handlebars-template"></script>
+<script src="js/templates/segmentsMamangement.js" type="text/x-handlebars-template"></script>
+
+<script id="fileUpload" type="text/x-handlebars-template">
+  <form>
+    <input type="file" id="file" name="file">
+    <span class="needs-margin"><input type="submit" class="upload-button" value="Upload"></span>
+  </form>
+
+  <div class="cancel-confirm-overlay">
+  <div id="upload-file-spinner"></div>
+  </div>
+</script>
+
+<script id="partitions" type="text/x-handlebars-template">
+  <select id="partions-select-drop-down" name="select1" class="partitions-dropdown" style="width:100%">
+    <option>Partition-all</option>
+    {{#each partitions}}
+      <option>Partition-{{this}}</option>
+      {{/each}}
+  </select>
+
+  <div class="predefined-filters">
+  <div class="sub-heading">Filter Options:</div>
+    <div class="predefined">
+      <div><a href="#" id="predefined-action-today" class="predefined-actions">Today</a></div>
+      <div><a href="#" id="predefined-action-yesterday" class="predefined-actions">Yesterday</a></div>
+      <div><a href="#" id="predefined-action-this-week" class="predefined-actions">This Week</a></div>
+      <div><a href="#" id="predefined-action-this-month" class="predefined-actions">This Month</a></div>
+    </div>
+  </div>
+
+  <br>
+  <div class="custom-filters">
+    <div class="sub-heading">Custom:</div>
+    <div class="from-selection">
+      From : <input type="text" id="custom-time-from" class="partion-view-input"/>
+    </div>
+    <div class="to-selection">
+      To : <input type="text" id="custom-time-to" class="partion-view-input" />
+    </div>
+  </div>
+
+  <div class="filter-button">Filter</div>
+</script>
+
+<script id="segment" type="text/x-handlebars-template">
+<div class="segment-item" style="margin:20px;padding:10px">
+
+  <div class="segment-header">
+    <div class="segment-main-info">
+      <div class="av-actions" style="color:#069;font-weight:bold;float:right">
+        <span class="move segment-actions" style="cursor:pointer">move</span>
+        <span></span>
+        <span class="delete segment-actions" style="cursor:pointer">delete</span>
+      </div>
+
+      <div class="segment-name"> 
+        Id : <span class="data">{{segmentId}}</span>
+      </div>
+
+      {{#if indexVersion}}
+        <div class="index-version" >
+          Index Version : <b class="data">{{indexVersion}}</b>
+        </div>
+      {{/if}}
+
+      <div class="segment-name"> 
+        Partition : <span class="data">{{partitionName}}</span>
+      </div>
+    </div>
+
+    <div class="segment-info">
+      {{#if startTime}}
+        <div>StartTime : <span class="data">{{startTime}}</span></div>
+      {{/if}}
+
+      {{#if endTime}}
+        <div>EndTime : <span class="data">{{endTime}}</span></div>
+      {{/if}}
+
+      {{#if timeType}}
+        <div>TimeType : <span class="data">{{timeType}}</span></div>
+      {{/if}}
+
+      {{#if aggregation}}
+        <div>Aggregation : <span class="data">{{aggregation}}</span></div>
+      {{/if}}
+
+      {{#if clusterName}}
+        <div>ClusterName : <span class="data">{{clusterName}}</span></div>
+      {{/if}}
+    </div>
+
+    <div class="nodes-list">
+      {{#each pathUrl}}
+        <div><a href="{{this}}">{{this}}</a></div>
+      {{/each}}
+    </div>
+  </div>
+</div>
+
+<div class="cancel-confirm-overlay">
+</div>
+
+<div class="confim-dialog-box">
+  <div class="confirm-message">
+    Are you Sure that you want to delete <b>{{segmentId}}</b> from partition <b>{{partitionName}}</b> ?
+  </div>
+  <div class="confirm-actions">
+    <div class="cancel-button float-left">Cancel</div>
+    <div class="seperator">    </div>
+    <div class="delete-button float-left">Delete</div>
+  </div>
+</div>
+
+<div class="confirm-move-box">
+  <div class="message info">The current partition for <b>{{segmentId}}</b> is <b>{{partitionName}}</b>.</div>  
+  <div class="message take-care">Be Sure to Select a partition before moving..</div>
+  <div class="partitions-select-for-move">
+    <select id="partions-select-for-move-drop-down" name="select1" class="partitions-move-dropdown">
+      {{#each partitions}}
+        <option>{{this}}</option>
+      {{/each}}
+    </select>
+  </div>
+  <div class="confirm-actions">
+    <div class="cancel-button float-left">Cancel</div>
+    <div class="seperator"></div>
+    <div class="move-button float-left">Move</div>
+    <div class="mover-error"></div>
+  </div>
+</div>
+</script>
+
+<script id="segmentsMamangement" type="text/x-handlebars-template">
+<div class="segment-parent">
+  <div class="heading" style="font-weight:bold;font-size:18px;padding:10px">Stats</div>
+  <div id="stats-view"></div>
+  <div class="heading" style="font-weight:bold;font-size:18px;padding:10px">Segments</div>
+  <div id="segments-list-view"></div>
+</div>
+</script>
+
+
+<script src="js/app/models/segmentModel.js" type="text/javascript"></script>
+<script src="js/app/collections/segmentsCollection.js" type="text/javascript"></script>
+<script src="js/app/views/fileUploadView.js" type="text/javascript"></script>
+<script src="js/app/views/partitionsView.js" type="text/javascript"></script>
+<script src="js/app/views/segmentItemView.js" type="text/javascript"></script>
+<script src="js/app/views/segmentsMamangementView.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+  var segment = {
+      name : "segment",
+      nodesList : ["node1", "node2", "node3"]
+  };
+
+  var baseUrl = "/segments";
+
+  function parseSegmentLevelStats(data) {
+    var stats = {};
+    var segments = Object.keys(data);
+    var collection = [];
+    for (var j = 0; j < segments.length ; j++) {
+      var model = data[segments[j]];
+      collection.push(model);
+    }
+    stats.segments = collection;
+    return stats;
+  }
+
+  function parseStats(data) {
+    var stats = {};
+    var collection = [];
+    stats.partitions = Object.keys(data);
+    for (var i = 0; i < stats.partitions.length ; i++) {
+      var segments = Object.keys(data[stats.partitions[i]]);
+      for (var j = 0; j < segments.length ; j++) {
+        var model = data[stats.partitions[i]][segments[j]];
+        model.partitionName = stats.partitions[i];
+        collection.push(model);
+      }
+    }
+    stats.segments = collection;
+    return stats;
+  }
+
+  $(document).ready(function() {
+    var fileUploadView = new FileUploadView();
+    function initialLoad() {
+      $.ajax({
+        url : baseUrl,
+        beforeSend : function(xhr) {
+          xhr.overrideMimeType("text/plain; charset=x-user-defined");
+        }
+      }).done(function(data) {
+        var parsed = JSON.parse(data);
+        var stats = parseStats(parsed);
+        var segmentsCollection = new SegmentsCollection(stats.segments);
+        segmentsCollection.allPartitions = stats.partitions;
+        var partitionsView = new PartitionsView({data: stats, segmentsCollection:segmentsCollection});
+        var segmentsParentView = new SegmentsMamangementView({collection:segmentsCollection});
+      });
+    }
+    initialLoad();
+  }); 
+</script>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="container-fluid">
+      <a class="brand" href="#">Sensei</a>
+      <ul class="nav">
+        <li class="active">
+          <a href="http://www.senseidb.com">Home</a>
+        </li>
+      </ul>
+      <p class="pull-right"></p>
+      <div id="sysinfo" style="color: white; text-align: right; float: right;">
+        SysInfo
+      </div><p></p>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid" style="margin-top: 90px">
+  <div class="sidebar" style="height:auto">
+    <div class="well">
+      <img width="100" height="100" src="http://javasoze.github.com/sensei/images/sensei_black.jpg">
+      <h5 style="text-decoration:underline">Partitions</h5>
+      <br>
+      <div id="partitions-view">
+      </div>
+    </div>
+  </div>
+
+  <div class="content" style="margin-left: 240px">
+    <div class="hero-unit" style="padding:20px">
+        <div id="upload-view">
+        </div>
+        <div id="segments-management-view">
+        </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

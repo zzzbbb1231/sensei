@@ -32,6 +32,7 @@ public class JettyServerHolder implements SenseiPlugin {
   private Map<String, Integer> clustersMaxPartitions;
   private String brokerUrl;
 
+
   @Override
   public void init(Map<String, String> config, SenseiPluginRegistry pluginRegistry) {
     this.pluginRegistry = pluginRegistry;
@@ -111,6 +112,8 @@ public class JettyServerHolder implements SenseiPlugin {
   @Override
   public void start() {
     server = new Server(port);
+    WebAppContext webApp = new WebAppContext();;
+
     ServletHandler servletHandler = new ServletHandler();
 
     servletHandler.addServletWithMapping(FileManagementServlet.class, "/files/*");
@@ -118,6 +121,7 @@ public class JettyServerHolder implements SenseiPlugin {
     servletHandler.addServletWithMapping(ValidationServlet.class, "/validation/*");
     servletHandler.addServletWithMapping(AllClustersRestSegmentServlet.class, "/allsegments/*");
     servletHandler.addServletWithMapping(MasterInfoServlet.class, "/controllers/*");
+    
     for (ServletHolder holder : servletHandler.getServlets()) {
       if (holder.getHeldClass() == FileManagementServlet.class) {
         for (String cluster : clustersMaxPartitions.keySet()) {
@@ -127,24 +131,35 @@ public class JettyServerHolder implements SenseiPlugin {
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("baseUrl", baseUrl);
         holder.setInitParameter("nasBasePath", nasBasePath);
+        webApp.addServlet(holder, "/files/*");
       } else if (holder.getHeldClass() == RestSegmentServlet.class) {
         holder.setInitParameter("maxPartitionId", String.valueOf(maxPartitionId));
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("clusterName", clusterName);
+        webApp.addServlet(holder, "/segments/*");
       } else if (holder.getHeldClass() == AllClustersRestSegmentServlet.class) {
         holder.setInitParameter("maxPartitionId", String.valueOf(maxPartitionId));
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("clusterName", clusterName);
+        webApp.addServlet(holder, "/allsegments/*");
       }else if (holder.getHeldClass() == MasterInfoServlet.class) {
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("clusterName", clusterName);
+        webApp.addServlet(holder, "/controllers/*");
       }else if (holder.getHeldClass() == ValidationServlet.class) {
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("clusterName", clusterName);
         holder.setInitParameter("brokerUrl", brokerUrl);
+        webApp.addServlet(holder, "/validation/*");
       }
     }
-    server.setHandler(servletHandler);
+
+    String webappPath = pluginRegistry.getConfiguration().getString(SenseiConfParams.SERVER_BROKER_WEBAPP_PATH);    
+    webappPath = webappPath.replace("webapp", "segmentsApp");
+
+    webApp.setResourceBase(webappPath);
+    server.setHandler(webApp);
+
     try {
       server.start();
     } catch (Exception e) {
