@@ -147,7 +147,7 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
             returnIndexReaders(Arrays.asList((ZoieIndexReader<BoboIndexReader>)segmentAdapter));
           }          
         } catch (Exception ex) {
-          logger.error("error in indexing thread", ex);
+          logger.error("error in persisting thread", ex);
         }
       }
       

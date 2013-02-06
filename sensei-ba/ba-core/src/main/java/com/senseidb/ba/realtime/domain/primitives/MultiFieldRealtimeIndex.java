@@ -20,7 +20,7 @@ import com.senseidb.ba.realtime.domain.primitives.dictionaries.RealtimeDictionar
 public class MultiFieldRealtimeIndex implements FieldRealtimeIndex {
   protected final int capacity;
   protected MultiArray forwardIndex;
-  protected int currentPosition;
+  protected volatile int currentPosition;
   protected ColumnSearchSnapshot searchSnapshot;
   private final RealtimeDictionary realtimeDictionary;
   private final ColumnType columnType;
@@ -56,8 +56,12 @@ public class MultiFieldRealtimeIndex implements FieldRealtimeIndex {
       buffer.add(dictionaryId);
       forwardIndex.addNumbers(buffer);
     } else {
+      if (value instanceof Object[])
       for (Object element : (Object[]) value) {
         int dictionaryId = realtimeDictionary.addElement(element, readWriteLock);
+        buffer.add(dictionaryId);
+      } else {
+        int dictionaryId = realtimeDictionary.addElement(value, readWriteLock);
         buffer.add(dictionaryId);
       }
       forwardIndex.addNumbers(buffer);

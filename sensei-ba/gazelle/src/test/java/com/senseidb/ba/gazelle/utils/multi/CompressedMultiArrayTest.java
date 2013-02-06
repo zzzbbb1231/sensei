@@ -20,7 +20,7 @@ public class CompressedMultiArrayTest {
   
   @Before
   public void setUp() throws Exception {
-    compressedMultiArray = new CompressedMultiArray(10, 1000);
+    compressedMultiArray = new CompressedMultiArray(10, 1000, false);
     compressedMultiArray.setMaxNumOfElementsPerChunk(909);
      for (int i = 0 ; i < 10000; i ++) {
        int length = i % 10;

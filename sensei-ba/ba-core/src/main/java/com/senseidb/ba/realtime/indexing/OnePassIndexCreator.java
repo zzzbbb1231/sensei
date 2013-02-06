@@ -75,7 +75,7 @@ public class OnePassIndexCreator {
         secondarySortedForwardIndexImpl.seal(metadata);
         return secondarySortedForwardIndexImpl;
       } else {
-        OffHeapCompressedIntArray heapCompressedIntArray = new OffHeapCompressedIntArray(count, OffHeapCompressedIntArray.getNumOfBits(dictionary.size()));
+       HeapCompressedIntArray heapCompressedIntArray = new HeapCompressedIntArray(count, OffHeapCompressedIntArray.getNumOfBits(dictionary.size()));
         for (int i = 0; i < forwardIndex.length ; i++) {
           int dictionaryValueId = invPermutationArray.getInt(forwardIndex[permArray[i]]) - 1;          
           if (dictionaryValueId >= dictionarySize || dictionaryValueId < 0) {
@@ -99,7 +99,7 @@ public class OnePassIndexCreator {
         if (initialSize > Integer.MAX_VALUE) {
           initialSize = Integer.MAX_VALUE;
         }
-        CompressedMultiArray compressedMultiArray = new CompressedMultiArray(OffHeapCompressedIntArray.getNumOfBits(dictionary.size()), (int) initialSize);
+        CompressedMultiArray compressedMultiArray = new CompressedMultiArray(OffHeapCompressedIntArray.getNumOfBits(dictionary.size()), (int) initialSize, false);
         int[] buffer = new int[multiArray.getMaxNumValuesPerDoc()];
         for (int i = 0; i < searchSnapshot.getForwardIndexSize(); i++) {
          

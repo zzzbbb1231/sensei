@@ -58,7 +58,7 @@ public class ForwardIndexCreator {
         } else if (dictionaryCreator.isSorted()) {
             sortedForwardIndexImpl = new SortedForwardIndexImpl(dictionary, new int[dictionary.size()], new int[dictionary.size()], count, MetadataCreator.createMetadata(columnName, dictionary, columnType, count, true));
         } else if (columnType.isMulti()) {
-            compressedMultiArray = new CompressedMultiArray(OffHeapCompressedIntArray.getNumOfBits(dictionary.size()), count * 2);
+            compressedMultiArray = new CompressedMultiArray(OffHeapCompressedIntArray.getNumOfBits(dictionary.size()), count * 2, true);
         } else {
           compressedIntArray = new OffHeapCompressedIntArray(count, OffHeapCompressedIntArray.getNumOfBits(dictionary.size()), getByteBuffer(count, dictionary.size()));
         }

@@ -15,7 +15,6 @@ public class RealtimeIndexingManager {
  
     private volatile SegmentAppendableIndex currentIndex;
     private volatile RealtimeSnapshotIndexSegment snapshot;
-    private volatile boolean  waitTillSegmentPersisted = false;
     
     private SnapshotRefreshScheduler snapshotRefreshScheduler;
     private RealtimeDataProvider dataProvider;
@@ -49,10 +48,7 @@ public class RealtimeIndexingManager {
     private Thread indexingThread = new Thread() {
       public void run() {
         while (!stopped) {
-          try {
-            while(waitTillSegmentPersisted) {
-              Thread.sleep(100L);
-            }
+          try {           
             DataWithVersion next = dataProvider.next();
             
             if (next == null) {
@@ -61,19 +57,24 @@ public class RealtimeIndexingManager {
             }
             if (shardingStrategy.calculateShard(next) != indexConfig.getPartition()) {
               continue;
-            }
+            }            
+            
             boolean isFull = currentIndex.add(next.getValues(), next.getVersion());
-            /*if (currentIndex.getCurrenIndex() %5000 == 0) {
-              System.out.println(currentIndex.getCurrenIndex());
-            }*/
+            
             if (isFull) {
-              retireAndCreateNewSegment();
-              waitTillSegmentPersisted = true;
+              synchronized(RealtimeIndexingManager.this) {
+                retireAndCreateNewSegment();
+                //System.out.println("!Wait till segment persisted - "  + System.currentTimeMillis());
+                RealtimeIndexingManager.this.wait();
+              }
             } else {
               snapshotRefreshScheduler.sizeUpdated(currentIndex.getCurrenIndex());
             }
           } catch (Exception ex) {
             logger.error("error in indexing thread", ex);
+            if (ex instanceof InterruptedException) {
+              return;
+            }
           }
         }
         
@@ -82,8 +83,7 @@ public class RealtimeIndexingManager {
     
     
     public void stop() {
-      System.out.println("Stopping");
-      waitTillSegmentPersisted = false;
+      notifySegmentPersisted();
       snapshotRefreshScheduler.stop();
       stopped = true;
       try {
@@ -116,12 +116,13 @@ public class RealtimeIndexingManager {
       return dataProvider;
     }
 
-    public boolean isWaitTillSegmentPersisted() {
-      return waitTillSegmentPersisted;
+    public void notifySegmentPersisted() {
+      synchronized(this) {
+        //System.out.println("release wait until persisted - " + System.currentTimeMillis());
+        this.notifyAll();
+      }
     }
 
-    public void setWaitTillSegmentPersisted(boolean waitTillSegmentPersisted) {
-      this.waitTillSegmentPersisted = waitTillSegmentPersisted;
-    }
+   
     
 }

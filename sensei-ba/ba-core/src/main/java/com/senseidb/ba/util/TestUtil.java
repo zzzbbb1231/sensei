@@ -43,7 +43,7 @@ public class TestUtil {
     conn.setDoOutput(true);
     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream(), "UTF-8"));
     String reqStr = req;
-    System.out.println("req: " + reqStr);
+    //System.out.println("req: " + reqStr);
     writer.write(reqStr, 0, reqStr.length());
     writer.flush();
     BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));

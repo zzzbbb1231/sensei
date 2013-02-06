@@ -20,7 +20,7 @@ import com.senseidb.ba.realtime.domain.primitives.dictionaries.StringRealtimeDic
 
 public class SegmentAppendableIndex {
     private int capacity;
-    private volatile int currenIndex = 0;;
+    private volatile int currenIndex = 0;
     private FieldRealtimeIndex[] columnIndexes;
     private Schema schema; 
     volatile private  String version;
@@ -71,11 +71,11 @@ public class SegmentAppendableIndex {
       }
     private RealtimeSnapshotIndexSegment previousSnapshot = null; 
     public synchronized RealtimeSnapshotIndexSegment refreshSearchSnapshot(ReusableIndexObjectsPool reusableIndexObjectsPool) {
-     
-      if (previousSnapshot != null && previousSnapshot.getLength() == currenIndex) {
+      int indexToSyncOn = currenIndex;
+      if (previousSnapshot != null && previousSnapshot.getLength() == indexToSyncOn) {
         boolean stillNeedToRefresh = false;
         for (int i = 0; i < schema.getColumnNames().length; i++) {
-          if (previousSnapshot.getForwardIndex(schema.getColumnNames()[i]).getForwardIndexSize() != currenIndex) {
+          if (previousSnapshot.getForwardIndex(schema.getColumnNames()[i]).getForwardIndexSize() < indexToSyncOn) {
             stillNeedToRefresh = true;
             break;
           }
@@ -89,9 +89,18 @@ public class SegmentAppendableIndex {
       for (int i = 0; i < schema.getColumnNames().length; i++) {
         String column = schema.getColumnNames()[i];
         columnTypes.put(column, schema.getTypes()[i]);
-        columnSnapshots.put(column, columnIndexes[i].produceSnapshot(readWriteLock, reusableIndexObjectsPool,  column));
+        ColumnSearchSnapshot newSnapshot = columnIndexes[i].produceSnapshot(readWriteLock, reusableIndexObjectsPool,  column);
+        if (newSnapshot.getForwardIndexSize() > indexToSyncOn) {
+          newSnapshot.setForwardIndexSize(indexToSyncOn);
+        } 
+        if (newSnapshot.getForwardIndexSize() < indexToSyncOn) {
+          //System.out.println("indexToSyncOn = " +  indexToSyncOn + "and currentIndex in snapshot =  " + newSnapshot.getForwardIndexSize() + " in realtimeColumn = " + columnIndexes[i].getCurrentSize());
+        }        
+        newSnapshot.setForwardIndexSize(indexToSyncOn);
+        columnSnapshots.put(column, newSnapshot);
+      
       }
-      previousSnapshot = new RealtimeSnapshotIndexSegment(currenIndex, columnSnapshots, columnTypes);
+      previousSnapshot = new RealtimeSnapshotIndexSegment(indexToSyncOn, columnSnapshots, columnTypes);
       previousSnapshot.setReferencedSegment(this);
       return previousSnapshot;
 

@@ -115,6 +115,9 @@ public class MultiArray {
         }
         _currentIndex = index;
         _currentPosition = position;
+        if (_currentChunkStart > _currentPosition) {
+          return false;
+        }
         return true;
       }
 
@@ -145,12 +148,15 @@ public class MultiArray {
         while(true) {
           int val = _currentChunk[localPosition];
           if (val == 0) {
-            return -1;
-            /*if (!advance(index + 1)) {
+           
+            if (!advance(index + 1)) {
               return -1;
             }  
             localPosition = _currentPosition - _currentChunkStart;
-            val = _currentChunk[localPosition];*/
+            val = _currentChunk[localPosition];
+            if (val == 0) {
+              return -1;
+            }
           }
           if (val < 0) {
             val &= Integer.MAX_VALUE;
@@ -182,12 +188,15 @@ public class MultiArray {
         while(true) {
           int val = _currentChunk[localPosition];
           if (val == 0) {
-            return -1;
-            /*if (!advance(index + 1)) {
+            if (!advance(index + 1)) {
               return -1;
             }  
             localPosition = _currentPosition - _currentChunkStart;
-            val = _currentChunk[localPosition];*/
+            
+            val = _currentChunk[localPosition];
+            if (val == 0) {
+              return -1;
+            }
           }
           if (val < 0) {
             //change the sign

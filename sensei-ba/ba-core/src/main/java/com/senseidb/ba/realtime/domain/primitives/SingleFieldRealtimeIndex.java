@@ -16,7 +16,7 @@ import com.senseidb.ba.realtime.domain.primitives.dictionaries.RealtimeDictionar
 public  class SingleFieldRealtimeIndex implements FieldRealtimeIndex {
   protected final int capacity;
   protected int[] forwardIndex;
-  protected int currentPosition;
+  protected volatile int currentPosition;
   protected ColumnSearchSnapshot searchSnapshot;
   private final RealtimeDictionary realtimeDictionary;
   private final ColumnType columnType;

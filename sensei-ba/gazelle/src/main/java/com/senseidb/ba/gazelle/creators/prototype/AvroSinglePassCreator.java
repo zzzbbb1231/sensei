@@ -151,7 +151,7 @@ public class AvroSinglePassCreator {
   }
   private ForwardIndex createForwardIndex(SinglePassIndexCreator singlePassIndexCreator, String columnName, boolean isSorted, TermValueList termValueList, int[] permutationArray, int length) {
    if (singlePassIndexCreator.isMulti()) {
-     CompressedMultiArray compressedMultiArray = new CompressedMultiArray(OffHeapCompressedIntArray.getNumOfBits(termValueList.size()), length);
+     CompressedMultiArray compressedMultiArray = new CompressedMultiArray(OffHeapCompressedIntArray.getNumOfBits(termValueList.size()), length, true);
      int index;
      int[] buffer = new int[singlePassIndexCreator.getMaxValuesCount()];
      for (int i = 0; i < length; i++) {

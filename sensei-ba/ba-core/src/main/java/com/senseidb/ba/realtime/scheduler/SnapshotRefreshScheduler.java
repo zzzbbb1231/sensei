@@ -63,7 +63,9 @@ public abstract class SnapshotRefreshScheduler {
          return;
      }
      if (currentSize -  lastRefreshedSize >= batchSize) {
-       refreshService.submit(countRefreshJob);
+       if (!isCancelled) {
+         refreshService.submit(countRefreshJob);
+       }
      } 
    }
   

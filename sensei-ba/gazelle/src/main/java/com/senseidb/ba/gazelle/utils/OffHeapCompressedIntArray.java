@@ -23,7 +23,11 @@ public class OffHeapCompressedIntArray  implements IntArray {
     return ((long)numOfElements * numOfBitsPerElement + 7) / 8;
   }
   public static int getNumOfBits(int dictionarySize) {
-      return  (int) Math.ceil(Math.log(dictionarySize)/Math.log(2));
+      int ret =  (int) Math.ceil(Math.log(dictionarySize)/Math.log(2));
+      if (ret == 0) {
+        ret = 1;
+      }
+      return ret;
     }
 
   public OffHeapCompressedIntArray(int numOfElements, int numOfBitsPerElement, ByteBuffer byteBuffer) {

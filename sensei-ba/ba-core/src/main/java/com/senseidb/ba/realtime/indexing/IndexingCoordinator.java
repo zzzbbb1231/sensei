@@ -6,14 +6,18 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.util.Assert;
 
 import proj.zoie.api.Zoie;
 import proj.zoie.api.indexing.ZoieIndexableInterpreter;
+import proj.zoie.impl.indexing.StreamDataProvider;
 import proj.zoie.impl.indexing.ZoieConfig;
 
 import com.browseengine.bobo.facets.FacetHandler;
@@ -29,7 +33,10 @@ import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
 import com.senseidb.ba.realtime.indexing.PendingSegmentsIndexFactory.SegmentPersistedListener;
 import com.senseidb.ba.realtime.indexing.ShardingStrategy.AcceptAllShardingStrategy;
+import com.senseidb.ba.realtime.indexing.providers.SenseiProviderAdapter;
+import com.senseidb.conf.SenseiConfParams;
 import com.senseidb.conf.ZoieFactoryFactory;
+import com.senseidb.gateway.SenseiGateway;
 import com.senseidb.plugin.SenseiPlugin;
 import com.senseidb.plugin.SenseiPluginRegistry;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
@@ -59,8 +66,7 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     indexingManager = new RealtimeIndexingManager();
     String dataProviderName = config.get("dataProvider");
     Assert.notNull(dataProviderName, "Property dataProvider should be defined");
-     realtimeDataProvider = pluginRegistry.getBeanByName(dataProviderName, RealtimeDataProvider.class);
-    Assert.notNull(realtimeDataProvider, "realtimeDataProvider No dataProvider instance with name - " + dataProviderName);
+    
     indexConfig = IndexConfig.valueOf(config,  pluginRegistry);
     if (indexConfig.getShardedColumn() == null) {
       shardingStrategy = new ShardingStrategy.AcceptAllShardingStrategy();
@@ -68,7 +74,12 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
       shardingStrategy = new FieldShardingStrategy();
       ((FieldShardingStrategy)shardingStrategy).init(indexConfig.getSchema(), indexConfig.getMaxPartitionId(), indexConfig.getShardedColumn());
     }
+    realtimeDataProvider = pluginRegistry.getBeanByName(dataProviderName, RealtimeDataProvider.class);
     metadata = new Metadata(indexConfig.getIndexDir());
+    if (realtimeDataProvider == null) {
+      realtimeDataProvider = initDataProviderFromSenseiGateway(pluginRegistry);
+    }
+     Assert.notNull(realtimeDataProvider, "realtimeDataProvider No dataProvider instance with name - " + dataProviderName);
     directory = new File(indexConfig.getIndexDir());
     if (!directory.exists()) {
       directory.mkdirs();
@@ -85,10 +96,10 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     shardBalancingStrategy = new ShardBalancingStrategy(indexConfig.getNumServingPartitions());
     indexingManager.init(indexConfig, realtimeDataProvider, this, shardingStrategy);
   }
+  
  
   public void start() {
     bootstrap();
-    realtimeIndexFactory.start();
     pendingSegmentsIndexFactory.start();
     indexingManager.start();
     realtimeDataProvider.start();
@@ -139,7 +150,8 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
             indexFactory.getReaders().add(new SegmentToZoieReaderAdapter(persistedSegment, segmentToProcess.getName(), decorator));
         }
         indexingManager.getDataProvider().commit(segmentToProcess.getVersion());
-        indexingManager.setWaitTillSegmentPersisted(false);
+        indexingManager.notifySegmentPersisted();
+        
         } catch (IOException e) {
           throw new RuntimeException("Should never happen", e);
         }
@@ -186,7 +198,7 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     if (partitionId == indexConfig.getNumServingPartitions() + 1) {
       return realtimeIndexFactory;
     }
-    return null;
+    throw new UnsupportedOperationException();
   }
 
 
@@ -203,6 +215,26 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     return metadata;
   }
 
- 
+  public SenseiProviderAdapter initDataProviderFromSenseiGateway(SenseiPluginRegistry pluginRegistry) {
+    SenseiGateway senseiGateway = pluginRegistry.getBeanByFullPrefix(SenseiConfParams.SENSEI_GATEWAY, SenseiGateway.class);
+    if (senseiGateway != null) {
+      HashSet<Integer> partitions = new HashSet<Integer>();
+      partitions.add(0);
+      com.senseidb.indexing.ShardingStrategy senseiDummyShardingStrategy = new com.senseidb.indexing.ShardingStrategy() {
+        @Override
+        public int caculateShard(int maxShardId, JSONObject dataObj) throws JSONException {
+          return 0;
+        }
+        
+      };
+      try {
+        StreamDataProvider dataProvider = senseiGateway.buildDataProvider(indexConfig.getSenseiSchema(), metadata.version, pluginRegistry, senseiDummyShardingStrategy, partitions);
+        return new SenseiProviderAdapter(dataProvider);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return null;
+  }
     
 }

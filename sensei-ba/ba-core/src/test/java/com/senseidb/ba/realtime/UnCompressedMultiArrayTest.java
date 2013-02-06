@@ -29,10 +29,15 @@ public class UnCompressedMultiArrayTest {
     compressedMultiArray = new MultiArray(10000);   
      IntList list = new IntArrayList();
     for (int i = 0 ; i < 10000; i ++) {
-       int length = i % 10;
+       int val = i % 10;
+       if (val == 0) {
+         val =1;
+       }
+       int length = val;
+       
        list.clear();
        for (int j = 0; j < length; j++) {
-         list.add(i % 10);
+         list.add(val);
        }
       
        compressedMultiArray.addNumbers(list);
@@ -102,9 +107,7 @@ public class UnCompressedMultiArrayTest {
       if (index == -1) {
         break;
       }
-      if (9 != index % 10) {
-        index = iterator.find(index, 9);
-      }
+   
       assertEquals(9, index % 10);
       i++;
     }

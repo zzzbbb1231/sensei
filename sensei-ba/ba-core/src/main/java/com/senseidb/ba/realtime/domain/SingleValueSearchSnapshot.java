@@ -11,7 +11,7 @@ public  class SingleValueSearchSnapshot implements ColumnSearchSnapshot<int[]>, 
  
 
   private volatile int[] forwardIndex;
-  private int forwardIndexSize;
+  private volatile int forwardIndexSize;
 
   private ColumnType columnType;
   private DictionarySnapshot dictionarySnapshot;

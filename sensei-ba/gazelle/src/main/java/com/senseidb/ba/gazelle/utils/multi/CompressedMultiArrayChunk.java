@@ -43,10 +43,18 @@ private int maxNumValuesPerDoc;
   }
 
   public CompressedMultiArrayChunk(int startElement, int numBitsPerElement, int initialSize) {
+   this(startElement, numBitsPerElement, initialSize, false);
+  }
+  public CompressedMultiArrayChunk(int startElement, int numBitsPerElement, int initialSize, boolean isOffHeap) {
     this.startElement = startElement;
     this.numBitsPerElement = numBitsPerElement;
-    compressedIntArray = new OffHeapCompressedIntArray(initialSize, numBitsPerElement);
+    compressedIntArray = new HeapCompressedIntArray(initialSize, numBitsPerElement);
     openBitSet = new OpenBitSet(initialSize);
+    if (isOffHeap) {
+      compressedIntArray = new OffHeapCompressedIntArray(initialSize, numBitsPerElement);
+    } else {
+      compressedIntArray = new HeapCompressedIntArray(initialSize, numBitsPerElement);
+    }
   }
   public void add(int[] values, int length) {
     if (values.length == 0) {
@@ -140,7 +148,7 @@ public void flush(File file) {
     
     flush(dataOutputStream);
     } catch (Exception ex) {
-        throw new RuntimeException();
+        throw new RuntimeException(ex);
     }
     
   }
@@ -154,12 +162,19 @@ public void flush(DataOutputStream dataOutputStream) {
       for (int i = 0; i < openBitSet.getNumWords(); i++) {
         dataOutputStream.writeLong(bits[i]);
       }
-      OffHeapCompressedIntArray directMemoryArray = (OffHeapCompressedIntArray) compressedIntArray;
-      directMemoryArray.getStorage().rewind();
-      int sizeInBytes = (int) OffHeapCompressedIntArray.getRequiredBufferSize(currentSize, numBitsPerElement);
-      byte[] bytes = new byte[sizeInBytes];
-      directMemoryArray.getStorage().get(bytes);
-      dataOutputStream.write(bytes);
+      if (compressedIntArray instanceof OffHeapCompressedIntArray) {
+        OffHeapCompressedIntArray directMemoryArray = (OffHeapCompressedIntArray) compressedIntArray;
+        directMemoryArray.getStorage().rewind();
+        int sizeInBytes = (int) OffHeapCompressedIntArray.getRequiredBufferSize(currentSize, numBitsPerElement);
+        byte[] bytes = new byte[sizeInBytes];
+        directMemoryArray.getStorage().get(bytes);
+        dataOutputStream.write(bytes);
+      } else {
+        HeapCompressedIntArray array = (HeapCompressedIntArray) compressedIntArray;
+        for (int i = 0; i < array.getBlocks().length; i++) {
+          dataOutputStream.writeLong(array.getBlocks()[i]);
+        }
+      }
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     } finally {

@@ -25,22 +25,24 @@ public class CompressedMultiArray {
     private final int numBitsPerElement;
     private int initialSize;
     private CompressedMultiArrayChunk[] chunksArr;
-    private int maxNumValuesPerDoc;    
+    private int maxNumValuesPerDoc;
+    private final boolean isOffHeap;    
     private CompressedMultiArray(int numBitsPerElement) {
       this.numBitsPerElement = numBitsPerElement;
-      
+      isOffHeap = false;
      
     }
-    public CompressedMultiArray(int numBitsPerElement, int initialSize) {
+    public CompressedMultiArray(int numBitsPerElement, int initialSize, boolean isOffHeap) {
       this.numBitsPerElement = numBitsPerElement;
-      this.initialSize = initialSize;     
-      currentChunk = new CompressedMultiArrayChunk(0, numBitsPerElement, initialSize);
+      this.initialSize = initialSize;
+      this.isOffHeap = isOffHeap;     
+      currentChunk = new CompressedMultiArrayChunk(0, numBitsPerElement, initialSize, isOffHeap);
       chunks.add(currentChunk);
       maxNumOfElementsPerChunk = Integer.MAX_VALUE / numBitsPerElement;
     }
     public void add(int[] values, int length) {      
       if (currentChunk.getCurrentSize() + length > maxNumOfElementsPerChunk) {
-        currentChunk = new CompressedMultiArrayChunk(numberOfElements, numBitsPerElement, initialSize);
+        currentChunk = new CompressedMultiArrayChunk(numberOfElements, numBitsPerElement, initialSize, isOffHeap);
         chunks.add(currentChunk);      
       }
       currentChunk.add(values, length);

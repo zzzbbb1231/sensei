@@ -5,18 +5,17 @@
 
   
   <table uid="id">
-	<column name="advertiserId" type="long" />
-    <column name="campaignId" type="int" />
-    <column name="campaignType" type="string" />
-    <column name="creativeId" type="int" />
+	<column name="birthYear" type="int" />
+    <column name="connectionCount" type="int" />
+    <column name="countryCode" type="string" />
+    <column name="gender" type="string" />
+    <column name="industry" type="string"/>
+    <column name="industryCode" type="int" />
+    <column name="regionCodey" type="string" />
     <column name="time" type="int" />
-    <column name="memberFunctions" type="string" multi="true"/>
-    <column name="memberIndustries" type="string" multi="true"/>
-    <column name="memberRegion" type="string" />
-    <column name="memberSeniority" type="string" />
-    <column name="memberTitles" type="string" multi="true"/>
-    <column name="clickCount" type="int" />
-    
+    <column name="type" type="string" />
+    <column name="vieweeId" type="int" />
+     <column name="viewerId" type="int" />
   </table>
 
    <!-- 
