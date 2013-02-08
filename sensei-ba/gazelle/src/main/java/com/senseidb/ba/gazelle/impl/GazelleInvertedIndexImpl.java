@@ -22,7 +22,6 @@ import com.senseidb.ba.gazelle.utils.PForDeltaDocIdSet;
 
 public class GazelleInvertedIndexImpl extends DocIdSet {
 
-	private final static double Z_VALUE = 1.28;
 	private final static double THRESHOLD = 0.1;
 
 	ForwardIndexReader iIndex;					//Used when we call getFromForwardIndex
@@ -136,7 +135,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 		//If the current estimate dismisses /too/ many DocIDs, then we'll take the previous estimate
 		if(currRatio < 0.05){
-			//If the previous estimate is too small, just take 10.
+			//If the previous estimate is too small, just take 100.
 			if(lastEstimate < 100){
 				return 100;
 			}
@@ -441,12 +440,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 				lastDoc = nextDoc();
 			}
 
-			//Don't bother with all the cool logic if the target is less than the jump value.
-			else if (target - lastDoc < minJumpValue){
-				lastDoc = iIndex.getFromForwardIndex(target);
-			}
-
-			// Okay fine, I guess we'll have to use the helper to find the answer. This is the most expensive option.
+			// Use helper to find next value.
 			else {
 				lastDoc = findNext(lowerBound, target);
 			}

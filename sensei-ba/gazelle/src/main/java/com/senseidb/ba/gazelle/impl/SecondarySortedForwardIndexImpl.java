@@ -68,7 +68,7 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
       private SortedRangeCountFinder countFinder = new SortedRangeCountFinder(regions[0]);
       private SortedRegion currentRegion = null;
       
-      private int binarySearchForFirstElementEqualOrLargerThanTarget(SortedRegion[] in, int start, int end, int target)
+      private int binarySearchOrGreater(SortedRegion[] in, int start, int end, int target)
       {
         int mid;
         while(start < end)
@@ -96,7 +96,7 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
             return true;
           } else {
         	
-        	  int index = binarySearchForFirstElementEqualOrLargerThanTarget(regions, currentRegionIndex + 1, regions.length, docid);
+        	  int index = binarySearchOrGreater(regions, currentRegionIndex + 1, regions.length, docid);
         	  
         	  if(index != -1){
         		  currentRegionIndex = index;
@@ -106,20 +106,12 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
         	  }
         	  return false;
         	
-//            while (++currentRegionIndex < regions.length) {
-//              if (regions[currentRegionIndex].maxDocId >= docid) {
-//                currentRegion = regions[currentRegionIndex];
-//                countFinder.reset(regions[currentRegionIndex]);
-//                return true;
-//              }
-//            }
-//            return false;
           }
         }
         if (docid <= currentRegion.maxDocId) {
           return true;
         } else {
-      	  int index = binarySearchForFirstElementEqualOrLargerThanTarget(regions, currentRegionIndex + 1, regions.length, docid);
+      	  int index = binarySearchOrGreater(regions, currentRegionIndex + 1, regions.length, docid);
     	  
       	  if(index != -1){
       		  currentRegionIndex = index;
@@ -128,14 +120,6 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
       		  return true;
       	  }
       	  return false;
-//          while (++currentRegionIndex < regions.length) {
-//            if (docid <= regions[currentRegionIndex].maxDocId) {
-//              currentRegion = regions[currentRegionIndex];
-//              countFinder.reset(regions[currentRegionIndex]);
-//              return true;
-//            }
-//          }
-//          return false;
         }
 
       }
