@@ -70,13 +70,18 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 	}
 
-	/** 
+	/**
 	 * This method figures out the best minimum jump value to use for the inverted indices.
-	 * We use some basic statistical math to estimate our jump value.
-	 * 
-	 * We assume that the distribution of the deltas of the DocIDs are normally distributed.
-	 * We use 1.28 as our critical value (z-value) to calculate that only 10% of the deltas will be stored in
-	 * our class.
+	 * The algorithm is as followed: We go through the forward iterator assuming the optimal jump value is 0.
+	 * If at any point, more than THRESHOLD percent of DocIDs are larger than this, we increase the optimal
+	 * jump value to be higher than the biggest jump we've seen so far.
+	 *
+	 * When we return, we check if the current ratio is less than 5%. This is too little DocIDs in our set
+	 * and we would rely too heavily on the forward iterator during next doc. In this case we return the previous optimal
+	 * value.
+	 *
+	 * This method should /always/ be called before we initialize a column. Otherwise if we don't supply the jump
+	 * value into the initializer we could end up spending too much time on estimation.
 	 * 
 	 * @param forwardIndex -> This is used to iterate through the forward index
 	 * @param dictValue -> This is the dict value we are looking for
@@ -135,7 +140,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 		//If the current estimate dismisses /too/ many DocIDs, then we'll take the previous estimate
 		if(currRatio < 0.05){
-			//If the previous estimate is too small, just take 100.
+			//If the previous estimate is too small, just take 10.
 			if(lastEstimate < 100){
 				return 100;
 			}
@@ -335,6 +340,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 		private int lastDoc = -1;
 		private int currentMin = -1;
+		private int lowerBound = -1;
 
 		GazelleInvertedIndex() throws IOException{
 			super();
@@ -343,6 +349,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 			currentMin = -1;
 			lastDoc = -1;
+			lowerBound = -1;
 
 			if(docCount > 0){
 				currentMin = PForDIt.nextDoc() - 1;
@@ -375,6 +382,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			else if (lastDoc == currentMin) {
 				//lowerBound = PForDIt.docID();
 				lastDoc = PForDIt.nextDoc() - 1;
+				lowerBound = lastDoc;
 				currentMin = PForDIt.nextDoc() - 1;
 			}
 
@@ -388,12 +396,12 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		 * @throws IOException -> Comes from kamikaze's API.
 		 */
 
-		private int findNext(int target) throws IOException {
+		private int findNext(int lowerBound, int target) throws IOException {
 			// This function works as a helper function for advance.
 
 			int i = 0, curr = 0;
 
-			curr = PForDIt.nextDoc() - 1;
+			curr = PForDIt.docID();
 
 			int result = 0;
 
@@ -402,19 +410,17 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			// function.
 			while (true) {
 				if (target <= curr) {
-					if (i % 2 == 1) {
+					if (i == 0){
+						result = iIndex.getFromForwardIndex(target);
+					}
+					else if (i % 2 == 1) {
 						result = curr;
 						currentMin = PForDIt.nextDoc() - 1;
 					} else {
 						result = iIndex.getFromForwardIndex(target);
 						currentMin = curr;
 					}
-
-					if (PForDIt.docID() - 1 < curr) {
-						PForDIt.advance(curr + 1);
-					}
 					break;
-
 				}
 				i++;
 				curr = PForDIt.nextDoc() - 1;
@@ -437,14 +443,14 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 				lastDoc = nextDoc();
 			}
 
-			//Don't bother with all the cool logic if the target is less than the jump value.
-			else if (target - lastDoc < minJumpValue){
+			//Don't bother with all the cool logic if we don't hold any docs in our class.
+			else if (docCount == 0){
 				lastDoc = iIndex.getFromForwardIndex(target);
 			}
 
 			// Okay fine, I guess we'll have to use the helper to find the answer. This is the most expensive option.
 			else {
-				lastDoc = findNext(target);
+				lastDoc = findNext(lowerBound, target);
 			}
 
 			return lastDoc;
