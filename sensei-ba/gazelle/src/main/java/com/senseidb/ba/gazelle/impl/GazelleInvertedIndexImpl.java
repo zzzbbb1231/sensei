@@ -335,7 +335,6 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 		private int lastDoc = -1;
 		private int currentMin = -1;
-		private int lowerBound = -1;
 
 		GazelleInvertedIndex() throws IOException{
 			super();
@@ -344,7 +343,6 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 			currentMin = -1;
 			lastDoc = -1;
-			lowerBound = -1;
 
 			if(docCount > 0){
 				currentMin = PForDIt.nextDoc() - 1;
@@ -377,7 +375,6 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			else if (lastDoc == currentMin) {
 				//lowerBound = PForDIt.docID();
 				lastDoc = PForDIt.nextDoc() - 1;
-				lowerBound = lastDoc;
 				currentMin = PForDIt.nextDoc() - 1;
 			}
 
@@ -391,7 +388,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		 * @throws IOException -> Comes from kamikaze's API.
 		 */
 
-		private int findNext(int lowerBound, int target) throws IOException {
+		private int findNext(int target) throws IOException {
 			// This function works as a helper function for advance.
 
 			int i = 0, curr = 0;
@@ -440,9 +437,14 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 				lastDoc = nextDoc();
 			}
 
-			// Use helper to find next value.
+			//Don't bother with all the cool logic if the target is less than the jump value.
+			else if (target - lastDoc < minJumpValue){
+				lastDoc = iIndex.getFromForwardIndex(target);
+			}
+
+			// Okay fine, I guess we'll have to use the helper to find the answer. This is the most expensive option.
 			else {
-				lastDoc = findNext(lowerBound, target);
+				lastDoc = findNext(target);
 			}
 
 			return lastDoc;
