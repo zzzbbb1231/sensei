@@ -36,7 +36,12 @@ public class GenericIndexCreator {
 		return create(file, new String[0]);
 	}
 	public static GazelleIndexSegmentImpl createWithInvertedIndices(File file, String[] invertedIndices) throws Exception {
-		return createWithInvertedIndicies(file, new String[0], invertedIndices);
+		if(invertedIndices != null){
+			return createWithInvertedIndicies(file, new String[0], invertedIndices);
+		}
+		else{
+			return create(file, new String[0]);
+		}
 	}
 	public static GazelleIndexSegmentImpl create(File file, String[] excludedColumns) throws Exception {
 		Assert.state(canCreateSegment(file.getName()));

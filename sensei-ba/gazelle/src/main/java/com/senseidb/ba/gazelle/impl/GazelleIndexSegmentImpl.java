@@ -119,6 +119,10 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 				//Fetch all values that this column could take
 				TermValueList values = termValueListMap.get(column);
 				ForwardIndex fIndex = forwardIndexMap.get(column);
+				
+				if (fIndex instanceof SortedForwardIndexImpl || fIndex instanceof SecondarySortedForwardIndexImpl){
+					continue;
+				}
 
 				if(values == null || fIndex == null){
 					return;
@@ -126,6 +130,11 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 
 				//Create correct number of inverted indices for this column
 				int size = values.size();
+				
+				if(size < 50){
+					continue;
+				}
+				
 				DocIdSet[] iIndices = new DocIdSet[size];
 				
 				//We estimate the jump value for one dictionary value and assume it will work for the others (Otherwise, we waste too much time

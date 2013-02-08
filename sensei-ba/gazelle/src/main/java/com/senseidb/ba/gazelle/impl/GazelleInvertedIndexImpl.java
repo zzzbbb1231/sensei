@@ -9,6 +9,8 @@ import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
+import com.senseidb.ba.gazelle.impl.FacetUtils.ForwardDocIdSet;
+import com.senseidb.ba.gazelle.impl.FacetUtils.ForwardIndexIterator;
 import com.senseidb.ba.gazelle.utils.PForDeltaDocIdSet;
 
 /**
@@ -19,8 +21,9 @@ import com.senseidb.ba.gazelle.utils.PForDeltaDocIdSet;
  */
 
 public class GazelleInvertedIndexImpl extends DocIdSet {
-	
+
 	private final static double Z_VALUE = 1.28;
+	private final static double THRESHOLD = 0.1;
 
 	ForwardIndexReader iIndex;					//Used when we call getFromForwardIndex
 
@@ -29,12 +32,11 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 	protected MultiValueForwardIndex multiIndex;	//Used to hold the MultiValueForwardIndex reader
 	protected int[] buffer;							//Used for reading from the MultiValue reader
 
-	protected SingleValueForwardIndex fIndex;
-	protected SingleValueRandomReader reader;		//Forward iterator needed for sequential iteration
+	protected GazelleForwardIndexImpl fIndex;
+	protected ForwardIndexIterator reader;		//Forward iterator needed for sequential iteration
 	protected int dictValue = 0;					//Value in the dictionary we need for sequential iteration
 
-	private int lastCandidate = 0;				//Last potential candidate that we looked at to add into PForDSet (Could have been added or not)
-	private int lastAdded = -1;					//Last DocID that was added to PForDSet
+	private int lastCandidate = -1;				//Last potential candidate that we looked at to add into PForDSet (Could have been added or not)
 	private int docCount = 0;					//Number of docs that we keep in the set
 	private int totalDocCount = 0;				//Actual docs with the specified value
 	private int finalDoc = -1;					//The very last doc with the specified value (Doesn't have to be added into the PForDSet)
@@ -48,17 +50,16 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 	 * @throws IOException -> Comes from Kamikaze's PForDelta implementation
 	 * @throws InterruptedException 
 	 */
-	public void addDoc(int id) throws IOException {
+	public void addDoc(int id) throws IOException {		
 
 		finalDoc = id;
 
 		if (id - lastCandidate > minJumpValue) {
 
-			pForDSet.addDoc(lastCandidate);
-			pForDSet.addDoc(id);
+			pForDSet.addDoc(lastCandidate + 1);
+			pForDSet.addDoc(id + 1);
 
 			lastCandidate = id;
-			lastAdded = id;
 			docCount++;
 		}
 
@@ -90,113 +91,122 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		else{
 			return estimateOptimalMinJumpSingle(forwardIndex, dictValue);
 		}
-		
+
 	}
 
 	//Idea remains the same between this one and the multi-value one, so I will only document this method.
-	private static int estimateOptimalMinJumpSingle(ForwardIndex forwardIndex, int dictValue) {
-		float sum = 0;
-		float numVals = 0;
-		float mean = 0;
-		float stdTemp = 0;
-		int prev = -1;
-		
+	public static int estimateOptimalMinJumpSingle(ForwardIndex forwardIndex, int dictValue) {
+
+		int lastEstimate = 0;
+		int currEstimate = 0;
+		double currRatio = 0;
+
+		int biggestJump = 0;
+
+		double largerThanEstimate = 0;
+
+		int lastDoc = -1;
+
+		double size = forwardIndex.getLength();
 		SingleValueForwardIndex index = (SingleValueForwardIndex) forwardIndex;
 		SingleValueRandomReader ireader = index.getReader();
-
-		int size = forwardIndex.getLength();
-
-		//	Find the mean of the deltas of the data.
-		for(int i = 0; i < size; i++){
-			if(ireader.getValueIndex(i) == dictValue){
-				if(prev == -1){
-					prev = i;
+		for(double i = 0; i < size; i++){
+			if(ireader.getValueIndex((int) i) == dictValue){
+				int jump = (int) (i - lastDoc);
+				if(lastDoc == -1){
+					lastDoc = (int) i;
 				}
-				else{
-					sum += (i - prev);
-					prev = i;
-					numVals++;
+				else if(jump > currEstimate){
+					largerThanEstimate++;
 				}
+
+				if(jump > biggestJump){
+					biggestJump = jump;
+				}
+
+				lastDoc = (int) i;
+			}
+			if(i % 1 == 0 && i > 0 && largerThanEstimate/i > THRESHOLD){
+				lastEstimate = currEstimate;
+				currEstimate = biggestJump + 1;
+				currRatio = largerThanEstimate/size;
+				largerThanEstimate = 0;
 			}
 		}
 
-		prev = -1;
-
-		mean = sum/numVals;
-
-		//	Find the standard deviation of the deltas of the data.
-		for(int i = 0; i < size; i++){
-			if(ireader.getValueIndex(i) == dictValue){
-				if(prev == -1){
-					prev = i;
-				}
-				else{
-					stdTemp += Math.pow(((i - prev) - mean),2);
-					prev = i;
-				}
-
+		//If the current estimate dismisses /too/ many DocIDs, then we'll take the previous estimate
+		if(currRatio < 0.05){
+			//If the previous estimate is too small, just take 10.
+			if(lastEstimate < 100){
+				return 100;
+			}
+			else{
+				return (int) lastEstimate;
 			}
 		}
-		
-		//	Return (Z_VALUE * standard deviation) + mean
-		//	According to a normal distribution, this value will be higher than 90% of the deltas of the data set (Assuming Z_VALUE = 1.28)
-		//	To change the threshold of the percentage of data below this value, change the z-value (Consult a z-value for statistics
-		//	to get the value you want)
-		return (int) ((int) mean + ((int) (Math.sqrt(stdTemp/(numVals - 1))) * Z_VALUE));
+		else{
+			return (int) currEstimate;
+		}	
+
 	}
 
-	private static int estimateOptimalMinJumpMulti(ForwardIndex forwardIndex, int dictValue) {
-		float sum = 0;
-		float numVals = 0;
-		float mean = 0;
-		float stdTemp = 0;
-		int prev = -1;
-		
+	public static int estimateOptimalMinJumpMulti(ForwardIndex forwardIndex, int dictValue) {
+
+		int lastEstimate = 0;
+		int currEstimate = 0;
+		double currRatio = 0;
+
+		int biggestJump = 0;
+
+		double largerThanEstimate = 0;
+
+		int lastDoc = -1;
+
+		double size = forwardIndex.getLength();
 		MultiValueForwardIndexImpl1 index = (MultiValueForwardIndexImpl1) forwardIndex;
 		int[] buffer = new int[index.getMaxNumValuesPerDoc()];
 
-		int size = forwardIndex.getLength();
-
-		for(int i = 0; i < size; i++){
-			int count = index.randomRead(buffer, i);
+		for(double i = 0; i < size; i++){
+			int count = index.randomRead(buffer, (int) i);
 			for(int j = 0; j < count; j++){
-				if(buffer[i] == dictValue){
-					if(prev == -1){
-						prev = i;
+				if(buffer[j] == dictValue){
+					int jump = (int) (i - lastDoc);
+					if(lastDoc == -1){
+						lastDoc = (int) i;
 					}
-					else{
-						sum += (i - prev);
-						prev = i;
-						numVals++;
+					else if(jump > currEstimate){
+						largerThanEstimate++;
 					}
+
+					if(jump > biggestJump){
+						biggestJump = jump;
+					}
+
+					lastDoc = (int) i;
 				}
+			}
+			if(i % 1 == 0 && i > 0 && largerThanEstimate/i > THRESHOLD){
+				lastEstimate = currEstimate;
+				currEstimate = biggestJump + 1;
+				currRatio = largerThanEstimate/size;
+				largerThanEstimate = 0;
 			}
 		}
 
-		prev = -1;
-
-		mean = sum/numVals;
-
-		for(int i = 0; i < size; i++){
-			int count = index.randomRead(buffer, i);
-			for(int j = 0; j < count; j++){
-				if(buffer[i] == dictValue){
-					if(prev == -1){
-						prev = i;
-					}
-					else{
-						stdTemp += Math.pow(((i - prev) - mean),2);
-						prev = i;
-					}
-				}
+		//If the current estimate dismisses /too/ many DocIDs, then we'll take the previous estimate
+		if(currRatio < 0.05){
+			//If the previous estimate is too small, just take 10.
+			if(lastEstimate < 100){
+				return 100;
 			}
-		}
-		if((mean +  (Math.sqrt(stdTemp/(numVals - 1))) * Z_VALUE) > 50){
-			return 50;
+			else{
+				return (int) lastEstimate;
+			}
 		}
 		else{
-			return (int) ((int) mean + ((int) (Math.sqrt(stdTemp/(numVals - 1))) * Z_VALUE));
-		}
+			return (int) currEstimate;
+		}	
+
 	}
 
 	/** 
@@ -204,8 +214,9 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 	 * optimal jump distance
 	 * @param forwardIndex -> Needed to fetch the reader
 	 * @param dictValue -> Needed for sequential iteration
+	 * @throws IOException 
 	 */
-	public GazelleInvertedIndexImpl(ForwardIndex forwardIndex, int dictValue, int jumpValue){
+	public GazelleInvertedIndexImpl(ForwardIndex forwardIndex, int dictValue, int jumpValue) throws IOException{
 
 		pForDSet = new PForDeltaDocIdSet();
 		this.dictValue = dictValue;
@@ -266,25 +277,27 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		 * Sequential iteration using the forward index. Used within jumps
 		 * @param index -> We grab the first row with the specified value starting with one HIGHER than this index
 		 * @return -> The index with the correct dictValue
+		 * @throws IOException 
 		 */		
-		int getFromForwardIndex(int index);
+		int getFromForwardIndex(int index) throws IOException;
 
 	}
 
 	class SingleValueForwardIndexReader implements ForwardIndexReader{
 
-		public SingleValueForwardIndexReader(ForwardIndex forwardIndex, int dictValue, int jumpValue) {
-			fIndex = (SingleValueForwardIndex) forwardIndex;
-			reader = fIndex.getReader();
+		public SingleValueForwardIndexReader(ForwardIndex forwardIndex, int dictValue, int jumpValue) throws IOException {
+			fIndex = (GazelleForwardIndexImpl) forwardIndex;
+			ForwardDocIdSet asdf = new FacetUtils.ForwardDocIdSet((GazelleForwardIndexImpl) forwardIndex, dictValue);
+			reader = (ForwardIndexIterator) asdf.iterator();
 		}
 
-		public int getFromForwardIndex(int index) {
-			for (int i = index + 1; i <= finalDoc; i++) {
-				if (reader.getValueIndex(i) == dictValue) {
-					return i;
-				}
+		public int getFromForwardIndex(int index) throws IOException {
+			if(index >= finalDoc){
+				return DocIdSetIterator.NO_MORE_DOCS;
 			}
-			return DocIdSetIterator.NO_MORE_DOCS;
+			else{
+				return reader.advance(index);
+			}
 		}
 
 	}
@@ -320,7 +333,6 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 	class GazelleInvertedIndex extends DocIdSetIterator {
 
 		private DocIdSetIterator PForDIt;
-		private DocIdSetIterator findNextIt;
 
 		private int lastDoc = -1;
 		private int currentMin = -1;
@@ -330,14 +342,13 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			super();
 
 			PForDIt = pForDSet.iterator();
-			findNextIt = pForDSet.iterator();
 
 			currentMin = -1;
 			lastDoc = -1;
 			lowerBound = -1;
 
 			if(docCount > 0){
-				currentMin = PForDIt.nextDoc();
+				currentMin = PForDIt.nextDoc() - 1;
 			}
 
 		}
@@ -359,15 +370,16 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			// there are any docs that are between -1 and the current min, return
 			// from the forward iterator.
 			if (docCount == 0 || lastDoc != currentMin){
-				lastDoc = iIndex.getFromForwardIndex(lastDoc);
+				lastDoc = iIndex.getFromForwardIndex(lastDoc + 1);
 			}
 
 			// Else, we are at a jump, return the higher end of the jump and set all
 			// needed variables.
 			else if (lastDoc == currentMin) {
-				lowerBound = PForDIt.docID();
-				lastDoc = PForDIt.nextDoc();
-				currentMin = PForDIt.nextDoc();
+				//lowerBound = PForDIt.docID();
+				lastDoc = PForDIt.nextDoc() - 1;
+				lowerBound = lastDoc;
+				currentMin = PForDIt.nextDoc() - 1;
 			}
 
 			return lastDoc;
@@ -383,22 +395,9 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		private int findNext(int lowerBound, int target) throws IOException {
 			// This function works as a helper function for advance.
 
-			int i = 1, curr = 0;
+			int i = 0, curr = 0;
 
-			// Move the iterator at least up to the last returned docID
-			if (findNextIt.docID() < lowerBound) {
-				curr = findNextIt.advance(lowerBound);
-			}
-			// If the iterator is on the target (The target we're looking for is a
-			// valid DocID), return that DocID
-			else if (findNextIt.docID() == target) {
-				lastDoc = findNextIt.docID();
-				return lastDoc;
-			}
-			// If all else fails, then we have to work through the loop.
-			else {
-				curr = findNextIt.docID();
-			}
+			curr = PForDIt.nextDoc() - 1;
 
 			int result = 0;
 
@@ -409,20 +408,20 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 				if (target <= curr) {
 					if (i % 2 == 1) {
 						result = curr;
-						currentMin = findNextIt.nextDoc();
+						currentMin = PForDIt.nextDoc() - 1;
 					} else {
-						result = iIndex.getFromForwardIndex(target - 1);
+						result = iIndex.getFromForwardIndex(target);
 						currentMin = curr;
 					}
 
-					if (PForDIt.docID() < curr) {
-						PForDIt.advance(curr);
+					if (PForDIt.docID() - 1 < curr) {
+						PForDIt.advance(curr + 1);
 					}
 					break;
 
 				}
 				i++;
-				curr = findNextIt.nextDoc();
+				curr = PForDIt.nextDoc() - 1;
 			}
 
 			return result;
@@ -431,18 +430,8 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		@Override
 		public int advance(int target) throws IOException {
 
-			// Iterator has been exhausted
-			if (lastDoc == DocIdSetIterator.NO_MORE_DOCS) {
-				return lastDoc;
-			}
-
-			// We actually don't hold any DocIDs, we should rely on the forward
-			// iterator.
-			// (By the way, this is not a good idea; having no DocIDs in the
-			// inverted index, nothing will break, but what's the point of having
-			// an inverted index then?)
-			else if (docCount == 0 || lastDoc == -1) {
-				lastDoc = iIndex.getFromForwardIndex(Math.max(target - 1, lastDoc));
+			if (lastDoc == DocIdSetIterator.NO_MORE_DOCS || target >= finalDoc) {
+				lastDoc = DocIdSetIterator.NO_MORE_DOCS;
 				return lastDoc;
 			}
 
@@ -450,13 +439,11 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			// the next element.
 			else if (target <= lastDoc) {
 				lastDoc = nextDoc();
-				return lastDoc;
 			}
 
 			//Don't bother with all the cool logic if the target is less than the jump value.
-			else if (target - lastDoc <= minJumpValue){
-				lastDoc = iIndex.getFromForwardIndex(target - 1);
-				return lastDoc;
+			else if (target - lastDoc < minJumpValue){
+				lastDoc = iIndex.getFromForwardIndex(target);
 			}
 
 			// Okay fine, I guess we'll have to use the helper to find the answer. This is the most expensive option.

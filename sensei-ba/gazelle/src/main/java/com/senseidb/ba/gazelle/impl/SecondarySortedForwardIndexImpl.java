@@ -67,6 +67,25 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
       private final SortedRegion[] regions = sortedRegions;
       private SortedRangeCountFinder countFinder = new SortedRangeCountFinder(regions[0]);
       private SortedRegion currentRegion = null;
+      
+      private int binarySearchForFirstElementEqualOrLargerThanTarget(SortedRegion[] in, int start, int end, int target)
+      {
+        int mid;
+        while(start < end)
+        {
+          mid = (start + end)/2;
+          if(in[mid].maxDocId < target)
+            start = mid+1;
+          else if(in[mid].maxDocId == target)
+            return mid;
+          else
+            end = mid;
+        }
+        if(in[start].maxDocId >= target)
+          return start;
+        else
+          return -1;
+      }     
 
       public boolean advance(int docid) {
         if (currentRegionIndex == -1) {
@@ -76,27 +95,47 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
             // countFinder.reset(regions[currentRegionIndex]);
             return true;
           } else {
-            while (++currentRegionIndex < regions.length) {
-              if (regions[currentRegionIndex].maxDocId >= docid) {
-                currentRegion = regions[currentRegionIndex];
-                countFinder.reset(regions[currentRegionIndex]);
-                return true;
-              }
-            }
-            return false;
+        	
+        	  int index = binarySearchForFirstElementEqualOrLargerThanTarget(regions, currentRegionIndex + 1, regions.length, docid);
+        	  
+        	  if(index != -1){
+        		  currentRegionIndex = index;
+        		  currentRegion = regions[currentRegionIndex];
+        		  countFinder.reset(regions[index]);
+        		  return true;
+        	  }
+        	  return false;
+        	
+//            while (++currentRegionIndex < regions.length) {
+//              if (regions[currentRegionIndex].maxDocId >= docid) {
+//                currentRegion = regions[currentRegionIndex];
+//                countFinder.reset(regions[currentRegionIndex]);
+//                return true;
+//              }
+//            }
+//            return false;
           }
         }
         if (docid <= currentRegion.maxDocId) {
           return true;
         } else {
-          while (++currentRegionIndex < regions.length) {
-            if (docid <= regions[currentRegionIndex].maxDocId) {
-              currentRegion = regions[currentRegionIndex];
-              countFinder.reset(regions[currentRegionIndex]);
-              return true;
-            }
-          }
-          return false;
+      	  int index = binarySearchForFirstElementEqualOrLargerThanTarget(regions, currentRegionIndex + 1, regions.length, docid);
+    	  
+      	  if(index != -1){
+      		  currentRegionIndex = index;
+      		  currentRegion = regions[currentRegionIndex];
+      		  countFinder.reset(regions[index]);
+      		  return true;
+      	  }
+      	  return false;
+//          while (++currentRegionIndex < regions.length) {
+//            if (docid <= regions[currentRegionIndex].maxDocId) {
+//              currentRegion = regions[currentRegionIndex];
+//              countFinder.reset(regions[currentRegionIndex]);
+//              return true;
+//            }
+//          }
+//          return false;
         }
 
       }
