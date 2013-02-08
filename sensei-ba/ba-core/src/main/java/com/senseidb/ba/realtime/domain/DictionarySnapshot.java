@@ -1,6 +1,7 @@
 package com.senseidb.ba.realtime.domain;
 
 import com.browseengine.bobo.facets.data.TermValueList;
+import com.senseidb.ba.realtime.domain.primitives.dictionaries.DictionaryResurrectingMarker;
 import com.senseidb.search.req.mapred.impl.dictionary.DictionaryNumberAccessor;
 
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -28,4 +29,5 @@ public interface DictionarySnapshot extends DictionaryNumberAccessor {
   public int sortedIndexOf(String value);
   public IntList getInvPermutationArray();
   int size();
+  public DictionaryResurrectingMarker getResurrectingMarker();
 }

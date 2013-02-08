@@ -62,7 +62,13 @@ public abstract class SnapshotRefreshScheduler {
      if (batchSize <= 0) {
          return;
      }
+     /*if (newSize == 99998) {
+       System.out.println("bla lastRefreshedSize" + (lastRefreshedSize));
+     }*/
      if (currentSize -  lastRefreshedSize >= batchSize) {
+      
+       //Could add unnecessary executions
+       //System.out.println("Size refreshed - " + newSize);
        if (!isCancelled) {
          refreshService.submit(countRefreshJob);
        }
@@ -73,21 +79,26 @@ public abstract class SnapshotRefreshScheduler {
    public final class CountRefreshJob implements Callable<Void> {
      @Override
      public Void call() throws Exception {
-       try {
+       
        if (isCancelled) return null;
        synchronized(lock) {
          if (isCancelled) return null;
          if (currentSize -  lastRefreshedSize >= batchSize) {
+           try {
            lastRefreshedSize = refresh();
+           }
+           catch (Exception ex) {
+            logger.error(ex.getMessage(), ex); 
+            throw ex;
+           }
+           if (lastRefreshedSize == capacity) {
+             lastRefreshedSize = 0;
+           }
            lastRefreshedTime = System.currentTimeMillis();
          }
        }
        return null;
-     }
-     catch (Exception ex) {
-      logger.error(ex.getMessage(), ex); 
-      throw ex;
-     }
+     
    }
    }
    public final class TimeRefreshJob implements Callable<Void> {
@@ -96,6 +107,7 @@ public abstract class SnapshotRefreshScheduler {
        if (isCancelled) return null;
        synchronized(lock) {
          if (isCancelled) return null;
+         //System.out.println("historicalRefreshTime = " + historicalRefreshTime + "lastRefreshedTime = " + lastRefreshedTime);
          if (historicalRefreshTime == lastRefreshedTime) {
            lastRefreshedSize = refresh();
            lastRefreshedTime = System.currentTimeMillis();

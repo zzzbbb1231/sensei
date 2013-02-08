@@ -65,7 +65,7 @@ public class LongRealtimeDictionary implements RealtimeDictionary {
       if (snapshotFromPool != null) {
         dictionarySnapshot = (LongDictionarySnapshot) snapshotFromPool;
       } else {
-        dictionarySnapshot =  new LongDictionarySnapshot();
+        dictionarySnapshot =  new LongDictionarySnapshot(indexObjectsPool, column);
       }  
         dictionarySnapshot.init(dictionary, readWriteLock);
         return dictionarySnapshot;

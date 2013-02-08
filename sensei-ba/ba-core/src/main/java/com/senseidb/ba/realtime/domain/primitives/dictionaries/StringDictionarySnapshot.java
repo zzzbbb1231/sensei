@@ -17,12 +17,16 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.creators.DictionaryCreator;
 import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
+import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 
 public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
   private ObjectList<String> unsortedValues;
+  private final DictionaryResurrectingMarker dictionaryResurrectingMarker;
 
-  
+  public StringDictionarySnapshot(ReusableIndexObjectsPool indexObjectsPool, String columnName) {
+    dictionaryResurrectingMarker = new DictionaryResurrectingMarker(columnName, indexObjectsPool, this);
+  }
 
   public void init(Object2IntMap<String> map, ReadWriteLock lock) {
     if (unsortedValues != null && unsortedValues.size() == map.size()) {
@@ -37,9 +41,7 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
       int previousSize = unsortedValues.size(); 
       unsortedValues.size(map.size() );
        for (Entry<String> entry : map.object2IntEntrySet()) {
-          if (entry.getIntValue() >= previousSize) {
             unsortedValues.set(entry.getIntValue(), entry.getKey());
-          }
         }
       
     } finally {
@@ -213,7 +215,10 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
     return o.toString();
   }
 
-
+  @Override
+  public DictionaryResurrectingMarker getResurrectingMarker() {
+    return dictionaryResurrectingMarker;
+  }
   
   
 }

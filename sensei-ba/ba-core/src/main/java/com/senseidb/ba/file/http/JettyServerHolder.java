@@ -154,12 +154,15 @@ public class JettyServerHolder implements SenseiPlugin {
       }
     }
 
-    String webappPath = pluginRegistry.getConfiguration().getString(SenseiConfParams.SERVER_BROKER_WEBAPP_PATH);    
-    webappPath = webappPath.replace("webapp", "segmentsApp");
-
-    webApp.setResourceBase(webappPath);
+    String webappPath = pluginRegistry != null ? pluginRegistry.getConfiguration().getString(SenseiConfParams.SERVER_BROKER_WEBAPP_PATH, null) : null;    
+    if (webappPath != null) {
+      webappPath = webappPath.replace("webapp", "segmentsApp");
+      webApp.setResourceBase(webappPath);
+    } else {
+      webApp.setResourceBase("");
+    }
     server.setHandler(webApp);
-
+    
     try {
       server.start();
     } catch (Exception e) {

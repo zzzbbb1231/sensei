@@ -19,6 +19,7 @@ import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.creators.DictionaryCreator;
 import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
+import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 
@@ -27,7 +28,11 @@ public class LongDictionarySnapshot extends TermLongList implements DictionarySn
   private LongList unsortedValues;
 
   private IntArrayList invDictPermArray;
-  
+
+  private DictionaryResurrectingMarker dictionaryResurrectingMarker;
+  public LongDictionarySnapshot(ReusableIndexObjectsPool indexObjectsPool, String columnName) {
+    dictionaryResurrectingMarker = new DictionaryResurrectingMarker(columnName, indexObjectsPool, this);
+  }
   private static ThreadLocal<DecimalFormat> formatter = new ThreadLocal<DecimalFormat>() {
     final String format = DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(ColumnType.LONG);
 
@@ -49,9 +54,7 @@ public class LongDictionarySnapshot extends TermLongList implements DictionarySn
        int previousSize = unsortedValues.size();
         unsortedValues.size(map.size());
         for (it.unimi.dsi.fastutil.longs.Long2IntMap.Entry entry : map.long2IntEntrySet()) {
-          if (entry.getIntValue() >= previousSize) {
             unsortedValues.set(entry.getIntValue(), entry.getLongKey());
-          }
         }
       
     } finally {
@@ -350,4 +353,9 @@ protected Object parseString(String o) {
 public IntList getInvPermutationArray() {
   return invDictPermArray;
 }
+@Override
+public DictionaryResurrectingMarker getResurrectingMarker() {
+  return dictionaryResurrectingMarker;
+}
+
 }

@@ -26,29 +26,40 @@ public class ReusableIndexObjectsPool {
   private Map<String, List<DictionarySnapshot>> dictionaryCache = new HashMap<String, List<DictionarySnapshot>>();  
   
   public synchronized SegmentAppendableIndex getAppendableIndex() {
+    
+    SegmentAppendableIndex ret = null;
     if (pool.size() > 0) {
-      return pool.remove(pool.size() - 1);
-    }
-     SegmentAppendableIndex ret = new SegmentAppendableIndex();
+      ret =  pool.remove(pool.size() - 1);
+    } else {
+     ret = new SegmentAppendableIndex(this);
+     
      ret.init(schema, capacity);
+    }
+    ret.getSegmentResurrectingMarker().incRef();
      return ret;
   }
   
   public synchronized void recycle(DictionarySnapshot dictionarySnapshot, String column)  {
+    /*if (column.equals("clickCount")) {
+      System.out.println("Recyclinh DictionarySnapshot - " + dictionarySnapshot);
+    }*/
+   /* dictionarySnapshot.getResurrectingMarker().reset();
     if (!dictionaryCache.containsKey(column)) {
       dictionaryCache.put(column, new ArrayList<DictionarySnapshot>());
     }
     dictionarySnapshot.recycle();
-    dictionaryCache.get(column).add(dictionarySnapshot);
+    dictionaryCache.get(column).add(dictionarySnapshot);*/
   }
   public synchronized DictionarySnapshot getDictSnapshot(String column)  {
     List<DictionarySnapshot> list = dictionaryCache.get(column);
+    DictionarySnapshot ret = null;
     if (list == null || list.size() == 0) {
       return null;
     }
     return list.remove(list.size() - 1);
   }
   public void recycle(SegmentAppendableIndex appendableIndex)  {
+   
     appendableIndex.recycle();
     synchronized(this) {
       pool.add(appendableIndex);

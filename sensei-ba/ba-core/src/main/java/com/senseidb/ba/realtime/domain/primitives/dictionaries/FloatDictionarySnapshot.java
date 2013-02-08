@@ -24,12 +24,15 @@ import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.creators.DictionaryCreator;
 import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
+import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 
 public class FloatDictionarySnapshot extends TermFloatList implements DictionarySnapshot {
 
   private FloatList unsortedValues;
+
+  private DictionaryResurrectingMarker dictionaryResurrectingMarker;
   
   private static ThreadLocal<DecimalFormat> formatter = new ThreadLocal<DecimalFormat>() {
     final String format = DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(ColumnType.FLOAT);
@@ -38,7 +41,9 @@ public class FloatDictionarySnapshot extends TermFloatList implements Dictionary
       return new DecimalFormat(format);
     }
   };
- 
+  public FloatDictionarySnapshot(ReusableIndexObjectsPool indexObjectsPool, String columnName) {
+    dictionaryResurrectingMarker = new DictionaryResurrectingMarker(columnName, indexObjectsPool, this);
+  }
   public void init(Float2IntMap map, ReadWriteLock lock) {
     if (unsortedValues != null && unsortedValues.size() == map.size()) {
       // do nothing
@@ -52,9 +57,7 @@ public class FloatDictionarySnapshot extends TermFloatList implements Dictionary
        int previousSize = unsortedValues.size();
         unsortedValues.size(map.size());
         for (it.unimi.dsi.fastutil.floats.Float2IntMap.Entry entry : map.float2IntEntrySet()) {
-          if (entry.getIntValue() >= previousSize) {
             unsortedValues.set(entry.getIntValue(), entry.getFloatKey());
-          }
         }
       
     } finally {
@@ -365,6 +368,10 @@ public Class getType() {
  protected Object parseString(String o) {
    throw new UnsupportedOperationException();
  }
+@Override
+public DictionaryResurrectingMarker getResurrectingMarker() {
+  return dictionaryResurrectingMarker;
+}
 
 
 

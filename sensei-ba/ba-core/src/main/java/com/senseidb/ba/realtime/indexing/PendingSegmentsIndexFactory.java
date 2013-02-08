@@ -69,6 +69,7 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
       SegmentToZoieReaderAdapter<BoboIndexReader> adapter = new SegmentToZoieReaderAdapter<BoboIndexReader>(indexSegment, appendableIndex.getName(), decorator);
       zoieSegments.put(appendableIndex, adapter);
       counters.put(adapter, new AtomicInteger(1));
+      appendableIndex.getSegmentResurrectingMarker().incRef();
     }
     } catch (Exception ex) {
       throw new RuntimeException("Should never happen", ex);
@@ -80,6 +81,8 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
     synchronized(lock) {
       for (SegmentToZoieReaderAdapter index : zoieSegments.values()) {
         counters.get(index).incrementAndGet();
+        RealtimeSnapshotIndexSegment indexSegment = (RealtimeSnapshotIndexSegment) index.getOfflineSegment();
+        indexSegment.getReferencedSegment().getSegmentResurrectingMarker().incRef();
       }
       return (List<ZoieIndexReader<BoboIndexReader>>) new ArrayList(zoieSegments.values());
     }
@@ -93,6 +96,7 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
     for (ZoieIndexReader<BoboIndexReader> indexReader : r ) {
       SegmentToZoieReaderAdapter adapter = (SegmentToZoieReaderAdapter) indexReader;
       SegmentAppendableIndex referencedSegment = ((RealtimeSnapshotIndexSegment)adapter.getOfflineSegment()).getReferencedSegment();
+      referencedSegment.getSegmentResurrectingMarker().decRef();
       AtomicInteger counter = counters.get(adapter);
       if(counter.decrementAndGet() == 0) {
         if (toRemove == null) {
@@ -112,7 +116,7 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
     //ZoieSegments are removed in persisting thread
     if (toRemove != null) {
       for (SegmentAppendableIndex segment : toRemove) {
-      indexConfig.getIndexObjectsPool().recycle(segment);
+        segment.getSegmentResurrectingMarker().decRef();
     }
     }
     }

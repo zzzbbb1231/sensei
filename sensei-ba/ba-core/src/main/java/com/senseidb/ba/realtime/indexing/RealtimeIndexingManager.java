@@ -32,11 +32,13 @@ public class RealtimeIndexingManager {
     
     public void start() {
       currentIndex = indexConfig.getIndexObjectsPool().getAppendableIndex();
+      
       snapshotRefreshScheduler = new SnapshotRefreshScheduler() {
         @Override
         public int refresh() {
           snapshot = currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool());
           indexingCoordinator.segmentSnapshotRefreshed(snapshot);
+          //System.out.println("refresh scheduler executed");
           return snapshot.getLength();
         }
       };
@@ -55,12 +57,15 @@ public class RealtimeIndexingManager {
               Thread.sleep(100L);
               continue;
             }
+            
             if (shardingStrategy.calculateShard(next) != indexConfig.getPartition()) {
               continue;
             }            
             
             boolean isFull = currentIndex.add(next.getValues(), next.getVersion());
-            
+             /*if (currentIndex.getCurrenIndex() % 1000 == 0) {
+               System.out.println("!!currentIndex.getCurrenIndex() = " + currentIndex.getCurrenIndex());
+             }*/
             if (isFull) {
               synchronized(RealtimeIndexingManager.this) {
                 retireAndCreateNewSegment();
@@ -68,6 +73,7 @@ public class RealtimeIndexingManager {
                 RealtimeIndexingManager.this.wait();
               }
             } else {
+              
               snapshotRefreshScheduler.sizeUpdated(currentIndex.getCurrenIndex());
             }
           } catch (Exception ex) {

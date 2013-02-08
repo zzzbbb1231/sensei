@@ -36,13 +36,7 @@ public  class SingleFieldRealtimeIndex implements FieldRealtimeIndex {
   public int getCapacity() {
     return capacity;
   }
-  @Override
-  public void recycle() {
-    Arrays.fill(forwardIndex, 0);
-    currentPosition = 0;
-    searchSnapshot.getDictionarySnapshot().recycle();
-    realtimeDictionary.recycle();
-  }
+ 
   @Override
   public void addElement(Object value, ReadWriteLock readWriteLock) {
     int dictionaryId = realtimeDictionary.addElement(value, readWriteLock);
@@ -54,11 +48,24 @@ public  class SingleFieldRealtimeIndex implements FieldRealtimeIndex {
     if (searchSnapshot != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray() != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray().size() == realtimeDictionary.size()) {
       searchSnapshot.setForwardIndexSize(currentPosition);
     } else {
+      if (searchSnapshot != null) {
+        searchSnapshot.getDictionarySnapshot().getResurrectingMarker().decRef();
+      }
       int position = currentPosition;
       SingleValueSearchSnapshot singleValueSearchSnapshot = new SingleValueSearchSnapshot();
-     singleValueSearchSnapshot.init(forwardIndex, position, columnType, (DictionarySnapshot)realtimeDictionary.produceDictSnapshot(readWriteLock, reusableIndexObjectsPool, columnName));
+     DictionarySnapshot dictSnapshot = (DictionarySnapshot)realtimeDictionary.produceDictSnapshot(readWriteLock, reusableIndexObjectsPool, columnName);
+    singleValueSearchSnapshot.init(forwardIndex, position, columnType, dictSnapshot);
+    dictSnapshot.getResurrectingMarker().incRef();
      searchSnapshot = singleValueSearchSnapshot;
     }
     return searchSnapshot;
+  }
+  
+  @Override
+  public void recycle() {
+    Arrays.fill(forwardIndex, 0);
+    currentPosition = 0;
+    searchSnapshot.getDictionarySnapshot().recycle();
+    realtimeDictionary.recycle();
   }
 }

@@ -25,7 +25,10 @@ public class SegmentAppendableIndex {
     private Schema schema; 
     volatile private  String version;
     private String name;
-    
+    private SegmentResurrectingMarker segmentResurrectingMarker;
+    public SegmentAppendableIndex(ReusableIndexObjectsPool indexObjectsPool) {
+       segmentResurrectingMarker = new SegmentResurrectingMarker(indexObjectsPool, this);
+    }
     private ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     public void init(Schema schema, int capacity) {
       this.schema = schema;
@@ -115,6 +118,7 @@ public class SegmentAppendableIndex {
       version = null;
       name = null;
       currenIndex = 0;
+     
       for (FieldRealtimeIndex index :   this.getColumnIndexes()) {
         index.recycle();
       }
@@ -132,5 +136,9 @@ public class SegmentAppendableIndex {
       this.name = name;
     }
     
+    public SegmentResurrectingMarker getSegmentResurrectingMarker() {
+      return segmentResurrectingMarker;
+    }
+   
     
 }

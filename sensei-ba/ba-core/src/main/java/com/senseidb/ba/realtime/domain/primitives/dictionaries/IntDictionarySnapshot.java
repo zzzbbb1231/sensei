@@ -22,13 +22,17 @@ import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.creators.DictionaryCreator;
 import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
+import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 
 public class IntDictionarySnapshot extends TermIntList implements DictionarySnapshot {
 
   private IntList unsortedValues;
-  
+  private DictionaryResurrectingMarker dictionaryResurrectingMarker;
+  public IntDictionarySnapshot(ReusableIndexObjectsPool indexObjectsPool, String columnName) {
+    dictionaryResurrectingMarker = new DictionaryResurrectingMarker(columnName, indexObjectsPool, this);
+  }
   private static ThreadLocal<DecimalFormat> formatter = new ThreadLocal<DecimalFormat>() {
     final String format = DictionaryCreator.DEFAULT_FORMAT_STRING_MAP.get(ColumnType.INT);
 
@@ -50,9 +54,7 @@ public class IntDictionarySnapshot extends TermIntList implements DictionarySnap
        int previousSize = unsortedValues.size();
         unsortedValues.size(map.size());
         for (it.unimi.dsi.fastutil.ints.Int2IntMap.Entry entry : map.int2IntEntrySet()) {
-          if (entry.getIntValue() >= previousSize) {
             unsortedValues.set(entry.getIntValue(), entry.getIntKey());
-          }
         }
       
     } finally {
@@ -356,6 +358,12 @@ protected Object parseString(String o) {
 @Override
 public IntList getInvPermutationArray() {
   return invDictPermArray;
+}
+
+
+@Override
+public DictionaryResurrectingMarker getResurrectingMarker() {
+  return dictionaryResurrectingMarker;
 }
 
   

@@ -347,7 +347,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
               @Override
               public Comparable value(ScoreDoc doc) {
                 int index = randomReader.getValueIndex(doc.doc);
-                return zeusDataCache.getForwardIndex().getDictionary().get(index);
+                return (Comparable) zeusDataCache.getForwardIndex().getDictionary().getRawValue(index);
               }
 
               @Override
@@ -361,7 +361,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
             @Override
             public Comparable value(ScoreDoc doc) {
               int index = randomReader.getValueIndex(doc.doc);
-              return zeusDataCache.getForwardIndex().getDictionary().getComparableValue(index);
+              return (Comparable) zeusDataCache.getForwardIndex().getDictionary().getRawValue(index);
             }
 
             @Override

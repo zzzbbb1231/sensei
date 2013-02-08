@@ -130,8 +130,8 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
        logger.info("Segment  " +  oldSegment.getName() + " is full. Containing " + oldSegment.getCurrenIndex() + " elements");
        synchronized(realtimeIndexFactory.getLock()) {
          synchronized(pendingSegmentsIndexFactory.getLock()) {
-           realtimeIndexFactory.setSnapshot(newSegment.refreshSearchSnapshot(indexConfig.getIndexObjectsPool()));
            pendingSegmentsIndexFactory.addSegment(oldSegment, fullExisingSnapshot, decorator);
+           realtimeIndexFactory.setSnapshot(newSegment.refreshSearchSnapshot(indexConfig.getIndexObjectsPool()));
          }
        }
        } catch (Exception ex) {
@@ -150,8 +150,7 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
             indexFactory.getReaders().add(new SegmentToZoieReaderAdapter(persistedSegment, segmentToProcess.getName(), decorator));
         }
         indexingManager.getDataProvider().commit(segmentToProcess.getVersion());
-        indexingManager.notifySegmentPersisted();
-        
+        indexingManager.notifySegmentPersisted();        
         } catch (IOException e) {
           throw new RuntimeException("Should never happen", e);
         }

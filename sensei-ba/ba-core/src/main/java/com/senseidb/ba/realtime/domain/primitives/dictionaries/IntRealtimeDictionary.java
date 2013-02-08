@@ -62,7 +62,7 @@ public class IntRealtimeDictionary implements RealtimeDictionary {
       if (snapshotFromPool != null) {
         dictionarySnapshot = (IntDictionarySnapshot) snapshotFromPool;
       } else {
-        dictionarySnapshot =  new IntDictionarySnapshot();
+        dictionarySnapshot =  new IntDictionarySnapshot(indexObjectsPool, column);
       }  
      
         dictionarySnapshot.init(dictionary, readWriteLock);

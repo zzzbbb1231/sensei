@@ -41,6 +41,11 @@ public class RealtimeIndexFactory extends AbstractFakeZoie {
       int incrementAndGet = atomicInteger.incrementAndGet();
       //System.out.println("!!!incrementAndGet = " + incrementAndGet + "with segment " + segmentToZoieReaderAdapter.getOfflineSegment()  + " time =" + System.currentTimeMillis());
       //System.out.flush();
+      RealtimeSnapshotIndexSegment indexSegment = (RealtimeSnapshotIndexSegment) segmentToZoieReaderAdapter.getOfflineSegment();
+      for (String column : indexSegment.getColumnTypes().keySet())  {
+        indexSegment.getForwardIndex(column).getDictionarySnapshot().getResurrectingMarker().incRef();
+      }
+      indexSegment.getReferencedSegment().getSegmentResurrectingMarker().incRef();
       return Arrays.asList((ZoieIndexReader<BoboIndexReader>) segmentToZoieReaderAdapter);
     }
   }
@@ -50,6 +55,11 @@ public class RealtimeIndexFactory extends AbstractFakeZoie {
     synchronized (lock) {
       for (ZoieIndexReader<BoboIndexReader> reader : r) {
         SegmentToZoieReaderAdapter adapter = (SegmentToZoieReaderAdapter) reader;
+        RealtimeSnapshotIndexSegment indexSegment = (RealtimeSnapshotIndexSegment) adapter.getOfflineSegment();
+        for (String column : indexSegment.getColumnTypes().keySet())  {
+          indexSegment.getForwardIndex(column).getDictionarySnapshot().getResurrectingMarker().decRef();
+        }
+        indexSegment.getReferencedSegment().getSegmentResurrectingMarker().decRef();
         decrementCount(adapter);
       }
     }
@@ -72,19 +82,21 @@ public class RealtimeIndexFactory extends AbstractFakeZoie {
       if (!snapshot.isFull()) {
         // snapshot.recycle(indexConfig.getIndexObjectsPool());
       }
-      //System.out.println("Removing snapshot - " + snapshot);
       counters.remove(snapshot);
     }
   }
 
   public void setSnapshot(RealtimeSnapshotIndexSegment newSnapshot) {
     synchronized (lock) {
+      //System.out.println("set snapshot - " + newSnapshot.getLength());
       if (currentSnapshot == newSnapshot) {
         return;
       }
       if (counters.containsKey(newSnapshot)) {
         throw new IllegalStateException();
       }
+     
+      
       if (currentSnapshot != null && newSnapshot.getReferencedSegment() != currentSnapshot.getReferencedSegment()) {
         currentSnapshot.setFull(true);
       }

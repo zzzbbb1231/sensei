@@ -61,7 +61,7 @@ public class StringRealtimeDictionary implements RealtimeDictionary {
         if (snapshotFromPool != null) {
           dictionarySnapshot = (StringDictionarySnapshot) snapshotFromPool;
         } else {
-          dictionarySnapshot =  new StringDictionarySnapshot();
+          dictionarySnapshot =  new StringDictionarySnapshot(indexObjectsPool, column);
         }  
          
           dictionarySnapshot.init(dictionary, readWriteLock);

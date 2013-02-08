@@ -62,9 +62,11 @@ public class FloatRealtimeDictionary implements RealtimeDictionary {
         if (snapshotFromPool != null) {
           dictionarySnapshot = (FloatDictionarySnapshot) snapshotFromPool;
         } else {
-          dictionarySnapshot =  new FloatDictionarySnapshot();
+          dictionarySnapshot =  new FloatDictionarySnapshot(indexObjectsPool, column);
         }  
+        
         dictionarySnapshot.init(dictionary, readWriteLock);
+        
         return dictionarySnapshot;
       
       }

@@ -21,40 +21,7 @@ public class SenseiProviderAdapter implements RealtimeDataProvider {
   public SenseiProviderAdapter(StreamDataProvider<JSONObject> provider ) {
     this.provider = provider;
     if (provider != null) {
-      try {
-        Field field = StreamDataProvider.class.getDeclaredField("_thread");
-        field.setAccessible(true);
-        Class<?> cls = Class.forName("proj.zoie.impl.indexing.StreamDataProvider$DataThread");
-        Constructor<?> constructor = cls.getDeclaredConstructors()[0];
-        constructor.setAccessible(true);
-        Object obj = constructor.newInstance(new StreamDataProvider(ZoieConfig.DEFAULT_VERSION_COMPARATOR) {
-
-          @Override
-          public DataEvent next() {
-            // TODO Auto-generated method stub
-            return null;
-          }
-
-          @Override
-          public void setStartingOffset(String version) {
-            // TODO Auto-generated method stub
-            
-          }
-
-          @Override
-          public void reset() {
-            // TODO Auto-generated method stub
-            
-          }
-          
-        });
-        field.set(provider, obj);
-        Method method = cls.getMethod("start");
-        method.setAccessible(true);
-        method.invoke(obj);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
+     
        
     }
   }
@@ -66,7 +33,45 @@ public class SenseiProviderAdapter implements RealtimeDataProvider {
 
   @Override
   public void start() {
-    provider.start();
+    try {
+      Field field = StreamDataProvider.class.getDeclaredField("_thread");
+      field.setAccessible(true);
+      Class<?> cls = Class.forName("proj.zoie.impl.indexing.StreamDataProvider$DataThread");
+      Constructor<?> constructor = cls.getDeclaredConstructors()[0];
+      constructor.setAccessible(true);
+      Object obj = constructor.newInstance(new StreamDataProvider(ZoieConfig.DEFAULT_VERSION_COMPARATOR) {
+
+        @Override
+        public DataEvent next() {
+          // TODO Auto-generated method stub
+          return null;
+        }
+
+        @Override
+        public void setStartingOffset(String version) {
+          // TODO Auto-generated method stub
+          
+        }
+
+        @Override
+        public void reset() {
+          // TODO Auto-generated method stub
+          
+        }
+        
+      });
+      field.set(provider, obj);
+      Method method = cls.getMethod("start");
+      method.setAccessible(true);
+      method.invoke(obj);
+      provider.start();
+      method = cls.getMethod("stop");
+      method.setAccessible(true);
+      method.invoke(obj);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+   
     
   }
 
