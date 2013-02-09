@@ -83,6 +83,9 @@ public abstract class SnapshotRefreshScheduler {
        if (isCancelled) return null;
        synchronized(lock) {
          if (isCancelled) return null;
+         if (lastRefreshedSize > currentSize) {
+             currentSize = 0;
+         }
          if (currentSize -  lastRefreshedSize >= batchSize) {
            try {
            lastRefreshedSize = refresh();
