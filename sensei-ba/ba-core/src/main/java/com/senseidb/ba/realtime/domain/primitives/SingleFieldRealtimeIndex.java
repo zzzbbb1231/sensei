@@ -56,8 +56,8 @@ public  class SingleFieldRealtimeIndex implements FieldRealtimeIndex {
      DictionarySnapshot dictSnapshot = (DictionarySnapshot)realtimeDictionary.produceDictSnapshot(readWriteLock, reusableIndexObjectsPool, columnName);
     singleValueSearchSnapshot.init(forwardIndex, position, columnType, dictSnapshot);
     dictSnapshot.getResurrectingMarker().incRef();
-    if (searchSnapshot != null && searchSnapshot.getDictionarySnapshot() != dictSnapshot) {
-        //searchSnapshot.getDictionarySnapshot().getResurrectingMarker().decRef();
+    if (searchSnapshot != null && searchSnapshot.getDictionarySnapshot() == dictSnapshot) {
+        dictSnapshot.getResurrectingMarker().decRef();
     }
     searchSnapshot = singleValueSearchSnapshot;
     }
