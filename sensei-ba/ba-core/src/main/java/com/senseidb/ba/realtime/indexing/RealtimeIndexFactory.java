@@ -15,6 +15,7 @@ import com.browseengine.bobo.api.BoboIndexReader;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.ba.management.directory.AbstractFakeZoie;
+import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
 import com.senseidb.search.node.SenseiIndexReaderDecorator;
 
@@ -95,7 +96,14 @@ public class RealtimeIndexFactory extends AbstractFakeZoie {
       if (counters.containsKey(newSnapshot)) {
         throw new IllegalStateException();
       }
-     
+      for (String column : newSnapshot.getColumnTypes().keySet())  {
+          DictionarySnapshot newDictSnapshot = newSnapshot.getForwardIndex(column).getDictionarySnapshot();
+          
+          newDictSnapshot.getResurrectingMarker().incRef();
+          if (currentSnapshot != null && currentSnapshot != newSnapshot && currentSnapshot.getForwardIndex(column).getDictionarySnapshot() != newDictSnapshot) {
+              currentSnapshot.getForwardIndex(column).getDictionarySnapshot().getResurrectingMarker().decRef();
+          }
+      } 
       
       if (currentSnapshot != null && newSnapshot.getReferencedSegment() != currentSnapshot.getReferencedSegment()) {
         currentSnapshot.setFull(true);

@@ -82,6 +82,9 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
       for (SegmentToZoieReaderAdapter index : zoieSegments.values()) {
         counters.get(index).incrementAndGet();
         RealtimeSnapshotIndexSegment indexSegment = (RealtimeSnapshotIndexSegment) index.getOfflineSegment();
+        for (String column : indexSegment.getColumnTypes().keySet())  {
+            indexSegment.getForwardIndex(column).getDictionarySnapshot().getResurrectingMarker().decRef();
+          }
         indexSegment.getReferencedSegment().getSegmentResurrectingMarker().incRef();
       }
       return (List<ZoieIndexReader<BoboIndexReader>>) new ArrayList(zoieSegments.values());
@@ -95,7 +98,11 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
     synchronized(lock) {
     for (ZoieIndexReader<BoboIndexReader> indexReader : r ) {
       SegmentToZoieReaderAdapter adapter = (SegmentToZoieReaderAdapter) indexReader;
-      SegmentAppendableIndex referencedSegment = ((RealtimeSnapshotIndexSegment)adapter.getOfflineSegment()).getReferencedSegment();
+      RealtimeSnapshotIndexSegment segment = (RealtimeSnapshotIndexSegment)adapter.getOfflineSegment();
+      for (String column : segment.getColumnTypes().keySet())  {
+          segment.getForwardIndex(column).getDictionarySnapshot().getResurrectingMarker().decRef();
+        }
+      SegmentAppendableIndex referencedSegment = segment.getReferencedSegment();
       referencedSegment.getSegmentResurrectingMarker().decRef();
       AtomicInteger counter = counters.get(adapter);
       if(counter.decrementAndGet() == 0) {

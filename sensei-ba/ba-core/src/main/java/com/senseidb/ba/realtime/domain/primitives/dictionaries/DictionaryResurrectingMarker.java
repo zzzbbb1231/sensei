@@ -29,4 +29,7 @@ public class DictionaryResurrectingMarker {
   public void reset() {
     counter.set(0);
   }
+  public int getValue() {
+      return counter.get();
+  }
 }

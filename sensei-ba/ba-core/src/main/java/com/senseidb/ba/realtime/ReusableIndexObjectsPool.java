@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.util.Assert;
+
 import scala.actors.threadpool.Arrays;
 
 import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
@@ -43,12 +45,14 @@ public class ReusableIndexObjectsPool {
     /*if (column.equals("clickCount")) {
       System.out.println("Recyclinh DictionarySnapshot - " + dictionarySnapshot);
     }*/
-   /* dictionarySnapshot.getResurrectingMarker().reset();
-    if (!dictionaryCache.containsKey(column)) {
-      dictionaryCache.put(column, new ArrayList<DictionarySnapshot>());
-    }
-    dictionarySnapshot.recycle();
-    dictionaryCache.get(column).add(dictionarySnapshot);*/
+      //System.out.println("Segment recycled");
+//    dictionarySnapshot.getResurrectingMarker().reset();
+//    if (!dictionaryCache.containsKey(column)) {
+//      dictionaryCache.put(column, new ArrayList<DictionarySnapshot>());
+//    }
+//    dictionarySnapshot.recycle();
+//    Assert.state(!dictionaryCache.get(column).contains(dictionarySnapshot), );
+//    dictionaryCache.get(column).add(dictionarySnapshot);
   }
   public synchronized DictionarySnapshot getDictSnapshot(String column)  {
     List<DictionarySnapshot> list = dictionaryCache.get(column);
@@ -56,7 +60,10 @@ public class ReusableIndexObjectsPool {
     if (list == null || list.size() == 0) {
       return null;
     }
-    return list.remove(list.size() - 1);
+    
+    ret = list.remove(list.size() - 1);
+    Assert.state(ret.getResurrectingMarker().getValue() == 0, "" + ret.getResurrectingMarker().getValue());
+     return ret;
   }
   public void recycle(SegmentAppendableIndex appendableIndex)  {
    

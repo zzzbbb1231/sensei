@@ -30,6 +30,7 @@ import com.senseidb.ba.management.directory.SimpleIndexFactory;
 import com.senseidb.ba.plugins.ZeusIndexReaderDecorator;
 import com.senseidb.ba.realtime.SegmentAppendableIndex;
 import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
+import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
 import com.senseidb.ba.realtime.indexing.PendingSegmentsIndexFactory.SegmentPersistedListener;
 import com.senseidb.ba.realtime.indexing.ShardingStrategy.AcceptAllShardingStrategy;
@@ -130,6 +131,11 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
        logger.info("Segment  " +  oldSegment.getName() + " is full. Containing " + oldSegment.getCurrenIndex() + " elements");
        synchronized(realtimeIndexFactory.getLock()) {
          synchronized(pendingSegmentsIndexFactory.getLock()) {
+             for (String column : fullExisingSnapshot.getColumnTypes().keySet())  {
+                 DictionarySnapshot dictSnapshot = fullExisingSnapshot.getForwardIndex(column).getDictionarySnapshot();
+                 dictSnapshot.getResurrectingMarker().incRef();
+                 //dictSnapshot.getResurrectingMarker().incRef();
+             }
            pendingSegmentsIndexFactory.addSegment(oldSegment, fullExisingSnapshot, decorator);
            realtimeIndexFactory.setSnapshot(newSegment.refreshSearchSnapshot(indexConfig.getIndexObjectsPool()));
          }
