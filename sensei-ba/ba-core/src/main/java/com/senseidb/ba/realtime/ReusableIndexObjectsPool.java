@@ -42,17 +42,22 @@ public class ReusableIndexObjectsPool {
   }
   
   public synchronized void recycle(DictionarySnapshot dictionarySnapshot, String column)  {
-    /*if (column.equals("clickCount")) {
+      /*if (column.equals("clickCount")) {
       System.out.println("Recyclinh DictionarySnapshot - " + dictionarySnapshot);
     }*/
-      //System.out.println("Segment recycled");
-//    dictionarySnapshot.getResurrectingMarker().reset();
-//    if (!dictionaryCache.containsKey(column)) {
-//      dictionaryCache.put(column, new ArrayList<DictionarySnapshot>());
+     // System.out.println("Segment recycled - " + dictionarySnapshot + " time = " + System.currentTimeMillis());
+     //new Exception().printStackTrace();
+    dictionarySnapshot.getResurrectingMarker().reset();
+    if (!dictionaryCache.containsKey(column)) {
+      dictionaryCache.put(column, new ArrayList<DictionarySnapshot>());
+    }
+//    if (dictionaryCache.get(column).contains(dictionarySnapshot)) {
+//        return;
 //    }
-//    dictionarySnapshot.recycle();
-//    Assert.state(!dictionaryCache.get(column).contains(dictionarySnapshot), );
-//    dictionaryCache.get(column).add(dictionarySnapshot);
+    dictionarySnapshot.recycle();
+    
+    Assert.state(!dictionaryCache.get(column).contains(dictionarySnapshot));
+    dictionaryCache.get(column).add(dictionarySnapshot);
   }
   public synchronized DictionarySnapshot getDictSnapshot(String column)  {
     List<DictionarySnapshot> list = dictionaryCache.get(column);

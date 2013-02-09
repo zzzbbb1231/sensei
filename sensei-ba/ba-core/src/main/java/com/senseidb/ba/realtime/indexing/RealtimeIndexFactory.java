@@ -100,7 +100,7 @@ public class RealtimeIndexFactory extends AbstractFakeZoie {
           DictionarySnapshot newDictSnapshot = newSnapshot.getForwardIndex(column).getDictionarySnapshot();
           
           newDictSnapshot.getResurrectingMarker().incRef();
-          if (currentSnapshot != null && currentSnapshot != newSnapshot && currentSnapshot.getForwardIndex(column).getDictionarySnapshot() != newDictSnapshot) {
+          if (currentSnapshot != null ) {
               currentSnapshot.getForwardIndex(column).getDictionarySnapshot().getResurrectingMarker().decRef();
           }
       } 
