@@ -13,6 +13,7 @@ import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
@@ -20,7 +21,7 @@ import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.util.FileUploadUtils;
 import com.senseidb.ba.util.TestUtil;
 import com.senseidb.util.SingleNodeStarter;
-
+@Ignore
 public class BASegmentRecoverTest  extends Assert {
 
   private static ZkManager zkManager;
