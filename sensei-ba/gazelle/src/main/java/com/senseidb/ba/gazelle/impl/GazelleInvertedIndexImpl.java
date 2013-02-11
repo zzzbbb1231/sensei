@@ -315,7 +315,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		}
 
 		public int getFromForwardIndex(int index) throws IOException {
-			if(index >= finalDoc){
+			if(index > finalDoc){
 				return DocIdSetIterator.NO_MORE_DOCS;
 			}
 			else{
@@ -389,7 +389,8 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		public int nextDoc() throws IOException {
 
 			//We exhausted the iterator
-			if (lastDoc == DocIdSetIterator.NO_MORE_DOCS) {
+			if (lastDoc == DocIdSetIterator.NO_MORE_DOCS || lastDoc >= finalDoc) {
+				lastDoc = DocIdSetIterator.NO_MORE_DOCS;
 				return lastDoc;
 			}
 
