@@ -29,11 +29,8 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private SegmentMetadata segmentMetadata;
 	private String[] invertedColumns;
 	
-	private int invertedDocCount = 0;
-	private int invertedCompressedSize = 0;
-	private int invertedTotalDocCount = 0;
 	public static Timer invertedIndicesCreationTime = Metrics.newTimer(new MetricName(GazelleIndexSegmentImpl.class ,"invertedIndicesCreationTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
-
+	
 	@SuppressWarnings("rawtypes")
 	public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr, TermValueList[] termValueListArr, ColumnMetadata[] columnMetadataArr, SegmentMetadata segmentMetadata, int length) throws IOException {
 		this.length = length;
@@ -171,12 +168,6 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 						((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).addDoc(i);
 					}
 					
-					size = values.size();
-					for(int i = 1; i < size; i++){
-						invertedTotalDocCount += ((GazelleInvertedIndexImpl) iIndices[i]).getCount();
-						invertedDocCount += ((GazelleInvertedIndexImpl) iIndices[i]).getTrueCount();
-						invertedCompressedSize += ((GazelleInvertedIndexImpl) iIndices[i]).getCompSize();
-					}
 				}
 				invertedIndexMap.put(column, iIndices);
 			}
@@ -210,13 +201,13 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 		this.length = length;
 	}
 	public long getInvertedDocCount() {
-		return invertedDocCount;
+		return GazelleInvertedIndexImpl.getTotalCount();
 	}
 	public long getInvertedCompressionRate() {
-		return invertedCompressedSize;
+		return GazelleInvertedIndexImpl.getTotalCompSize();
 	}
 	public long getTotalInvertedDocCount() {
-		return invertedTotalDocCount;
+		return GazelleInvertedIndexImpl.getTotalTrueCount();
 	}
 
 }

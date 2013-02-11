@@ -12,6 +12,8 @@ import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.senseidb.ba.gazelle.impl.FacetUtils.ForwardDocIdSet;
 import com.senseidb.ba.gazelle.impl.FacetUtils.ForwardIndexIterator;
 import com.senseidb.ba.gazelle.utils.PForDeltaDocIdSet;
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.Counter;
 
 /**
  * Implementation of an InvertedIndex for SenseiBA. We don't store all docIDs in
@@ -41,6 +43,11 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 	private int finalDoc = -1;					//The very last doc with the specified value (Doesn't have to be added into the PForDSet)
 
 	private int minJumpValue = 0;				//If two DocIDs are at least this far apart, we add it to PForDSet.
+	
+	private static final Counter invertedDocCount = Metrics.newCounter(GazelleInvertedIndexImpl.class, "invertedDocCount");
+	private static final Counter invertedCompressedSize = Metrics.newCounter(GazelleInvertedIndexImpl.class, "invertedCompressedSize");
+	private static final Counter invertedTotalDocCount = Metrics.newCounter(GazelleInvertedIndexImpl.class, "invertedTotalDocCount");
+
 
 	/** 
 	 * Used to add DocIDs to the set. Calling this method doesn't guarantee that the DocIDs that you are 
@@ -263,6 +270,18 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 	public long getCompSize() {
 		return pForDSet.getCompressedBitSize();
 	}
+	
+	public static long getTotalCount() {
+		return invertedTotalDocCount.count();
+	}
+
+	public static long getTotalTrueCount() {
+		return invertedDocCount.count();
+	}
+
+	public static long getTotalCompSize() {
+		return invertedCompressedSize.count();
+	}
 
 	@Override
 	public DocIdSetIterator iterator() throws IOException {
@@ -344,6 +363,10 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 		GazelleInvertedIndex() throws IOException{
 			super();
+			
+			invertedTotalDocCount.inc(getCount());
+			invertedDocCount.inc(getTrueCount());
+			invertedCompressedSize.inc(getCompSize());
 
 			PForDIt = pForDSet.iterator();
 
