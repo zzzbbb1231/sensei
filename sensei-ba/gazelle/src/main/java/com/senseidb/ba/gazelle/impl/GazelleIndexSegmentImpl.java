@@ -165,13 +165,17 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 
 					//Insert DocID into the correct index.
 					for(int i = 0; i < size; i++){
+						if(reader.getValueIndex(i) == 0){
+							continue;
+						}
 						((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).addDoc(i);
 					}
 					
-					for(int i = 0; i < size; i++){
-						invertedTotalDocCount += ((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).getCount();
-						invertedDocCount += ((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).getTrueCount();
-						invertedCompressedSize += ((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).getCompSize();
+					size = values.size();
+					for(int i = 1; i < size; i++){
+						invertedTotalDocCount += ((GazelleInvertedIndexImpl) iIndices[i]).getCount();
+						invertedDocCount += ((GazelleInvertedIndexImpl) iIndices[i]).getTrueCount();
+						invertedCompressedSize += ((GazelleInvertedIndexImpl) iIndices[i]).getCompSize();
 					}
 				}
 				invertedIndexMap.put(column, iIndices);
