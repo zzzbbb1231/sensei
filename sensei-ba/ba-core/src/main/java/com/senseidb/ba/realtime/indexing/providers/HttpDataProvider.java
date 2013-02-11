@@ -51,7 +51,8 @@ public class HttpDataProvider implements RealtimeDataProvider,SenseiPlugin {
 
   @Override
   public void start() {
-    blockingQueue = new ArrayBlockingQueue<Object[]>(capacity); 
+    if (blockingQueue != null) return;
+     blockingQueue = new ArrayBlockingQueue<Object[]>(capacity); 
     server = new Server(port);
      server.setHandler(new AbstractHandler() {
       
@@ -65,7 +66,7 @@ public class HttpDataProvider implements RealtimeDataProvider,SenseiPlugin {
         if (str.startsWith("[")) {
           JSONArray jsonArray = new JSONArray(str);
           for (int i = 0; i < jsonArray.length(); i++) {
-            blockingQueue.add(schema.fromJson(jsonArray.getJSONObject(i)));
+            blockingQueue.put(schema.fromJson(jsonArray.getJSONObject(i)));
           }
         } else {
           blockingQueue.add(schema.fromJson(new JSONObject(str)));

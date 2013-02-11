@@ -147,6 +147,18 @@ public class SecondarySortIntegrationTest  extends Assert {
     System.out.println(resp.toString(1));
     assertEquals("numhits is wrong", 20000, resp.getInt("numhits"));
   }
+  
+  @Test
+  public void test4BQLFilterSecondarySortedColumn() throws Exception {
+      String req = "{\"bql\":\"select dim_memberIndustry where dim_memberIndustry in (102, 100) order by dim_memberIndustry \"}";
+      
+      
+    JSONObject resp = null;
+    
+      resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong", 326, resp.getInt("numhits"));
+  }
   public List<Pair<String, String>> getFacetCounts(String facetName) {
     return null;
   }

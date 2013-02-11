@@ -2,6 +2,7 @@ package com.senseidb.ba.realtime.indexing;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,11 @@ public class RealtimeIndexFactory extends AbstractFakeZoie {
 
   @Override
   public List<ZoieIndexReader<BoboIndexReader>> getIndexReaders() throws IOException {
+    
     synchronized (lock) {
+      if (segmentToZoieReaderAdapter == null) {
+          return Collections.EMPTY_LIST;
+      }
       AtomicInteger atomicInteger = counters.get(segmentToZoieReaderAdapter.getOfflineSegment());
       if (atomicInteger == null) {
         //System.out.println("!!!Error the counter for the segment " + segmentToZoieReaderAdapter.getOfflineSegment() + " doesn't exist" + " time =" + System.currentTimeMillis());
