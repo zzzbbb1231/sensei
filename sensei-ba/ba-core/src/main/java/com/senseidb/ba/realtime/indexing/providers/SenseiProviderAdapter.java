@@ -65,7 +65,7 @@ public class SenseiProviderAdapter implements RealtimeDataProvider {
       method.setAccessible(true);
       method.invoke(obj);
       provider.start();
-      method = cls.getMethod("stop");
+      method = cls.getDeclaredMethod("terminate");
       method.setAccessible(true);
       method.invoke(obj);
     } catch (Exception e) {

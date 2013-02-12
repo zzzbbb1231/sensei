@@ -62,13 +62,8 @@ public abstract class SnapshotRefreshScheduler {
      if (batchSize <= 0) {
          return;
      }
-     /*if (newSize == 99998) {
-       System.out.println("bla lastRefreshedSize" + (lastRefreshedSize));
-     }*/
      if (currentSize -  lastRefreshedSize >= batchSize) {
       
-       //Could add unnecessary executions
-       //System.out.println("Size refreshed - " + newSize);
        if (!isCancelled) {
          refreshService.submit(countRefreshJob);
        }
@@ -110,7 +105,6 @@ public abstract class SnapshotRefreshScheduler {
        if (isCancelled) return null;
        synchronized(lock) {
          if (isCancelled) return null;
-         //System.out.println("historicalRefreshTime = " + historicalRefreshTime + "lastRefreshedTime = " + lastRefreshedTime);
          if (historicalRefreshTime == lastRefreshedTime) {
            lastRefreshedSize = refresh();
            lastRefreshedTime = System.currentTimeMillis();

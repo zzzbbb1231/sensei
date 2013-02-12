@@ -134,8 +134,11 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
          synchronized(pendingSegmentsIndexFactory.getLock()) {
              for (String column : fullExisingSnapshot.getColumnTypes().keySet())  {
                  DictionarySnapshot dictSnapshot = fullExisingSnapshot.getForwardIndex(column).getDictionarySnapshot();
+                 if ("clickCount".equalsIgnoreCase(column)) {
+                   
+                 }
                  dictSnapshot.getResurrectingMarker().incRef();
-                 //dictSnapshot.getResurrectingMarker().incRef();
+                 dictSnapshot.getResurrectingMarker().incRef();
              }
            pendingSegmentsIndexFactory.addSegment(oldSegment, fullExisingSnapshot, decorator);
            realtimeIndexFactory.setSnapshot(newSegment.refreshSearchSnapshot(indexConfig.getIndexObjectsPool()));

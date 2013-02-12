@@ -96,9 +96,6 @@ public class SegmentAppendableIndex {
         if (newSnapshot.getForwardIndexSize() > indexToSyncOn) {
           newSnapshot.setForwardIndexSize(indexToSyncOn);
         } 
-        if (newSnapshot.getForwardIndexSize() < indexToSyncOn) {
-          //System.out.println("indexToSyncOn = " +  indexToSyncOn + "and currentIndex in snapshot =  " + newSnapshot.getForwardIndexSize() + " in realtimeColumn = " + columnIndexes[i].getCurrentSize());
-        }        
         newSnapshot.setForwardIndexSize(indexToSyncOn);
         columnSnapshots.put(column, newSnapshot);
       

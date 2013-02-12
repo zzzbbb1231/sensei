@@ -9,7 +9,7 @@ public class DictionaryResurrectingMarker {
   private String columnName;
   private ReusableIndexObjectsPool indexObjectsPool;
   private DictionarySnapshot dictionarySnapshot;
-  private AtomicInteger counter = new AtomicInteger();
+  private AtomicInteger counter = new AtomicInteger(0);
   public DictionaryResurrectingMarker(String columnName, ReusableIndexObjectsPool indexObjectsPool, DictionarySnapshot dictionarySnapshot) {
     super();
     this.columnName = columnName;
@@ -20,7 +20,7 @@ public class DictionaryResurrectingMarker {
     counter.incrementAndGet();
   }
   public void decRef() {
-    int res = counter.decrementAndGet();
+    int res = counter.decrementAndGet();   
     if (res <= 0) {
       counter.set(0);
       indexObjectsPool.recycle(dictionarySnapshot, columnName);

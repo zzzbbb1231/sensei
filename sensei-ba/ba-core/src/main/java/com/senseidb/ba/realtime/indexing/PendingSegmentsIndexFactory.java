@@ -83,7 +83,7 @@ public class PendingSegmentsIndexFactory  extends AbstractFakeZoie {
         counters.get(index).incrementAndGet();
         RealtimeSnapshotIndexSegment indexSegment = (RealtimeSnapshotIndexSegment) index.getOfflineSegment();
         for (String column : indexSegment.getColumnTypes().keySet())  {
-            indexSegment.getForwardIndex(column).getDictionarySnapshot().getResurrectingMarker().decRef();
+            indexSegment.getForwardIndex(column).getDictionarySnapshot().getResurrectingMarker().incRef();
           }
         indexSegment.getReferencedSegment().getSegmentResurrectingMarker().incRef();
       }

@@ -36,9 +36,10 @@ public class RealtimeIndexingManager {
       snapshotRefreshScheduler = new SnapshotRefreshScheduler() {
         @Override
         public int refresh() {
-          snapshot = currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool());
+          synchronized(RealtimeIndexingManager.this) {         
+            snapshot = currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool());
           indexingCoordinator.segmentSnapshotRefreshed(snapshot);
-          //System.out.println("refresh scheduler executed");
+          }
           return snapshot.getLength();
         }
       };
@@ -63,13 +64,10 @@ public class RealtimeIndexingManager {
             }            
             
             boolean isFull = currentIndex.add(next.getValues(), next.getVersion());
-             /*if (currentIndex.getCurrenIndex() % 1000 == 0) {
-               System.out.println("!!currentIndex.getCurrenIndex() = " + currentIndex.getCurrenIndex());
-             }*/
+            
             if (isFull) {
               synchronized(RealtimeIndexingManager.this) {
                 retireAndCreateNewSegment();
-                //System.out.println("!Wait till segment persisted - "  + System.currentTimeMillis());
                 RealtimeIndexingManager.this.wait();
               }
             } else {
@@ -102,17 +100,8 @@ public class RealtimeIndexingManager {
     protected void retireAndCreateNewSegment() {
       
       SegmentAppendableIndex appendableIndex = indexConfig.getIndexObjectsPool().getAppendableIndex();
-     /* System.out.flush();
-      for (FieldRealtimeIndex fieldRealtimeIndex : currentIndex.getColumnIndexes()) {
-        System.out.println("fieldRealtimeIndex size = " + fieldRealtimeIndex.getCurrentSize());
-      }
-      System.out.flush();*/
+     
       RealtimeSnapshotIndexSegment refreshedSearchSnapshot = currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool());
-      /*for (String columnName : refreshedSearchSnapshot.getColumnTypes().keySet()) {
-        ColumnSearchSnapshot forwardIndex = refreshedSearchSnapshot.getForwardIndex(columnName);
-        System.out.println("snapshot's size = " + forwardIndex.getLength());
-      }
-      System.out.flush();*/
       indexingCoordinator.segmentFullAndNewCreated(refreshedSearchSnapshot, currentIndex, appendableIndex);
       currentIndex = appendableIndex;
       
@@ -124,7 +113,6 @@ public class RealtimeIndexingManager {
 
     public void notifySegmentPersisted() {
       synchronized(this) {
-        //System.out.println("release wait until persisted - " + System.currentTimeMillis());
         this.notifyAll();
       }
     }

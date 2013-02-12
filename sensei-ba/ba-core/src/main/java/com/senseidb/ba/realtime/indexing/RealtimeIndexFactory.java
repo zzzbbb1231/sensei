@@ -41,12 +41,9 @@ public class RealtimeIndexFactory extends AbstractFakeZoie {
           return Collections.EMPTY_LIST;
       }
       AtomicInteger atomicInteger = counters.get(segmentToZoieReaderAdapter.getOfflineSegment());
-      if (atomicInteger == null) {
-        //System.out.println("!!!Error the counter for the segment " + segmentToZoieReaderAdapter.getOfflineSegment() + " doesn't exist" + " time =" + System.currentTimeMillis());
-      }
+      
       int incrementAndGet = atomicInteger.incrementAndGet();
-      //System.out.println("!!!incrementAndGet = " + incrementAndGet + "with segment " + segmentToZoieReaderAdapter.getOfflineSegment()  + " time =" + System.currentTimeMillis());
-      //System.out.flush();
+     
       RealtimeSnapshotIndexSegment indexSegment = (RealtimeSnapshotIndexSegment) segmentToZoieReaderAdapter.getOfflineSegment();
       for (String column : indexSegment.getColumnTypes().keySet())  {
         indexSegment.getForwardIndex(column).getDictionarySnapshot().getResurrectingMarker().incRef();
@@ -76,10 +73,7 @@ public class RealtimeIndexFactory extends AbstractFakeZoie {
     IndexSegment offlineSegment = adapter.getOfflineSegment();
     AtomicInteger counter = counters.get(offlineSegment);
 
-    if (counter == null) {
-     // System.out.println("!!!Error" + "with segment " + segmentToZoieReaderAdapter.getOfflineSegment() +   " time =" + System.currentTimeMillis());
-      return;
-    }
+   
     int count = counter.decrementAndGet();
     if (count == 0) {
       RealtimeSnapshotIndexSegment snapshot = (RealtimeSnapshotIndexSegment) offlineSegment;
@@ -94,7 +88,6 @@ public class RealtimeIndexFactory extends AbstractFakeZoie {
 
   public void setSnapshot(RealtimeSnapshotIndexSegment newSnapshot) {
     synchronized (lock) {
-      //System.out.println("set snapshot - " + newSnapshot.getLength());
       if (currentSnapshot == newSnapshot) {
         return;
       }
@@ -103,10 +96,13 @@ public class RealtimeIndexFactory extends AbstractFakeZoie {
       }
       for (String column : newSnapshot.getColumnTypes().keySet())  {
           DictionarySnapshot newDictSnapshot = newSnapshot.getForwardIndex(column).getDictionarySnapshot();
-          
           newDictSnapshot.getResurrectingMarker().incRef();
           if (currentSnapshot != null ) {
-              currentSnapshot.getForwardIndex(column).getDictionarySnapshot().getResurrectingMarker().decRef();
+              DictionarySnapshot oldDictSnapshot = currentSnapshot.getForwardIndex(column).getDictionarySnapshot();
+              oldDictSnapshot.getResurrectingMarker().decRef();
+              if (oldDictSnapshot != newDictSnapshot) {
+                oldDictSnapshot.getResurrectingMarker().decRef();
+              }
           }
       } 
       
@@ -122,7 +118,6 @@ public class RealtimeIndexFactory extends AbstractFakeZoie {
       currentSnapshot = newSnapshot;
 
       try {
-        //System.out.println("!!!!Set the snapshot - " + newSnapshot + " time =" + System.currentTimeMillis());
         segmentToZoieReaderAdapter = new SegmentToZoieReaderAdapter(newSnapshot, "realtimeSegment", indexDecorator);
         if (counters.containsKey(newSnapshot)) {
           throw new IllegalStateException();
