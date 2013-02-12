@@ -1639,7 +1639,7 @@ group_by_clause returns [JSONObject json]
             $json = new FastJSONObject();
             try {
                 JSONArray cols = $comma_column_name_list.json;
-                for (int i = 0; i < cols.length(); ++i) {
+                /*for (int i = 0; i < cols.length(); ++i) {
                     String col = cols.getString(i);
                     String[] facetInfo = _facetInfoMap.get(col);
                     if (facetInfo != null && (facetInfo[0].equals("range") ||
@@ -1649,7 +1649,7 @@ group_by_clause returns [JSONObject json]
                                                            "group_by_clause",
                                                            "Range/multi/path facet, \"" + col + "\", cannot be used in the GROUP BY clause.");
                     }
-                }
+                }*/
                 $json.put("columns", cols);
                 if (top != null) {
                     $json.put("top", Integer.parseInt(top.getText()));
