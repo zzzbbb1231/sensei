@@ -179,5 +179,13 @@ public class TestMapReduce extends TestCase {
       assertEquals("0000000000000000000000000000000000014990", firstObject.getString("group"));
       assertEquals(14990, firstObject.getLong("max"));
     }
+    public void test17CountByMultiColumn() throws Exception {      
+      //we shouldn't get an error here
+      String req = "{\"bql\":\"SELECT count(groupid) group by tags limit 1\"}";
+      JSONObject res = TestSensei.search(new JSONObject(req));
+      System.out.println(res.toString(1));
+       assertEquals(1, res.getJSONArray("hits").length());
+       assertEquals(0, res.getJSONArray("errors").length());
+    }
    
 }
