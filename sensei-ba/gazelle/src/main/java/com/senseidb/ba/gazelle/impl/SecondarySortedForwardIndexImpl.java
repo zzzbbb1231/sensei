@@ -95,7 +95,7 @@ public class SecondarySortedForwardIndexImpl implements SingleValueForwardIndex,
             // countFinder.reset(regions[currentRegionIndex]);
             return true;
           } else {
-            
+        
               int index = binarySearchOrGreater(regions, currentRegionIndex + 1, regions.length, docid);
               
               if(index != -1){
