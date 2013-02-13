@@ -28,9 +28,9 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();
 	private SegmentMetadata segmentMetadata;
 	private String[] invertedColumns;
-	
+
 	public static Timer invertedIndicesCreationTime = Metrics.newTimer(new MetricName(GazelleIndexSegmentImpl.class ,"invertedIndicesCreationTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
-	
+
 	@SuppressWarnings("rawtypes")
 	public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr, TermValueList[] termValueListArr, ColumnMetadata[] columnMetadataArr, SegmentMetadata segmentMetadata, int length) throws IOException {
 		this.length = length;
@@ -116,7 +116,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 				//Fetch all values that this column could take
 				TermValueList values = termValueListMap.get(column);
 				ForwardIndex fIndex = forwardIndexMap.get(column);
-				
+
 				if (fIndex instanceof SortedForwardIndexImpl || fIndex instanceof SecondarySortedForwardIndexImpl){
 					continue;
 				}
@@ -127,16 +127,16 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 
 				//Create correct number of inverted indices for this column
 				int size = values.size();
-				
+
 				if(size < 50){
 					continue;
 				}
-				
+
 				DocIdSet[] iIndices = new DocIdSet[size];
-				
+
 				//We estimate the jump value for one dictionary value and assume it will work for the others (Otherwise, we waste too much time
 				//on estimation of the jump value.
-				int optVal = GazelleInvertedIndexImpl.estimateOptimalMinJump(fIndex, fIndex.getDictionary().indexOf(values.get(0)));				
+				int optVal = GazelleInvertedIndexImpl.estimateOptimalMinJump(fIndex, fIndex.getDictionary().indexOf(values.get(1)));	
 				for(int i = 1; i < size; i++){
 					String value = values.get(i);
 					iIndices[i] = new GazelleInvertedIndexImpl(fIndex, fIndex.getDictionary().indexOf(value), optVal);
@@ -154,6 +154,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 							((GazelleInvertedIndexImpl)iIndices[valueId]).addDoc(i);
 						}
 					}
+
 				}
 				else{
 					size = fIndex.getLength();
@@ -162,12 +163,20 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 
 					//Insert DocID into the correct index.
 					for(int i = 0; i < size; i++){
-						if(reader.getValueIndex(i) == 0){
+						if(iIndices[reader.getValueIndex(i)] == null){
 							continue;
 						}
 						((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).addDoc(i);
 					}
-					
+				}
+				size = iIndices.length;
+				for(int i = 0; i < size; i++){
+					if(iIndices[i] == null){
+						continue;
+					}
+					((GazelleInvertedIndexImpl) iIndices[i]).flush();
+					((GazelleInvertedIndexImpl) iIndices[i]).optimize();
+
 				}
 				invertedIndexMap.put(column, iIndices);
 			}

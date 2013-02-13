@@ -24,14 +24,14 @@ import com.yammer.metrics.core.Counter;
 
 public class GazelleInvertedIndexImpl extends DocIdSet {
 
-	private final static double THRESHOLD = 0.1;
+	private final static double THRESHOLD = 0.5;
 
 	ForwardIndexReader iIndex;					//Used when we call getFromForwardIndex
 
-	private PForDeltaDocIdSet pForDSet;			//Internal data set of the DocIDs that we will keep
+	private PForDeltaDocIdSet pForDSet;		//Internal data set of the DocIDs that we will keep
 
 	protected MultiValueForwardIndex multiIndex;	//Used to hold the MultiValueForwardIndex reader
-	protected int[] buffer;							//Used for reading from the MultiValue reader
+	protected int[] buffer;					//Used for reading from the MultiValue reader
 
 	protected GazelleForwardIndexImpl fIndex;
 	protected ForwardIndexIterator reader;		//Forward iterator needed for sequential iteration
@@ -72,7 +72,6 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		else {
 			lastCandidate = id;
 		}
-
 		totalDocCount++;
 
 	}
@@ -117,17 +116,24 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		double largerThanEstimate = 0;
 
 		int lastDoc = -1;
+		int currCount = 0;
 
 		double size = forwardIndex.getLength();
 		SingleValueForwardIndex index = (SingleValueForwardIndex) forwardIndex;
 		SingleValueRandomReader ireader = index.getReader();
 		for(double i = 0; i < size; i++){
 			if(ireader.getValueIndex((int) i) == dictValue){
-				int jump = (int) (i - lastDoc);
+				
+				currCount++;
+				
 				if(lastDoc == -1){
 					lastDoc = (int) i;
+					continue;
 				}
-				else if(jump > currEstimate){
+				
+				int jump = (int) (i - lastDoc);
+				
+				if(jump > currEstimate){
 					largerThanEstimate++;
 				}
 
@@ -136,17 +142,18 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 				}
 
 				lastDoc = (int) i;
-			}
-			if(i % 1 == 0 && i > 0 && largerThanEstimate/i > THRESHOLD){
-				lastEstimate = currEstimate;
-				currEstimate = biggestJump + 1;
-				currRatio = largerThanEstimate/size;
-				largerThanEstimate = 0;
+				
+				if(currCount > 0 && largerThanEstimate/currCount > THRESHOLD){
+					lastEstimate = currEstimate;
+					currEstimate = biggestJump + 1;
+					currRatio = largerThanEstimate/size;
+					largerThanEstimate = 0;
+				}
 			}
 		}
 
 		//If the current estimate dismisses /too/ many DocIDs, then we'll take the previous estimate
-		if(currRatio < 0.05){
+		if(currRatio < 0.25){
 			//If the previous estimate is too small, just take 10.
 			if(lastEstimate < 100){
 				return 100;
@@ -172,6 +179,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		double largerThanEstimate = 0;
 
 		int lastDoc = -1;
+		int currCount = 0;
 
 		double size = forwardIndex.getLength();
 		MultiValueForwardIndexImpl1 index = (MultiValueForwardIndexImpl1) forwardIndex;
@@ -181,11 +189,17 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			int count = index.randomRead(buffer, (int) i);
 			for(int j = 0; j < count; j++){
 				if(buffer[j] == dictValue){
-					int jump = (int) (i - lastDoc);
+					
+					currCount++;
+					
 					if(lastDoc == -1){
 						lastDoc = (int) i;
+						continue;
 					}
-					else if(jump > currEstimate){
+					
+					int jump = (int) (i - lastDoc);
+					
+					if(jump > currEstimate){
 						largerThanEstimate++;
 					}
 
@@ -194,18 +208,18 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 					}
 
 					lastDoc = (int) i;
+					if(currCount > 0 && largerThanEstimate/currCount > THRESHOLD){
+						lastEstimate = currEstimate;
+						currEstimate = biggestJump + 1;
+						currRatio = largerThanEstimate/size;
+						largerThanEstimate = 0;
+					}
 				}
-			}
-			if(i % 1 == 0 && i > 0 && largerThanEstimate/i > THRESHOLD){
-				lastEstimate = currEstimate;
-				currEstimate = biggestJump + 1;
-				currRatio = largerThanEstimate/size;
-				largerThanEstimate = 0;
 			}
 		}
 
 		//If the current estimate dismisses /too/ many DocIDs, then we'll take the previous estimate
-		if(currRatio < 0.05){
+		if(currRatio < 0.25){
 			//If the previous estimate is too small, just take 10.
 			if(lastEstimate < 100){
 				return 100;
@@ -217,7 +231,6 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		else{
 			return (int) currEstimate;
 		}	
-
 	}
 
 	/** 
@@ -228,8 +241,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 	 * @throws IOException 
 	 */
 	public GazelleInvertedIndexImpl(ForwardIndex forwardIndex, int dictValue, int jumpValue) throws IOException{
-
-		pForDSet = new PForDeltaDocIdSet();
+		
 		this.dictValue = dictValue;
 
 		if(forwardIndex instanceof MultiValueForwardIndex){
@@ -247,6 +259,8 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		else{
 			minJumpValue = jumpValue;
 		}
+		
+		pForDSet = new PForDeltaDocIdSet();
 
 	}
 
@@ -281,6 +295,14 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 	public static long getTotalCompSize() {
 		return invertedCompressedSize.count();
+	}
+	
+	public void optimize(){
+		pForDSet.optimize();
+	}
+	
+	public void flush(){
+		pForDSet.flush(0);
 	}
 
 	@Override
@@ -366,7 +388,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			invertedTotalDocCount.inc(getCount());
 			invertedDocCount.inc(getTrueCount());
 			invertedCompressedSize.inc(getCompSize());
-
+			
 			PForDIt = pForDSet.iterator();
 
 			currentMin = -1;
