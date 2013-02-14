@@ -260,6 +260,9 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			minJumpValue = jumpValue;
 		}
 		
+		//TODO: Change this so we can get a general jump value
+		minJumpValue = 250;
+		
 		pForDSet = new PForDeltaDocIdSet();
 
 	}
