@@ -1,0 +1,107 @@
+---
+layout: default
+title: SenseiBA - Realtime indexing example
+name: getting-started
+---
+<div class="hero-unit">
+	<h2>Realtime indexing example</h2>
+	<p>
+		This example would show how to inject events itn oSenseiBA in realtime via http
+	</p>
+</div>
+
+<h2>Getting Sensei</h2>
+<p>
+   Download a release of SenseiBA at <a href="https://www.box.com/s/tejg15td9ltcr0tzoexs" target="_blank">here</a>.
+</p>
+<p>
+   Expand the tar ball: <code>tar -zxf sensei-ba--xxx.tar.tz</code> to your favorite location. We will refer to root directory of your SenseiBA install as <code>$SENSEIBA_HOME</code>.
+</p>
+
+<h2>Running the realtime http example</h2>
+<p>
+	SenseiBA comes with a few examples to help you getting started. Let&apos;s let's take a look at the <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/config-example/src/main/resources/realtime-config-http" target="_blank">Realtime config example</a> and get that running.
+</p>
+
+<div class="row">
+	<div class="span6">
+		<h3>Step 1: Start Zookeeper</h3>
+		<p>
+		Zookeeper manages Sensei&apos;s network topology or cluster.
+		</p>
+	</div>
+	<div class="span10">
+		<p>
+		Start your Zookeeper instance: (You can start your own Zookeeper cluster by following instructions <a href="http://zookeeper.apache.org/doc/trunk/zookeeperStarted.html">here</a>), From <code>$SENSEIBA_HOME</code>
+		<pre><code>./bin/zookeeper-server-start.sh config/zookeeper.properties</code></pre>
+		</p>
+		<p>
+			You can shut it down by running:
+			<pre><code>./bin/zookeeper-server-stop.sh</code></pre>
+		</p>
+	</div>
+</div>
+<div class="row">
+	<div class="span6">
+		<h3>Step 2: Setup schema the realtime indexing</h3>
+		<p>
+		 The example is based on the SenseiDB car sample. http://senseidb.github.com/sensei/gettingStarted.html
+                 Realtime indexing requires us to define a schema in the SenseiBA -  $SENSEIBA_HOME/examples/realtime-indexing-http/schema.xml                   
+		</p>
+                <p>
+      </div>
+    <div class="span10">      
+ <code> <pre>
+&lt;table uid=&quot;id&quot;&gt;<br/>        &lt;column name=&quot;id&quot; type=&quot;long&quot; /&gt;<br/>	&lt;column name=&quot;groupid&quot; type=&quot;long&quot; /&gt;<br/>	&lt;column name=&quot;color&quot; type=&quot;string&quot; /&gt;<br/>	&lt;column name=&quot;category&quot; type=&quot;string&quot; /&gt;<br/>	&lt;column name=&quot;city&quot; type=&quot;string&quot; /&gt;<br/>	&lt;column name=&quot;makemodel&quot; type=&quot;string&quot; /&gt;<br/>	&lt;column name=&quot;year&quot; type=&quot;int&quot; /&gt;<br/>	&lt;column name=&quot;price&quot; type=&quot;float&quot; /&gt;<br/>	&lt;column name=&quot;mileage&quot; type=&quot;int&quot; /&gt;	<br/>	&lt;column name=&quot;tags&quot; type=&quot;string&quot; multi=&quot;true&quot; delimiter=&quot;,&quot;/&gt;<br/>  &lt;/table&gt;
+</pre></code>
+            </p> 
+       </div>
+
+</div>
+<div class="row">
+	<div class="span6">
+		<h3>Step 3: Start SenseiBA Node</h3>
+		<p>
+		 With Zookeeper running, we can start a Sensei node serving  SenseiBA node listening on port 8080:
+		</p>
+	</div>
+	<div class="span10">
+		<p>
+		In <code>$SENSEIBA_HOME</code>, start your SenseiBA node by pointing to the <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/config-example/src/main/resources/realtime-config-http" target="_blank">Realtime config example configuration directory</a>:
+		<pre><code>./bin/start-sensei-node.sh examples/realtime-config-http</code></pre>
+		</p>
+		
+	</div>
+</div>
+<div class="row">
+	<div class="span6">
+		<h3>Step 4: Getting the data</h3>
+		<p>
+		 Go
+		</p>
+                <p>
+		 The started SenseiBA node is listening on 9093 http port for Json data.
+		</p> 
+ </div>
+    <div class="span10">                     
+<p>
+		  Now let's go to the $SENSEIBA_HOME/examples/realtime-indexing-http/data directory. And upload some json data
+		</p> 
+                <p>
+		<pre><code>for f in *.json; do curl -X POST -d @$f http://localhost:9093/; done</code></pre>
+		</p>  
+	</div>
+	</div>
+<div class="row">
+	<div class="span6">
+		<h3>Step 5: Run the queries</h3>
+		<p>
+		 Go to  <a href="http://localhost:8080" target="_blank">http://localhost:8080</a> . The data is there and is available for queries
+		</p>
+               </div>
+	<div class="span10">
+              
+	</div>
+	
+</div>
+
