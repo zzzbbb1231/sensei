@@ -14,22 +14,8 @@
 	<column name="year" type="int" />
 	<column name="price" type="float" />
 	<column name="mileage" type="int" />
-	<!-- multi is default to be false, if set to true, delimiter is used to break the values,
-	     default delimiter is ","
-	 -->
 	<column name="tags" type="string" multi="true" delimiter=","/>
   </table>
-
-   <!-- 
-     valid types are:
-      simple - corresponds to com.browseengine.bobo.facets.impl.SimpleFacetHandler
-      path - corresponds to com.browseengine.bobo.facets.impl.PathFacetHandler
-      range - corresponds to com.browseengine.bobo.facets.impl.RangeFacetHandler
-      multi - corresponds to com.browseengine.bobo.facets.impl.MultiFacetHandler
-      compact-multi - corresponds to com.browseengine.bobo.facets.impl.CompactMultiFacetHandler
-      custom - custom facet handler, name must be defined in a spring bean in custom-facets.xml
-   -->
    <facets>
-	 
    </facets>
 </schema>

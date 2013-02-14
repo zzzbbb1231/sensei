@@ -2,6 +2,8 @@ package com.senseidb.ba.realtime.indexing;
 
 import org.apache.log4j.Logger;
 
+import proj.zoie.api.ZoieSegmentReader;
+
 import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.Schema;
 import com.senseidb.ba.realtime.SegmentAppendableIndex;
@@ -9,10 +11,12 @@ import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
 import com.senseidb.ba.realtime.domain.primitives.FieldRealtimeIndex;
 import com.senseidb.ba.realtime.scheduler.SnapshotRefreshScheduler;
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.Counter;
 
 public class RealtimeIndexingManager {
   private static Logger logger = Logger.getLogger(RealtimeIndexingManager.class);  
- 
+  private static final Counter currentNumberDocsInMemory = Metrics.newCounter(RealtimeIndexingManager.class, "currentNumberDocsInMemory");
     private volatile SegmentAppendableIndex currentIndex;
     private volatile RealtimeSnapshotIndexSegment snapshot;
     
@@ -38,7 +42,11 @@ public class RealtimeIndexingManager {
         public int refresh() {
           synchronized(RealtimeIndexingManager.this) {         
             snapshot = currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool());
-          indexingCoordinator.segmentSnapshotRefreshed(snapshot);
+            if (currentNumberDocsInMemory.count() != snapshot.getLength()) {
+              currentNumberDocsInMemory.clear();
+              currentNumberDocsInMemory.inc(snapshot.getLength());
+            }
+            indexingCoordinator.segmentSnapshotRefreshed(snapshot);
           }
           return snapshot.getLength();
         }

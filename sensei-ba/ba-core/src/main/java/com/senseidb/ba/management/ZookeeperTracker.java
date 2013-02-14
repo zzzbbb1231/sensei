@@ -15,6 +15,7 @@ import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.log4j.Logger;
 import org.springframework.util.Assert;
 
+import com.senseidb.ba.management.controller.validation.ValidationServlet;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
 
@@ -80,7 +81,9 @@ public  class ZookeeperTracker implements IZkChildListener, IZkDataListener, Seg
   
     if (toAdd != null) {
       for (String newSegment : toAdd.keySet()) {
-        segmentTracker.addSegment(newSegment, toAdd.get(newSegment), this);        
+        segmentTracker.addSegment(newSegment, toAdd.get(newSegment), this); 
+        ValidationServlet.lastPushTime.clear();
+        ValidationServlet.lastPushTime.inc(System.currentTimeMillis());
       }
     }
     if (toDelete != null) {

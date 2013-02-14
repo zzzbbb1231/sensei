@@ -24,6 +24,13 @@
           </includes>
         </fileSet>
         <fileSet>
+          <directory>config-example/target/realtime-config-http</directory>
+          <outputDirectory>examples/realtime-config-http</outputDirectory>
+          <includes>
+            <include>**</include>
+          </includes>
+        </fileSet>
+        <fileSet>
           <directory>config-example/target/config</directory>
           <outputDirectory>examples/config</outputDirectory>
           <includes>

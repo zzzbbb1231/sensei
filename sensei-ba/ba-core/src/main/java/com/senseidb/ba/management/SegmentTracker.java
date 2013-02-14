@@ -39,6 +39,8 @@ public class SegmentTracker {
   private static final Timer segmentFailedInstantiateTime = Metrics.newTimer(new MetricName(SegmentTracker.class ,"segmentTotalFailedInstantiateTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
   private static final Timer segmentLoadIntoMemoryTime = Metrics.newTimer(new MetricName(SegmentTracker.class ,"segmentLoadIntoMemoryTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
   private static final Timer segmentDownloadTime = Metrics.newTimer(new MetricName(SegmentTracker.class ,"segmentDownloadTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
+  public static final Counter lastPushTime = Metrics.newCounter(SegmentTracker.class, "lastPushTime");
+  
   private static final Counter currentNumberOfSegments = Metrics.newCounter(SegmentTracker.class, "currentNumberOfSegments");
   private static final Counter currentNumberOfDocuments = Metrics.newCounter(SegmentTracker.class, "currentNumberOfDocuments");
  
