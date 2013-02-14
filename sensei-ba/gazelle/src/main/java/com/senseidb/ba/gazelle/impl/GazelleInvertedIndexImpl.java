@@ -24,7 +24,7 @@ import com.yammer.metrics.core.Counter;
 
 public class GazelleInvertedIndexImpl extends DocIdSet {
 
-	private final static double THRESHOLD = 0.5;
+	private final static double THRESHOLD = 0.70;
 
 	ForwardIndexReader iIndex;					//Used when we call getFromForwardIndex
 
@@ -155,8 +155,8 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		//If the current estimate dismisses /too/ many DocIDs, then we'll take the previous estimate
 		if(currRatio < 0.25){
 			//If the previous estimate is too small, just take 10.
-			if(lastEstimate < 100){
-				return 100;
+			if(lastEstimate < 250){
+				return 250;
 			}
 			else{
 				return (int) lastEstimate;
@@ -441,31 +441,20 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		private int findNext(int target) throws IOException {
 			// This function works as a helper function for advance.
 
-			int i = 0, curr = 0;
-
-			curr = PForDIt.docID();
-
+			int curr = PForDIt.advance(target) - 1;
+		
 			int result = 0;
-
-			// This loop will advance the iterator to the current docid and return
-			// the correct docid with respect to how advance is supposed to
-			// function.
-			while (true) {
-				if (target <= curr) {
-					if (i == 0){
-						result = iIndex.getFromForwardIndex(target);
-					}
-					else if (i % 2 == 1) {
-						result = curr;
-						currentMin = PForDIt.nextDoc() - 1;
-					} else {
-						result = iIndex.getFromForwardIndex(target);
-						currentMin = curr;
-					}
-					break;
-				}
-				i++;
-				curr = PForDIt.nextDoc() - 1;
+			
+			if(curr == DocIdSetIterator.NO_MORE_DOCS){
+				result = iIndex.getFromForwardIndex(target); 
+			}
+			else if(pForDSet.jump){
+				result = curr;
+				currentMin = PForDIt.nextDoc() - 1;				
+			}
+			else{
+				result = iIndex.getFromForwardIndex(target);
+				currentMin = curr;
 			}
 
 			return result;
@@ -486,7 +475,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 			}
 
 			//Don't bother with all the cool logic if we don't hold any docs in our class.
-			else if (docCount == 0){
+			else if (docCount == 0 || target <= currentMin){
 				lastDoc = iIndex.getFromForwardIndex(target);
 			}
 
