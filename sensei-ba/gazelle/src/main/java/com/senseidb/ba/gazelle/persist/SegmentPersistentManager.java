@@ -73,6 +73,21 @@ public class SegmentPersistentManager {
   }
   
   public static GazelleIndexSegmentImpl read(File indexDir, ReadMode mode) throws ConfigurationException, IOException {
+	    try {
+	    File file = new File(indexDir, GazelleUtils.METADATA_FILENAME);
+	    PropertiesConfiguration config = new PropertiesConfiguration(file);
+	    SegmentMetadata globalProperties = MetadataPersistentManager.readSegmentMetadata(config);
+	    HashMap<String, ColumnMetadata> metadataMap = MetadataPersistentManager.readFromFile(config);
+	    Map<String, TermValueList> dictionaries = getTermValueListMap(metadataMap, indexDir);
+	    return new GazelleIndexSegmentImpl(metadataMap, getForwardIndexesMap(metadataMap, dictionaries, indexDir, mode),
+	        dictionaries, globalProperties, metadataMap.values().iterator().next().getNumberOfElements());
+	    } catch (Exception ex) {
+	      logger.error("Couldn't read the segment", ex);
+	      return null;
+	    }
+	  }
+  
+  public static GazelleIndexSegmentImpl read(File indexDir, ReadMode mode, String[] invertedColumns) throws ConfigurationException, IOException {
     try {
     File file = new File(indexDir, GazelleUtils.METADATA_FILENAME);
     PropertiesConfiguration config = new PropertiesConfiguration(file);
@@ -80,7 +95,7 @@ public class SegmentPersistentManager {
     HashMap<String, ColumnMetadata> metadataMap = MetadataPersistentManager.readFromFile(config);
     Map<String, TermValueList> dictionaries = getTermValueListMap(metadataMap, indexDir);
     return new GazelleIndexSegmentImpl(metadataMap, getForwardIndexesMap(metadataMap, dictionaries, indexDir, mode),
-        dictionaries, globalProperties, metadataMap.values().iterator().next().getNumberOfElements());
+        dictionaries, globalProperties, metadataMap.values().iterator().next().getNumberOfElements(), invertedColumns);
     } catch (Exception ex) {
       logger.error("Couldn't read the segment", ex);
       return null;
