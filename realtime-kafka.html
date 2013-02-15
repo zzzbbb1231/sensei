@@ -1,12 +1,12 @@
 ---
 layout: default
-title: SenseiBA - Realtime indexing example
+title: SenseiBA - Realtime indexing with Kafka
 name: getting-started
 ---
 <div class="hero-unit">
-	<h2>Realtime indexing example</h2>
+	<h2>Realtime indexing example with Kafka</h2>
 	<p>
-		This example  shows how to inject events into SenseiBA in realtime via http. This approach can not be used in production, as we need to push the same set of events to all the clusters, which ussually is not possible 
+		We advice to use Kafka provider to inject realtime data into the SenseiBA
 	</p>
 </div>
 
@@ -18,11 +18,11 @@ name: getting-started
    Expand the tar ball: <code>tar -zxf sensei-ba--xxx.tar.tz</code> to your favorite location. We will refer to root directory of your SenseiBA install as <code>$SENSEIBA_HOME</code>.
 </p>
 
-<h2>Running the realtime http example</h2>
+<h2>Running the realtime Kafka example</h2>
 <p>
-	SenseiBA comes with a few examples to help you getting started. Let&apos;s let's take a look at the <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/config-example/src/main/resources/realtime-config-http" target="_blank">Realtime config example</a> and get that running.
+	SenseiBA comes with a few examples to help you getting started. Let&apos;s let's take a look at the <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/config-example/src/main/resources/realtime-config-kafka" target="_blank">Realtime config example</a> and get that running.
 </p>
-
+<br>
 <div class="row">
 	<div class="span6">
 		<h3>Step 1: Start Zookeeper</h3>
@@ -41,12 +41,13 @@ name: getting-started
 		</p>
 	</div>
 </div>
+<br>
 <div class="row">
 	<div class="span6">
 		<h3>Step 2: Setup schema for realtime indexing</h3>
 		<p>
 		 The example is based on the SenseiDB car sample. http://senseidb.github.com/sensei/gettingStarted.html
-                 Realtime indexing requires us to define a schema in the SenseiBA -  $SENSEIBA_HOME/examples/realtime-indexing-http/schema.xml                   
+                 Realtime indexing requires us to define a schema in the SenseiBA -  $SENSEIBA_HOME/examples/realtime-indexing-kafka/schema.xml                   
 		</p>
                 <p>
       </div>
@@ -58,40 +59,50 @@ name: getting-started
        </div>
 
 </div>
+<br>
 <div class="row">
 	<div class="span6">
-		<h3>Step 3: Start SenseiBA Node</h3>
+		<h3>Step 3: Setup your Kafka server</h3>
 		<p>
-		 With Zookeeper running, we can start a Sensei node serving  SenseiBA node listening on port 8080:
+		Kafka is an excellent messaging system. It can be used to ensure data consistency, fault tolerance and the high indexing rate             
+		</p>
+                <p>
+      </div>
+    <div class="span10">      
+<p>
+Start you Kafka server. More instructions could be found  <a href="http://kafka.apache.org/quickstart.html">here</a> 
+            </p> 
+<p>
+The Kafka server could be also started programatically. Here is the test that does this - <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/ba-core/src/test/java/com/senseidb/ba/realtime/RealtimeIndexingFromKafkaTest.java">RealtimeIndexingFromKafkaTest.java</a>
+</p> 
+<p> The Kafka producer needs to push the data into the topic. Make sure that the data corresponds to the Sensei's schema
+
+       </div>
+
+</div>
+<br>
+<div class="row">
+	<div class="span6">
+		<h3>Step 4: Start SenseiBA Node</h3>
+		<p>
+		 With Zookeeper and Kafka server running, we can start a Sensei node serving  SenseiBA node listening on port 8080:
 		</p>
 	</div>
 	<div class="span10">
-		<p>
-		In <code>$SENSEIBA_HOME</code>, start your SenseiBA node by pointing to the <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/config-example/src/main/resources/realtime-config-http" target="_blank">Realtime config example configuration directory</a>:
-		<pre><code>./bin/start-sensei-node.sh examples/realtime-config-http</code></pre>
+		<p><br>
+Configure the following properties to match your Kafka's server configs:
+<pre><code>sensei.gateway.kafka.zookeeperUrl
+sensei.gateway.kafka.consumerGroupId
+sensei.gateway.kafka.topic</code></pre> at <code>examples/realtime-config-kafka/sensei.properties</code>
+</p>
+<p>
+                In <code>$SENSEIBA_HOME</code>, start your SenseiBA node by pointing to the <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/config-example/src/main/resources/realtime-config-kafka" target="_blank">Realtime config example configuration directory</a>:
+		<pre><code>./bin/start-sensei-node.sh examples/realtime-config-kafka</code></pre>
 		</p>
 		
 	</div>
 </div>
-<div class="row">
-	<div class="span6">
-		<h3>Step 4: Getting the data</h3>
-		<p>
-		 Go
-		</p>
-                <p>
-		 The started SenseiBA node is listening on 9093 http port for Json data.
-		</p> 
- </div>
-    <div class="span10">                     
-<p>
-		  Now let's go to the $SENSEIBA_HOME/examples/realtime-indexing-http/data directory. And upload some json data
-		</p> 
-                <p>
-		<pre><code>for f in *.json; do curl -X POST -d @$f http://localhost:9093/; done</code></pre>
-		</p>  
-	</div>
-	</div>
+<br>
 <div class="row">
 	<div class="span6">
 		<h3>Step 5: Run the queries</h3>
