@@ -30,6 +30,20 @@
             <include>**</include>
           </includes>
         </fileSet>
+         <fileSet>
+          <directory>config-example/target/realtime-config-avro</directory>
+          <outputDirectory>examples/realtime-config-avro</outputDirectory>
+          <includes>
+            <include>**</include>
+          </includes>
+        </fileSet>
+        <fileSet>
+          <directory>config-example/target/realtime-config-kafka</directory>
+          <outputDirectory>examples/realtime-config-kafka</outputDirectory>
+          <includes>
+            <include>**</include>
+          </includes>
+        </fileSet>
         <fileSet>
           <directory>config-example/target/config</directory>
           <outputDirectory>examples/config</outputDirectory>

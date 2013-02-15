@@ -80,10 +80,11 @@ public class SenseiProviderAdapter implements RealtimeDataProvider {
     //provider.stop();
     
   }
-
+  int count;
   @Override
   public DataWithVersion next() {
     final DataEvent<JSONObject> next = provider.next();
+   
     if (next == null) {
       return null;
     }
@@ -103,7 +104,19 @@ public class SenseiProviderAdapter implements RealtimeDataProvider {
 
   @Override
   public void commit(String version) {
-    
+    if (provider != null) {
+      try {
+        Method method = provider.getClass().getMethod("commit");
+       if (method != null) {
+        method.setAccessible(true);
+        method.invoke(provider);
+       }
+       
+      
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
 }
