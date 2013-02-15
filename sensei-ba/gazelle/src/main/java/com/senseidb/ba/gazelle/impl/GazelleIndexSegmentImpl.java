@@ -174,7 +174,6 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 					if(iIndices[i] == null){
 						continue;
 					}
-					((GazelleInvertedIndexImpl) iIndices[i]).flush();
 					((GazelleInvertedIndexImpl) iIndices[i]).optimize();
 
 				}
