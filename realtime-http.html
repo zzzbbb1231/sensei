@@ -6,7 +6,7 @@ name: getting-started
 <div class="hero-unit">
 	<h2>Realtime indexing example</h2>
 	<p>
-		This example  shows how to inject events into SenseiBA in realtime via http. This approach can not be used in production, as we need to push the same set of events to all the clusters, which ussually is not possible 
+		This example  shows how to inject events into SenseiBA in realtime via http. This approach can not be used in production, as we need to push the same set of events to all the clusters. But it's essential for testing'
 	</p>
 </div>
 
@@ -46,7 +46,7 @@ name: getting-started
 		<h3>Step 2: Setup schema for realtime indexing</h3>
 		<p>
 		 The example is based on the SenseiDB car sample. http://senseidb.github.com/sensei/gettingStarted.html
-                 Realtime indexing requires us to define a schema in the SenseiBA -  $SENSEIBA_HOME/examples/realtime-indexing-http/schema.xml                   
+                 Realtime indexing requires us to define a schema at  $SENSEIBA_HOME/examples/realtime-indexing-http/schema.xml                   
 		</p>
                 <p>
       </div>
@@ -67,7 +67,7 @@ name: getting-started
 	</div>
 	<div class="span10">
 		<p>
-		In <code>$SENSEIBA_HOME</code>, start your SenseiBA node by pointing to the <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/config-example/src/main/resources/realtime-config-http" target="_blank">Realtime config example configuration directory</a>:
+		In <code>$SENSEIBA_HOME</code>, start your SenseiBA node by pointing it to the <a href="https://github.com/sensei-ba/sensei/blob/master/sensei-ba/config-example/src/main/resources/realtime-config-http" target="_blank">Realtime config example configuration directory</a>:
 		<pre><code>./bin/start-sensei-node.sh examples/realtime-config-http</code></pre>
 		</p>
 		
@@ -80,12 +80,12 @@ name: getting-started
 		 Go
 		</p>
                 <p>
-		 The started SenseiBA node is listening on 9093 http port for Json data.
+		 The started SenseiBA node is listening on 9093 http port for Json data. It could accept either a single json object or a json array
 		</p> 
  </div>
     <div class="span10">                     
 <p>
-		  Now let's go to the $SENSEIBA_HOME/examples/realtime-indexing-http/data directory. And upload some json data
+		  Now let's go to the $SENSEIBA_HOME/examples/realtime-indexing-http/data directory. And upload some json data to the server
 		</p> 
                 <p>
 		<pre><code>for f in *.json; do curl -X POST -d @$f http://localhost:9093/; done</code></pre>
