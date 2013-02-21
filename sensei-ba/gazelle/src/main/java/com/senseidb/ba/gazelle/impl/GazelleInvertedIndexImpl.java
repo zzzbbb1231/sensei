@@ -24,9 +24,10 @@ import com.yammer.metrics.core.Counter;
 
 public class GazelleInvertedIndexImpl extends DocIdSet {
 
-	private final static double THRESHOLD = 0.70;
+	private final static double THRESHOLD = 0.5;
 
 	ForwardIndexReader iIndex;					//Used when we call getFromForwardIndex
+	ForwardIndex forwardIndex;
 
 	private PForDeltaDocIdSet pForDSet;		//Internal data set of the DocIDs that we will keep
 
@@ -243,13 +244,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 	public GazelleInvertedIndexImpl(ForwardIndex forwardIndex, int dictValue, int jumpValue) throws IOException{
 		
 		this.dictValue = dictValue;
-
-		if(forwardIndex instanceof MultiValueForwardIndex){
-			iIndex = new MultiValueForwardIndexReader(forwardIndex, dictValue, jumpValue);
-		}
-		else{
-			iIndex = new SingleValueForwardIndexReader(forwardIndex, dictValue, jumpValue);
-		}
+		this.forwardIndex = forwardIndex;
 
 		//If the jump value is specified (As it should be... Or we may end up taking too much time initializing) we set it.
 		//If not, we go estimate it.
@@ -333,9 +328,9 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 	class SingleValueForwardIndexReader implements ForwardIndexReader{
 
-		public SingleValueForwardIndexReader(ForwardIndex forwardIndex, int dictValue, int jumpValue) throws IOException {
+		public SingleValueForwardIndexReader(ForwardIndex forwardIndex, int dictValue) throws IOException {
 			fIndex = (GazelleForwardIndexImpl) forwardIndex;
-			ForwardDocIdSet asdf = new FacetUtils.ForwardDocIdSet((GazelleForwardIndexImpl) forwardIndex, dictValue);
+			ForwardDocIdSet asdf = new FacetUtils.ForwardDocIdSet((GazelleForwardIndexImpl) forwardIndex, dictValue, finalDoc);
 			reader = (ForwardIndexIterator) asdf.iterator();
 		}
 
@@ -352,7 +347,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 	class MultiValueForwardIndexReader implements ForwardIndexReader{
 
-		public MultiValueForwardIndexReader(ForwardIndex forwardIndex, int dictValue, int jumpValue) {
+		public MultiValueForwardIndexReader(ForwardIndex forwardIndex, int dictValue) {
 			multiIndex = (MultiValueForwardIndex) forwardIndex;
 			buffer = new int[multiIndex.getMaxNumValuesPerDoc()];
 		}
@@ -388,6 +383,13 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		GazelleInvertedIndex() throws IOException{
 			super();
 			
+			if(forwardIndex instanceof MultiValueForwardIndex){
+				iIndex = new MultiValueForwardIndexReader(forwardIndex, dictValue);
+			}
+			else{
+				iIndex = new SingleValueForwardIndexReader(forwardIndex, dictValue);
+			}
+			
 			invertedTotalDocCount.inc(getCount());
 			invertedDocCount.inc(getTrueCount());
 			invertedCompressedSize.inc(getCompSize());
@@ -412,7 +414,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		public int nextDoc() throws IOException {
 
 			//We exhausted the iterator
-			if (lastDoc == DocIdSetIterator.NO_MORE_DOCS || lastDoc >= finalDoc) {
+			if (lastDoc >= DocIdSetIterator.NO_MORE_DOCS - 1 || lastDoc >= finalDoc) {
 				lastDoc = DocIdSetIterator.NO_MORE_DOCS;
 				return lastDoc;
 			}
@@ -444,7 +446,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		private int findNext(int target) throws IOException {
 			// This function works as a helper function for advance.
 
-			int curr = PForDIt.advance(target) - 1;
+			int curr = PForDIt.advance(target + 1) - 1;
 		
 			int result = 0;
 			

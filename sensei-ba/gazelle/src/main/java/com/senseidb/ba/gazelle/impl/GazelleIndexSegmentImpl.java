@@ -32,6 +32,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private String[] invertedColumns;
 	
 	public Boolean highCardinality = false;
+	private final int DICT_SIZE_THRESHOLD = 100000;
 
 	public static Timer invertedIndicesCreationTime = Metrics.newTimer(new MetricName(GazelleIndexSegmentImpl.class ,"invertedIndicesCreationTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
 
@@ -138,7 +139,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 
 				
 
-				if(size < 100000){
+				if(size < DICT_SIZE_THRESHOLD){
 					DocIdSet[] iIndices = new DocIdSet[size];
 					//We estimate the jump value for one dictionary value and assume it will work for the others (Otherwise, we waste too much time
 					//on estimation of the jump value.
@@ -231,13 +232,28 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 		this.length = length;
 	}
 	public long getInvertedDocCount() {
-		return GazelleInvertedIndexImpl.getTotalCount();
+		if(highCardinality == false){
+			return GazelleInvertedIndexImpl.getTotalCount();
+		}
+		else{
+			return GazelleInvertedIndexHighCardinalityImpl.getTotalCount();
+		}
 	}
 	public long getInvertedCompressionRate() {
-		return GazelleInvertedIndexImpl.getTotalCompSize();
+		if(highCardinality == false){
+			return GazelleInvertedIndexImpl.getTotalCompSize();
+		}
+		else{
+			return GazelleInvertedIndexHighCardinalityImpl.getTotalCompSize();
+		}
 	}
 	public long getTotalInvertedDocCount() {
-		return GazelleInvertedIndexImpl.getTotalTrueCount();
+		if(highCardinality == false){
+			return GazelleInvertedIndexImpl.getTotalTrueCount();
+		}
+		else{
+			return GazelleInvertedIndexHighCardinalityImpl.getTotalTrueCount();
+		}
 	}
 
 }
