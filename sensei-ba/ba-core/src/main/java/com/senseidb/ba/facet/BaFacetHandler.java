@@ -48,7 +48,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
   private final String bootsrapFacetHandlerName;
   private final String columnName;
   
-  private final int DICT_SIZE_THRESHOLD = 100000;
+  private final static int DICT_SIZE_THRESHOLD = 100000;
   /**
    * Needed to detect columnType collisions. Because of the schemaless approach the same column for different segments might have different types
    */

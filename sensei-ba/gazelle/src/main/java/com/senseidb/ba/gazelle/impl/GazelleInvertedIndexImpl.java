@@ -95,13 +95,17 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 	 * @return -> The optimal minimum jump value.
 	 */
 	public static int estimateOptimalMinJump(ForwardIndex forwardIndex, int dictValue) {
+		
+		
+		//TODO: Somehow come up with a good algorithm to determine the optimal jump value;
+		return 250;
 
-		if(forwardIndex instanceof MultiValueForwardIndexImpl1){
-			return estimateOptimalMinJumpMulti(forwardIndex, dictValue);
-		}
-		else{
-			return estimateOptimalMinJumpSingle(forwardIndex, dictValue);
-		}
+//		if(forwardIndex instanceof MultiValueForwardIndexImpl1){
+//			return estimateOptimalMinJumpMulti(forwardIndex, dictValue);
+//		}
+//		else{
+//			return estimateOptimalMinJumpSingle(forwardIndex, dictValue);
+//		}
 
 	}
 
@@ -222,8 +226,8 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		//If the current estimate dismisses /too/ many DocIDs, then we'll take the previous estimate
 		if(currRatio < 0.25){
 			//If the previous estimate is too small, just take 10.
-			if(lastEstimate < 100){
-				return 100;
+			if(lastEstimate < 250){
+				return 250;
 			}
 			else{
 				return (int) lastEstimate;
@@ -254,9 +258,6 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		else{
 			minJumpValue = jumpValue;
 		}
-		
-		//TODO: Change this so we can get a general jump value
-		minJumpValue = 250;
 		
 		pForDSet = new PForDeltaDocIdSet();
 
@@ -330,8 +331,8 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 
 		public SingleValueForwardIndexReader(ForwardIndex forwardIndex, int dictValue) throws IOException {
 			fIndex = (GazelleForwardIndexImpl) forwardIndex;
-			ForwardDocIdSet asdf = new FacetUtils.ForwardDocIdSet((GazelleForwardIndexImpl) forwardIndex, dictValue, finalDoc);
-			reader = (ForwardIndexIterator) asdf.iterator();
+			ForwardDocIdSet docIdSet = new FacetUtils.ForwardDocIdSet((GazelleForwardIndexImpl) forwardIndex, dictValue, finalDoc);
+			reader = (ForwardIndexIterator) docIdSet.iterator();
 		}
 
 		public int getFromForwardIndex(int index) throws IOException {

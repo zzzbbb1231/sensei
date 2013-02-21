@@ -15,7 +15,7 @@ import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.ba.gazelle.SegmentMetadata;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
-import com.senseidb.ba.gazelle.impl.GazelleInvertedIndexHighCardinalityImpl.GazelleInvertedHighSet;
+import com.senseidb.ba.gazelle.impl.GazelleInvertedIndexHighCardinalityImpl.GazelleInvertedHighCardinalitySet;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.MetricName;
 import com.yammer.metrics.core.Timer;
@@ -32,7 +32,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private String[] invertedColumns;
 	
 	public Boolean highCardinality = false;
-	private final int DICT_SIZE_THRESHOLD = 100000;
+	private final static int DICT_SIZE_THRESHOLD = 100000;
 
 	public static Timer invertedIndicesCreationTime = Metrics.newTimer(new MetricName(GazelleIndexSegmentImpl.class ,"invertedIndicesCreationTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
 
@@ -122,12 +122,8 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 				TermValueList values = termValueListMap.get(column);
 				ForwardIndex fIndex = forwardIndexMap.get(column);
 
-				if (fIndex instanceof SortedForwardIndexImpl || fIndex instanceof SecondarySortedForwardIndexImpl){
+				if (fIndex instanceof SortedForwardIndexImpl || fIndex instanceof SecondarySortedForwardIndexImpl || values == null || fIndex == null){
 					continue;
-				}
-
-				if(values == null || fIndex == null){
-					return;
 				}
 
 				//Create correct number of inverted indices for this column
@@ -135,11 +131,10 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 
 				if(size < 50){
 					continue;
-				}
+				}				
 
-				
-
-				if(size < DICT_SIZE_THRESHOLD){
+				//Create the normal GazelleInvertedIndexImpl if the size of the dictionary isn't too large
+				else if(size < DICT_SIZE_THRESHOLD){
 					DocIdSet[] iIndices = new DocIdSet[size];
 					//We estimate the jump value for one dictionary value and assume it will work for the others (Otherwise, we waste too much time
 					//on estimation of the jump value.
@@ -188,11 +183,13 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 					invertedIndexMap.put(column, iIndices);
 				}
 				
+				//If the size of the dictionary is too large, we create a specialized GazelleInvertedIndexHighCardinalityImpl
 				else{
 					highCardinality = true;
 					
 					GazelleInvertedIndexHighCardinalityImpl iIndices = new GazelleInvertedIndexHighCardinalityImpl(fIndex, size);
 					
+					//Prepare the data for use.
 					iIndices.prepData();
 
 					invertedIndexObjectMap.put(column, iIndices);

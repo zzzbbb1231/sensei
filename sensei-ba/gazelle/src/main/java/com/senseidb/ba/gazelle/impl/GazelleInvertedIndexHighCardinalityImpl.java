@@ -12,10 +12,9 @@ import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
 
 /**
- * Implementation of an InvertedIndex for SenseiBA. We don't store all docIDs in
- * our inverted index; but we opt to keep large 'jumps' and rely on iterating
- * through the forward index for smaller gaps. The size of this jump is calculated
- * so that compression rate and iteration time is optimized.
+ * A specialized inverted index class for gazelle. This is only used if the number of values in the dictionary are too high to be able to use the
+ * normal GazelleInvertedIndexImpl without taking too long to initialize them or taking up too much space. In this implementation, compression is
+ * a minimum, but initialization and iteration time remains similar.
  */
 
 public class GazelleInvertedIndexHighCardinalityImpl {
@@ -27,6 +26,9 @@ public class GazelleInvertedIndexHighCardinalityImpl {
 	private static final Counter invertedCompressedSize = Metrics.newCounter(GazelleInvertedIndexImpl.class, "invertedCompressedSize");
 	private static final Counter invertedTotalDocCount = Metrics.newCounter(GazelleInvertedIndexImpl.class, "invertedTotalDocCount");
 
+	/** 
+	 * This function prepares the data to be read. This MUST be called after the initializer before using the iterator.
+	 */
 	public void prepData(){
 
 		offsets[0] = 0;
@@ -41,6 +43,11 @@ public class GazelleInvertedIndexHighCardinalityImpl {
 
 	}
 
+	/**
+	 * The initializer loads all the DocIDs into the class and initializes the offset array.
+	 * @param fIndex -> Used to read through the forward index
+	 * @param valCount -> Number of dictionary values for this column
+	 */
 	public GazelleInvertedIndexHighCardinalityImpl(ForwardIndex fIndex, int valCount){
 
 		offsets = new int[valCount + 1];
@@ -100,8 +107,12 @@ public class GazelleInvertedIndexHighCardinalityImpl {
 
 	}
 
-	public GazelleInvertedHighSet getSet(int dictValue){
-		return new GazelleInvertedHighSet(dictValue); 
+	/**
+	 * Returns the DocIdSet for the specified dictValue
+	 * @param dictValue
+	 */
+	public GazelleInvertedHighCardinalitySet getSet(int dictValue){
+		return new GazelleInvertedHighCardinalitySet(dictValue); 
 	}
 
 	public static long getTotalCount() {
@@ -116,16 +127,12 @@ public class GazelleInvertedIndexHighCardinalityImpl {
 		return invertedCompressedSize.count();
 	}
 
-	class GazelleInvertedHighSet extends DocIdSet {
+	class GazelleInvertedHighCardinalitySet extends DocIdSet {
 
 		private int dictValue = 0;
 
-		GazelleInvertedHighSet(int dictValue){
+		GazelleInvertedHighCardinalitySet(int dictValue){
 			this.dictValue = dictValue - 1;
-		}
-
-		public void addDoc(int id){
-			data[offsets[dictValue]++] = id;
 		}
 
 		@Override
