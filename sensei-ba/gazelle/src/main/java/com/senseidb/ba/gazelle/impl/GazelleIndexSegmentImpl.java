@@ -15,6 +15,7 @@ import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.ba.gazelle.SegmentMetadata;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
+import com.senseidb.ba.gazelle.impl.GazelleInvertedIndexHighCardinalityImpl.GazelleInvertedHighSet;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.MetricName;
 import com.yammer.metrics.core.Timer;
@@ -24,10 +25,13 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private Map<String, TermValueList> termValueListMap = new HashMap<String, TermValueList>();
 	private Map<String, ForwardIndex> forwardIndexMap = new HashMap<String, ForwardIndex>();
 	private Map<String, DocIdSet[]> invertedIndexMap = new HashMap<String, DocIdSet[]>();
+	private Map<String, GazelleInvertedIndexHighCardinalityImpl> invertedIndexObjectMap = new HashMap<String, GazelleInvertedIndexHighCardinalityImpl>();
 	private int length;
 	private Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();
 	private SegmentMetadata segmentMetadata;
 	private String[] invertedColumns;
+	
+	public Boolean highCardinality = false;
 
 	public static Timer invertedIndicesCreationTime = Metrics.newTimer(new MetricName(GazelleIndexSegmentImpl.class ,"invertedIndicesCreationTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
 
@@ -132,53 +136,66 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 					continue;
 				}
 
-				DocIdSet[] iIndices = new DocIdSet[size];
+				
 
-				//We estimate the jump value for one dictionary value and assume it will work for the others (Otherwise, we waste too much time
-				//on estimation of the jump value.
-				int optVal = GazelleInvertedIndexImpl.estimateOptimalMinJump(fIndex, fIndex.getDictionary().indexOf(values.get(1)));	
-				for(int i = 1; i < size; i++){
-					String value = values.get(i);
-					iIndices[i] = new GazelleInvertedIndexImpl(fIndex, fIndex.getDictionary().indexOf(value), optVal);
-				}
-
-				//If it's a MultiValueForwardIndex, we have to deal with it differently.
-				if(fIndex instanceof MultiValueForwardIndexImpl1){
-					MultiValueForwardIndexImpl1 mIndex = (MultiValueForwardIndexImpl1) fIndex;
-					int[] buffer = new int[mIndex.getMaxNumValuesPerDoc()];
-
-					for(int i = 0; i < length; i++) {
-						int count = mIndex.randomRead(buffer, i);
-						for (int j = 0; j < count; j++) {
-							int valueId = buffer[j];
-							((GazelleInvertedIndexImpl)iIndices[valueId]).addDoc(i);
-						}
+				if(size < 100000){
+					DocIdSet[] iIndices = new DocIdSet[size];
+					//We estimate the jump value for one dictionary value and assume it will work for the others (Otherwise, we waste too much time
+					//on estimation of the jump value.
+					int optVal = GazelleInvertedIndexImpl.estimateOptimalMinJump(fIndex, fIndex.getDictionary().indexOf(values.get(1)));	
+					for(int i = 1; i < size; i++){
+						String value = values.get(i);
+						iIndices[i] = new GazelleInvertedIndexImpl(fIndex, fIndex.getDictionary().indexOf(value), optVal);
 					}
 
-				}
-				else{
-					size = fIndex.getLength();
-					SingleValueForwardIndex temp = (SingleValueForwardIndex) fIndex;
-					SingleValueRandomReader reader = temp.getReader();
+					//If it's a MultiValueForwardIndex, we have to deal with it differently.
+					if(fIndex instanceof MultiValueForwardIndexImpl1){
+						MultiValueForwardIndexImpl1 mIndex = (MultiValueForwardIndexImpl1) fIndex;
+						int[] buffer = new int[mIndex.getMaxNumValuesPerDoc()];
 
-					//Insert DocID into the correct index.
+						for(int i = 0; i < length; i++) {
+							int count = mIndex.randomRead(buffer, i);
+							for (int j = 0; j < count; j++) {
+								int valueId = buffer[j];
+								((GazelleInvertedIndexImpl)iIndices[valueId]).addDoc(i);
+							}
+						}
+
+					}
+					else{
+						size = fIndex.getLength();
+						SingleValueForwardIndex temp = (SingleValueForwardIndex) fIndex;
+						SingleValueRandomReader reader = temp.getReader();
+
+						//Insert DocID into the correct index.
+						for(int i = 0; i < size; i++){
+							if(iIndices[reader.getValueIndex(i)] == null){
+								continue;
+							}
+							((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).addDoc(i);
+						}
+					}
+					size = iIndices.length;
 					for(int i = 0; i < size; i++){
-						if(iIndices[reader.getValueIndex(i)] == null){
+						if(iIndices[i] == null){
 							continue;
 						}
-						((GazelleInvertedIndexImpl) iIndices[reader.getValueIndex(i)]).addDoc(i);
-					}
-				}
-				size = iIndices.length;
-				for(int i = 0; i < size; i++){
-					if(iIndices[i] == null){
-						continue;
-					}
-					((GazelleInvertedIndexImpl) iIndices[i]).flush();
-					((GazelleInvertedIndexImpl) iIndices[i]).optimize();
+						((GazelleInvertedIndexImpl) iIndices[i]).flush();
+						((GazelleInvertedIndexImpl) iIndices[i]).optimize();
 
+					}
+					invertedIndexMap.put(column, iIndices);
 				}
-				invertedIndexMap.put(column, iIndices);
+				
+				else{
+					highCardinality = true;
+					
+					GazelleInvertedIndexHighCardinalityImpl iIndices = new GazelleInvertedIndexHighCardinalityImpl(fIndex, size);
+					
+					iIndices.prepData();
+
+					invertedIndexObjectMap.put(column, iIndices);
+				}
 			}
 			invertedIndicesCreationTime.update(System.currentTimeMillis() - elapsedTime, TimeUnit.MILLISECONDS); 
 		}
@@ -187,6 +204,10 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	@Override
 	public DocIdSet[] getInvertedIndex(String column) {
 		return invertedIndexMap.get(column);
+	}
+	
+	public GazelleInvertedIndexHighCardinalityImpl getInvertedIndexObject(String column) {
+		return invertedIndexObjectMap.get(column);
 	}
 
 	@Override

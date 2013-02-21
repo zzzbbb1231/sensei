@@ -5,11 +5,14 @@ import org.apache.lucene.search.DocIdSet;
 import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.impl.GazelleInvertedIndexHighCardinalityImpl;
 import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 
 public class ZeusDataCache {
   private FacetDataCache fakeCache;
   private DocIdSet[] invertedIndexes;
+  private GazelleInvertedIndexHighCardinalityImpl invertedIndexObject;
   private ForwardIndex forwardIndex;
   private TermValueList<?> dictionary;
   public ZeusDataCache(ForwardIndex forwardIndex, DocIdSet[] invertedIndexes) {
@@ -25,9 +28,27 @@ public class ZeusDataCache {
   
 
 
-  public boolean invertedIndexPresent(int dictionaryIndex) {
-    return invertedIndexes != null && dictionaryIndex < invertedIndexes.length && invertedIndexes[dictionaryIndex] != null;
+  public ZeusDataCache(ForwardIndex forwardIndex, GazelleInvertedIndexHighCardinalityImpl invertedIndexObject) {
+	    this.forwardIndex = forwardIndex;
+	    this.invertedIndexObject = invertedIndexObject;
+	    dictionary = forwardIndex.getDictionary();
+	    if ((forwardIndex instanceof ColumnSearchSnapshot)) {
+	      fakeCache = createRealtimeFakeFacetDataCache(forwardIndex);
+	    } else {
+	      fakeCache = createFakeFacetDataCache(forwardIndex);
+	    }
+}
+
+
+
+public boolean invertedIndexPresent(int dictionaryIndex) {
+    return (invertedIndexes != null && dictionaryIndex < invertedIndexes.length && invertedIndexes[dictionaryIndex] != null) ||
+    		(invertedIndexObject != null);
   }
+
+public boolean highCardinality(){
+	return invertedIndexObject != null;
+}
   public static FacetDataCache createFakeFacetDataCache(ForwardIndex forwardIndex) {
     FacetDataCache newDataCache = new FacetDataCache<String>();
     newDataCache.valArray = forwardIndex.getDictionary(); 
@@ -58,6 +79,9 @@ public class ZeusDataCache {
   public DocIdSet[] getInvertedIndexes() {
     return invertedIndexes;
   }
+  public DocIdSet getInvertedIndex(int index) {
+	    return invertedIndexObject.getSet(index);
+	  }
   public void setInvertedIndexes(DocIdSet[] invertedIndexes) {
     this.invertedIndexes = invertedIndexes;
   }

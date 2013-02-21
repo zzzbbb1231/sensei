@@ -35,6 +35,7 @@ import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.senseidb.ba.gazelle.SortedForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
+import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl;
 import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.MultiValueSearchSnapshot;
@@ -71,7 +72,14 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
       return null;
     }
     currentColumnTypes.add(forwardIndex.getColumnType());  
-    return new ZeusDataCache(forwardIndex, offlineSegment.getInvertedIndex(columnName));
+    if(offlineSegment instanceof GazelleIndexSegmentImpl && offlineSegment.getDictionary(columnName).size() >= 100000){
+    	return new ZeusDataCache(forwardIndex, ((GazelleIndexSegmentImpl) offlineSegment).getInvertedIndexObject(columnName));
+    }
+    else{
+        return new ZeusDataCache(forwardIndex, offlineSegment.getInvertedIndex(columnName));
+    }
+
+    
 
   }
 
@@ -120,9 +128,14 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
     }
     // Go by inverted index path
     if (zeusDataCache.invertedIndexPresent(index)) {
-      final DocIdSet invertedIndex =
-          zeusDataCache.getInvertedIndexes()[index];
-      return new FacetUtils.InvertedIndexDocIdSet(zeusDataCache, invertedIndex, index);
+      if(zeusDataCache.highCardinality()){
+    	  final DocIdSet invertedIndex = zeusDataCache.getInvertedIndex(index);
+    	  return new FacetUtils.InvertedIndexDocIdSet(zeusDataCache, invertedIndex, index);
+      }
+      else{
+    	  final DocIdSet invertedIndex = zeusDataCache.getInvertedIndexes()[index];
+    	  return new FacetUtils.InvertedIndexDocIdSet(zeusDataCache, invertedIndex, index);
+      }
     } else if (zeusDataCache.getForwardIndex() instanceof SecondarySortedForwardIndexImpl) {
       SecondarySortedForwardIndexImpl secondarySortedForwardIndexImpl = (SecondarySortedForwardIndexImpl) zeusDataCache.getForwardIndex();
       return new SortedFacetUtils.SecondarySortedForwardDocIdSet(secondarySortedForwardIndexImpl.getSortedRegions(), index);

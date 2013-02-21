@@ -304,7 +304,7 @@ public class GazelleInvertedIndexImpl extends DocIdSet {
 		pForDSet.optimize();
 	}
 	
-	public void flush(){
+	public void flush() throws IOException{
 		pForDSet.flush(0);
 	}
 
