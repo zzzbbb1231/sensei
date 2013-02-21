@@ -47,6 +47,8 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
   private static Logger logger = Logger.getLogger(BaFacetHandler.class);  
   private final String bootsrapFacetHandlerName;
   private final String columnName;
+  
+  private final int DICT_SIZE_THRESHOLD = 100000;
   /**
    * Needed to detect columnType collisions. Because of the schemaless approach the same column for different segments might have different types
    */
@@ -72,7 +74,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
       return null;
     }
     currentColumnTypes.add(forwardIndex.getColumnType());  
-    if(offlineSegment instanceof GazelleIndexSegmentImpl && offlineSegment.getDictionary(columnName).size() >= 100000){
+    if(offlineSegment instanceof GazelleIndexSegmentImpl && offlineSegment.getDictionary(columnName).size() >= DICT_SIZE_THRESHOLD){
     	return new ZeusDataCache(forwardIndex, ((GazelleIndexSegmentImpl) offlineSegment).getInvertedIndexObject(columnName));
     }
     else{
