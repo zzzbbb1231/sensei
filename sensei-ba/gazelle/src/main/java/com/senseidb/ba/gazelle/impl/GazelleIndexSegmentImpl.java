@@ -32,7 +32,8 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private String[] invertedColumns;
 	
 	public Boolean highCardinality = false;
-	private final static int DICT_SIZE_THRESHOLD = 100000;
+	private final static int DICT_SIZE_THRESHOLD_MAX = 20000;
+	private final static int DICT_SIZE_THRESHOLD_MIN = 50;
 
 	public static Timer invertedIndicesCreationTime = Metrics.newTimer(new MetricName(GazelleIndexSegmentImpl.class ,"invertedIndicesCreationTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
 
@@ -128,13 +129,13 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 
 				//Create correct number of inverted indices for this column
 				int size = values.size();
-
-				if(size < 50){
+				
+				if(size < DICT_SIZE_THRESHOLD_MIN){
 					continue;
-				}				
+				}
 
 				//Create the normal GazelleInvertedIndexImpl if the size of the dictionary isn't too large
-				else if(size < DICT_SIZE_THRESHOLD){
+				if(size < DICT_SIZE_THRESHOLD_MAX){
 					DocIdSet[] iIndices = new DocIdSet[size];
 					//We estimate the jump value for one dictionary value and assume it will work for the others (Otherwise, we waste too much time
 					//on estimation of the jump value.

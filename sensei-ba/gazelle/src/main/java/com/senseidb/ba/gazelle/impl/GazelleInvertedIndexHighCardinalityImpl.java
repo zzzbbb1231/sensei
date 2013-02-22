@@ -31,11 +31,11 @@ public class GazelleInvertedIndexHighCardinalityImpl {
 	 */
 	public void prepData(){
 
-		offsets[0] = 0;
-
 		for(int i = offsets.length - 1; i > 0; i--){
 			offsets[i] = offsets[i - 1];
 		}
+		
+		offsets[0] = 0;
 
 		invertedDocCount.inc(data.length);
 		invertedTotalDocCount.inc(data.length);
@@ -65,10 +65,10 @@ public class GazelleInvertedIndexHighCardinalityImpl {
 				offsets[i] += offsets[i - 1];
 			}
 
-			size = fIndex.getLength();
+			size = offsets[offsets.length - 1];
 			data = new int[size];
 
-			for(int i = 1; i < size; i++){
+			for(int i = 0; i < size; i++){
 				if(ireader.getValueIndex(i) == 0){
 					continue;
 				}
