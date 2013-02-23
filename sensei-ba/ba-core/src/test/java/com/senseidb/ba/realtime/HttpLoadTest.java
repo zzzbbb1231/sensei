@@ -20,6 +20,7 @@ import com.senseidb.util.SingleNodeStarter;
 public class HttpLoadTest  {
   @BeforeClass
   public static void setUp() throws Exception {
+    SingleNodeStarter.rmrf(new File("/tmp/realtimeIndexHttp/test"));
     File ConfDir1 = new File("/home/vzhabiuk/work/sensei-ba/sensei/sensei-ba/config-example/src/main/resources/realtime-config-http");
     Logger rootLogger = Logger.getRootLogger();
     rootLogger.setLevel(Level.WARN);
@@ -74,6 +75,7 @@ public class HttpLoadTest  {
     //Thread.sleep(5000);
     long time = System.currentTimeMillis();
     SingleNodeStarter.shutdown(); 
+    SingleNodeStarter.rmrf(new File("/tmp/realtimeIndexHttp/test"));
     System.out.println("!!Time to shutdown = " + (System.currentTimeMillis() - time));
     //SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
     //FileUtils.deleteDirectory(new File("ba-index/ba-data"));

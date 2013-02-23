@@ -39,9 +39,10 @@ public class RealtimeIndexingFromKafkaTest  extends Assert {
   
   private static KafkaServer kafkaServer;
   private static Properties kafkaProps;
+  private static File ConfDir1;
   @BeforeClass
   public static void setUp() throws Exception {
-    File ConfDir1 = new File("/home/vzhabiuk/work/sensei-ba/sensei/sensei-ba/config-example/src/main/resources/realtime-config-kafka");
+     ConfDir1 = new File("/home/vzhabiuk/work/sensei-ba/sensei/sensei-ba/config-example/src/main/resources/realtime-config-kafka");
     File kafkaServerFile = new File("/home/vzhabiuk/work/sensei-ba/sensei/sensei-ba/config-example/src/main/resources/realtime-config-kafka/ext/kafka-server.properties");
     
      kafkaProps = new Properties();
@@ -52,9 +53,12 @@ public class RealtimeIndexingFromKafkaTest  extends Assert {
     FileUtils.deleteDirectory(new File("/tmp/realtimeKafkaIndex/test"));
     KafkaConfig kafkaConfig = new KafkaConfig(kafkaProps);
     kafkaServer = new KafkaServer(kafkaConfig);
-    
     kafkaServer.startup();
-    
+    kafkaServer.shutdown();
+    kafkaServer.awaitShutdown();
+    Thread.sleep(500);
+    kafkaServer = new KafkaServer(kafkaConfig);
+    kafkaServer.startup();
     Properties props = new Properties();
     props.put("zk.connect", "localhost:2181");
     props.put("serializer.class", "kafka.serializer.DefaultEncoder");
@@ -95,15 +99,27 @@ public class RealtimeIndexingFromKafkaTest  extends Assert {
     JSONObject resp = TestUtil.search(new URL("http://localhost:8080/sensei"), new JSONObject(req).toString());
     System.out.println(resp.toString(1));
     assertEquals(resp.getInt("numhits"), 10000);
-    
-    
-  
+  }
+  @Test
+  public void test2Restart() throws Exception {
+    String req = "{\"bql\":\"select * \"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8080/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals(resp.getInt("numhits"), 10000);
+    Thread.sleep(500L);
+    SingleNodeStarter.shutdown(); 
+    FileUtils.deleteDirectory(new File("/tmp/realtimeKafkaIndex/test"));
+    SingleNodeStarter.start(ConfDir1, 10000);
+    assertEquals(resp.getInt("numhits"), 10000);
   }
   @AfterClass
   public static void tearDown() throws Exception {
     //Thread.sleep(5000);
-    long time = System.currentTimeMillis();
     SingleNodeStarter.shutdown(); 
+    kafkaServer.shutdown();
+    kafkaServer.awaitShutdown();
+    kafkaServer.CLEAN_SHUTDOWN_FILE();
+    long time = System.currentTimeMillis();
     File kafkaLogFile = new File(kafkaProps.getProperty("log.dir"));
     FileUtils.deleteDirectory(kafkaLogFile);
     FileUtils.deleteDirectory(new File("/tmp/realtimeKafkaIndex/test"));

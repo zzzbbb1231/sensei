@@ -25,6 +25,9 @@ public class SegmentAppendableIndex {
     private Schema schema; 
     volatile private  String version;
     private String name;
+    private long indexingStartTime;
+    private long indexingEndTime;
+    
     private SegmentResurrectingMarker segmentResurrectingMarker;
     public SegmentAppendableIndex(ReusableIndexObjectsPool indexObjectsPool) {
        segmentResurrectingMarker = new SegmentResurrectingMarker(indexObjectsPool, this);
@@ -133,6 +136,18 @@ public class SegmentAppendableIndex {
       this.name = name;
     }
     
+    public long getIndexingStartTime() {
+      return indexingStartTime;
+    }
+    public long getIndexingEndTime() {
+      return indexingEndTime;
+    }
+    public void setIndexingStartTime(long indexingStartTime) {
+      this.indexingStartTime = indexingStartTime;
+    }
+    public void setIndexingEndTime(long indexingEndTime) {
+      this.indexingEndTime = indexingEndTime;
+    }
     public SegmentResurrectingMarker getSegmentResurrectingMarker() {
       return segmentResurrectingMarker;
     }

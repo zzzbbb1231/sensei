@@ -22,18 +22,17 @@ import proj.zoie.impl.indexing.ZoieConfig;
 
 import com.browseengine.bobo.facets.FacetHandler;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
-import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.SegmentTimeType;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
 import com.senseidb.ba.management.directory.SimpleIndexFactory;
+import com.senseidb.ba.management.directory.SimpleIndexWithDeletionFactory;
 import com.senseidb.ba.plugins.ZeusIndexReaderDecorator;
 import com.senseidb.ba.realtime.SegmentAppendableIndex;
-import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
 import com.senseidb.ba.realtime.indexing.PendingSegmentsIndexFactory.SegmentPersistedListener;
-import com.senseidb.ba.realtime.indexing.ShardingStrategy.AcceptAllShardingStrategy;
 import com.senseidb.ba.realtime.indexing.providers.SenseiProviderAdapter;
 import com.senseidb.conf.SenseiConfParams;
 import com.senseidb.conf.ZoieFactoryFactory;
@@ -49,7 +48,7 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
   private IndexConfig indexConfig;
   private RealtimeIndexFactory realtimeIndexFactory;
   private PendingSegmentsIndexFactory pendingSegmentsIndexFactory;
-  private Map<Integer, SimpleIndexFactory> staticIndexFactories = new HashMap<Integer, SimpleIndexFactory>();
+  private Map<Integer, SimpleIndexWithDeletionFactory> staticIndexFactories = new HashMap<Integer, SimpleIndexWithDeletionFactory>();
   private File directory;
   private ZeusIndexReaderDecorator decorator;
   private RealtimeIndexingManager indexingManager;
@@ -59,6 +58,8 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
   private ShardingStrategy shardingStrategy;
 
   private ShardBalancingStrategy shardBalancingStrategy;
+
+  private RetentionController retentionController;
   public IndexingCoordinator() {
     super(null, null, null, null, null);
   }
@@ -92,24 +93,27 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
     realtimeIndexFactory = new RealtimeIndexFactory(decorator, indexConfig);
     pendingSegmentsIndexFactory = new PendingSegmentsIndexFactory(this, indexConfig);
     for (int partition = 0; partition < indexConfig.getNumServingPartitions(); partition++) {
-      staticIndexFactories.put(partition, new SimpleIndexFactory(new ArrayList<SegmentToZoieReaderAdapter>(), new Object()));
+      staticIndexFactories.put(partition, new SimpleIndexWithDeletionFactory());
     }
     shardBalancingStrategy = new ShardBalancingStrategy(indexConfig.getNumServingPartitions());
     indexingManager.init(indexConfig, realtimeDataProvider, this, shardingStrategy);
+    if (indexConfig.getRetentionTimeUnit() != null && indexConfig.getRetentionDuration() > 0) {
+      retentionController = new RetentionController(indexConfig.getRetentionTimeUnit(), indexConfig.getRetentionDuration(), staticIndexFactories.values());
+    }
   }
   
  
   public void start() {
     bootstrap();
     pendingSegmentsIndexFactory.start();
-    realtimeDataProvider.start();
+    realtimeDataProvider.startProvider();
     indexingManager.start();
     
     
   }
   @Override
   public void stop() {
-    realtimeDataProvider.stop();
+    realtimeDataProvider.stopProvider();
     try {
       indexingManager.stop();
     } catch (Exception ex) {
@@ -130,13 +134,13 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
        try {      
        oldSegment.setName(indexConfig.getClusterName() + "_" + new SimpleDateFormat("ddMMMyy-HH:mm:ss:SSS").format(new Date(System.currentTimeMillis())));
        logger.info("Segment  " +  oldSegment.getName() + " is full. Containing " + oldSegment.getCurrenIndex() + " elements");
+       newSegment.setIndexingStartTime(System.currentTimeMillis());
+       oldSegment.setIndexingEndTime(System.currentTimeMillis());
        synchronized(realtimeIndexFactory.getLock()) {
          synchronized(pendingSegmentsIndexFactory.getLock()) {
              for (String column : fullExisingSnapshot.getColumnTypes().keySet())  {
                  DictionarySnapshot dictSnapshot = fullExisingSnapshot.getForwardIndex(column).getDictionarySnapshot();
-                 if ("clickCount".equalsIgnoreCase(column)) {
-                   
-                 }
+                
                  dictSnapshot.getResurrectingMarker().incRef();
                  dictSnapshot.getResurrectingMarker().incRef();
              }
@@ -154,10 +158,13 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
       
       logger.info("Segment  " +  segmentToProcess.getName() + " is persisted");
       int partition = shardBalancingStrategy.chooseShard(persistedSegment);
-        SimpleIndexFactory indexFactory = staticIndexFactories.get(partition);
+      persistedSegment.getSegmentMetadata().setStartTime("" + segmentToProcess.getIndexingStartTime());
+      persistedSegment.getSegmentMetadata().setEndTime("" + segmentToProcess.getIndexingEndTime());
+      persistedSegment.getSegmentMetadata().setTimeType(SegmentTimeType.millisSinceEpoch);
+      SimpleIndexWithDeletionFactory indexFactory = staticIndexFactories.get(partition);
         try {
         synchronized(indexFactory.getGlobalLock()) {
-            indexFactory.getReaders().add(new SegmentToZoieReaderAdapter(persistedSegment, segmentToProcess.getName(), decorator));
+            indexFactory.addSegment(new SegmentToZoieReaderAdapter(persistedSegment, segmentToProcess.getName(), decorator));
         }
         indexingManager.getDataProvider().commit(segmentToProcess.getVersion());
         indexingManager.notifySegmentPersisted();        
@@ -177,9 +184,9 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
       GazelleIndexSegmentImpl segment = SegmentPersistentManager.read(new File(directory, gazelleSegment), indexConfig.getReadMode());
       numDocs += segment.getLength();
        int partition = shardBalancingStrategy.chooseShard(segment);
-      SimpleIndexFactory indexFactory = staticIndexFactories.get(partition);
+       SimpleIndexWithDeletionFactory indexFactory = staticIndexFactories.get(partition);
       synchronized(indexFactory.getGlobalLock()) {
-        indexFactory.getReaders().add(new SegmentToZoieReaderAdapter(segment, gazelleSegment, decorator));
+        indexFactory.addSegment(new SegmentToZoieReaderAdapter(segment, gazelleSegment, decorator));
       }
     }
     logger.info("Boostrapping finished. It took " + (System.currentTimeMillis() - time) + " ms to load  " + numDocs + " docs");

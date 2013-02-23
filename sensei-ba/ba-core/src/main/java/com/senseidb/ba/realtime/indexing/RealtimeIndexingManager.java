@@ -11,6 +11,7 @@ import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
 import com.senseidb.ba.realtime.domain.primitives.FieldRealtimeIndex;
 import com.senseidb.ba.realtime.scheduler.SnapshotRefreshScheduler;
+import com.senseidb.util.SenseiUncaughtExceptionHandler;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
 
@@ -36,12 +37,17 @@ public class RealtimeIndexingManager {
     
     public void start() {
       currentIndex = indexConfig.getIndexObjectsPool().getAppendableIndex();
-      
+      currentIndex.setIndexingStartTime(System.currentTimeMillis());
       snapshotRefreshScheduler = new SnapshotRefreshScheduler() {
         @Override
         public int refresh() {
           synchronized(RealtimeIndexingManager.this) {         
+            try {
             snapshot = currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool());
+            } catch (Throwable ex) {
+              logger.error("Error while refreshing the segment - ", ex);
+              throw new RuntimeException(ex);
+            }
             if (currentNumberDocsInMemory.count() != snapshot.getLength()) {
               currentNumberDocsInMemory.clear();
               currentNumberDocsInMemory.inc(snapshot.getLength());
@@ -54,6 +60,7 @@ public class RealtimeIndexingManager {
       snapshotRefreshScheduler.init(indexConfig.getBufferSize(), indexConfig.getCapacity(), indexConfig.getRefreshTime());
       snapshotRefreshScheduler.start();
       indexingThread.setDaemon(true);
+      indexingThread.setUncaughtExceptionHandler(SenseiUncaughtExceptionHandler.getInstance());
       indexingThread.start();
     }
     private Thread indexingThread = new Thread() {
@@ -61,7 +68,6 @@ public class RealtimeIndexingManager {
         while (!stopped) {
           try {           
             DataWithVersion next = dataProvider.next();
-            
             if (next == null) {
               Thread.sleep(100L);
               continue;
