@@ -1,9 +1,7 @@
 package com.senseidb.ba.gazelle.creators.prototype;
 
-import it.unimi.dsi.fastutil.Swapper;
 import it.unimi.dsi.fastutil.floats.Float2IntOpenHashMap;
 import it.unimi.dsi.fastutil.floats.FloatIterator;
-import it.unimi.dsi.fastutil.ints.IntComparator;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -27,6 +25,7 @@ import com.browseengine.bobo.util.BigNestedIntArray;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.creators.DictionaryCreator;
 import com.senseidb.ba.gazelle.utils.BufferedLoader;
+import com.senseidb.ba.gazelle.utils.SortUtil;
 
 public class SinglePassIndexCreator {
     private Float2IntOpenHashMap float2IntMap;
@@ -146,7 +145,7 @@ public class SinglePassIndexCreator {
       for (int j = 0; j < permutationArray.length; j++) {
         permutationArray[j] = j + 1;
       }
-      it.unimi.dsi.fastutil.Arrays.quickSort(0, permutationArray.length, new IntComparator() {
+      SortUtil.quickSort(0, permutationArray.length, new SortUtil.IntComparator() {
         @Override
         public int compare(Integer o1, Integer o2) {
           return compare(o1.intValue(), o2.intValue());
@@ -157,7 +156,7 @@ public class SinglePassIndexCreator {
           if (arr[permutationArray[k2]] > arr[permutationArray[k1]]) return -1;
           return 0;
         }
-      }, new Swapper() {
+      }, new SortUtil.Swapper() {
         @Override
         public void swap(int a, int b) {
           int tmp = permutationArray[b];
@@ -181,7 +180,7 @@ public class SinglePassIndexCreator {
       for (int j = 0; j < permutationArray.length; j++) {
         permutationArray[j] = j + 1;
       }
-      it.unimi.dsi.fastutil.Arrays.quickSort(0, permutationArray.length, new IntComparator() {
+      SortUtil.quickSort(0, permutationArray.length, new SortUtil.IntComparator() {
         @Override
         public int compare(Integer o1, Integer o2) {
           return compare(o1.intValue(), o2.intValue());
@@ -192,7 +191,7 @@ public class SinglePassIndexCreator {
           if (arr[k2] > arr[k1]) return -1;
           return 0;
         }
-      }, new Swapper() {
+      }, new SortUtil.Swapper() {
         @Override
         public void swap(int a, int b) {
           int tmp = permutationArray[b];
@@ -217,7 +216,7 @@ public class SinglePassIndexCreator {
       for (int j = 0; j < permutationArray.length; j++) {
         permutationArray[j] = j + 1;
       }
-      it.unimi.dsi.fastutil.Arrays.quickSort(0, permutationArray.length, new IntComparator() {
+      SortUtil.quickSort(0, permutationArray.length, new SortUtil.IntComparator() {
         @Override
         public int compare(Integer o1, Integer o2) {
           return compare(o1.intValue(), o2.intValue());
@@ -227,7 +226,7 @@ public class SinglePassIndexCreator {
           return innerList.get(k1).compareTo(innerList.get(k2));
          
         }
-      }, new Swapper() {
+      }, new SortUtil.Swapper() {
         @Override
         public void swap(int a, int b) {
           int tmp = permutationArray[b];

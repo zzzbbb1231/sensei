@@ -131,25 +131,30 @@ public class JettyServerHolder implements SenseiPlugin {
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("baseUrl", baseUrl);
         holder.setInitParameter("nasBasePath", nasBasePath);
+        holder.setInitOrder(5);
         webApp.addServlet(holder, "/files/*");
       } else if (holder.getHeldClass() == RestSegmentServlet.class) {
         holder.setInitParameter("maxPartitionId", String.valueOf(maxPartitionId));
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("clusterName", clusterName);
+        holder.setInitOrder(4);
         webApp.addServlet(holder, "/segments/*");
       } else if (holder.getHeldClass() == AllClustersRestSegmentServlet.class) {
         holder.setInitParameter("maxPartitionId", String.valueOf(maxPartitionId));
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("clusterName", clusterName);
+        holder.setInitOrder(3);
         webApp.addServlet(holder, "/allsegments/*");
       }else if (holder.getHeldClass() == MasterInfoServlet.class) {
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("clusterName", clusterName);
+        holder.setInitOrder(2);
         webApp.addServlet(holder, "/controllers/*");
       }else if (holder.getHeldClass() == ValidationServlet.class) {
         holder.setInitParameter("zkUrl", zkUrl);
         holder.setInitParameter("clusterName", clusterName);
         holder.setInitParameter("brokerUrl", brokerUrl);
+        holder.setInitOrder(1);
         webApp.addServlet(holder, "/validation/*");
       }
     }
@@ -162,7 +167,6 @@ public class JettyServerHolder implements SenseiPlugin {
       webApp.setResourceBase("");
     }
     server.setHandler(webApp);
-    
     try {
       server.start();
     } catch (Exception e) {

@@ -36,9 +36,20 @@ public class Schema {
           }
           val = vals;
         } else if (types[i].isMulti() && val instanceof String) {
-          val = ((String)val).split(",");
-        } 
-          ret[i] = val;
+          Object[] objects = ((String)val).split(",");
+          if (types[i] != ColumnType.STRING_ARRAY) {
+            for (int j = 0; j < objects.length; j++) {
+              if ("".equals(objects[j])) {
+                objects[j] = null;
+              }
+            }
+          }
+          val = objects;
+        } else if ("".equals(val) && !types[i].isMulti() && types[i] != ColumnType.STRING) {
+          val = null;
+        }
+         
+        ret[i] = val;
         
       }
       return ret;

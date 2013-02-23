@@ -1,8 +1,5 @@
 package com.senseidb.ba.gazelle.creators.prototype;
 
-import it.unimi.dsi.fastutil.Swapper;
-import it.unimi.dsi.fastutil.ints.IntComparator;
-
 import java.util.List;
 
 import org.apache.avro.Schema.Field;
@@ -26,6 +23,7 @@ import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.impl.SortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.OffHeapCompressedIntArray;
+import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.gazelle.utils.multi.CompressedMultiArray;
 
 public class AvroSinglePassCreator {
@@ -86,7 +84,8 @@ public class AvroSinglePassCreator {
     if (sortedFieldIndexes.length > 0) {
       final int[] permutationArrayCopy = new int[currentRowCount + 1];
       permutationArray = permutationArrayCopy;
-      it.unimi.dsi.fastutil.Arrays.quickSort(0, permutationArray.length, new IntComparator() {
+      
+      SortUtil.quickSort(0, permutationArray.length, new SortUtil.IntComparator() {
         @Override
         public int compare(Integer o1, Integer o2) {
           return compare(o1.intValue(), o2.intValue());
@@ -102,7 +101,7 @@ public class AvroSinglePassCreator {
           }
           return 0; 
         }
-      }, new Swapper() {
+      }, new SortUtil.Swapper() {
         @Override
         public void swap(int a, int b) {
           int tmp = permutationArrayCopy[b];

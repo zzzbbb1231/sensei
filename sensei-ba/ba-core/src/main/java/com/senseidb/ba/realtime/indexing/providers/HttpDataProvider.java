@@ -100,7 +100,9 @@ public class HttpDataProvider implements RealtimeDataProvider,SenseiPlugin {
 
   @Override
   public DataWithVersion next() {
-    
+    if (blockingQueue == null) {
+      return null;
+    }
     final Object[] poll = blockingQueue.poll();
     if (poll == null) {
       return null;
@@ -121,6 +123,18 @@ public class HttpDataProvider implements RealtimeDataProvider,SenseiPlugin {
 
   @Override
   public void commit(String version) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void startProvider() {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void stopProvider() {
     // TODO Auto-generated method stub
     
   }

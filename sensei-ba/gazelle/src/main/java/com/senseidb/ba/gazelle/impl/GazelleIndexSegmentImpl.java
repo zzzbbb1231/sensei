@@ -1,5 +1,6 @@
 package com.senseidb.ba.gazelle.impl;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +26,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private Map<String, ForwardIndex> forwardIndexMap = new HashMap<String, ForwardIndex>();
 	private Map<String, DocIdSet[]> invertedIndexMap = new HashMap<String, DocIdSet[]>();
 	private int length;
+	private String associatedDirectory;
 	private Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();
 	private SegmentMetadata segmentMetadata;
 	private String[] invertedColumns;
@@ -218,5 +220,11 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	public long getTotalInvertedDocCount() {
 		return GazelleInvertedIndexImpl.getTotalTrueCount();
 	}
+  public String getAssociatedDirectory() {
+    return associatedDirectory;
+  }
+  public void setAssociatedDirectory(String associatedDirectory) {
+    this.associatedDirectory = associatedDirectory;
+  }
 
 }

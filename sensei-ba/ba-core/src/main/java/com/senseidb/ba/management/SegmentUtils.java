@@ -50,6 +50,9 @@ public class SegmentUtils {
   public static String getMasterZkPath(String clusterName) {
     return SegmentUtils.getZkRoot() + "/" + clusterName + "/masters";
   }
+  public static String getRefreshMarkerPath(String clusterName) {
+    return SegmentUtils.getZkRoot() + "/" + clusterName + "/refreshMarkers";
+  }
   public static String getActiveSegmentsPath(String clusterName, int partition, String segmentId) {
     return getActiveSegmentsPath(clusterName) + "/"+ + partition + "/" + segmentId;
   }

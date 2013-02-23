@@ -50,13 +50,13 @@ public class TestDataProvider implements RealtimeDataProvider{
   }
 
   @Override
-  public void start() {
+  public void startProvider() {
     // TODO Auto-generated method stub
     
   }
 
   @Override
-  public void stop() {
+  public void stopProvider() {
     // TODO Auto-generated method stub
     
   }

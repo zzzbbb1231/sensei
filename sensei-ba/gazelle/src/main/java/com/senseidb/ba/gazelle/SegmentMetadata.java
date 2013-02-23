@@ -9,13 +9,15 @@ public class SegmentMetadata {
   public static final String SEGMENT_CLUSTER_NAME = "segment.cluster.name";
   public static final String SEGMENT_END_TIME = "segment.endTime";
   public static final String SEGMENT_START_TIME = "segment.startTime";
+  public static final String SEGMENT_CRC = "segment.crc";
   private String clusterName;
   private SegmentTimeType timeType;
   private SegmentAggregationLevel aggregationLevel;
   private String startTime;
   private String endTime;
+  private String crc = null;
   private HashMap<String, String> addionalEntries = new HashMap<String, String>();
-  private static String[] defaultList = {SEGMENT_CLUSTER_NAME,"segment.time.Type","segment.aggregation",SEGMENT_START_TIME,SEGMENT_END_TIME};
+  private static String[] defaultList = {SEGMENT_CLUSTER_NAME,"segment.time.Type","segment.aggregation",SEGMENT_START_TIME,SEGMENT_END_TIME, SEGMENT_CRC};
 
   public void addToConfig(Configuration configuration) {
     if (clusterName != null) {
@@ -37,7 +39,9 @@ public class SegmentMetadata {
     if (endTime != null) {
       configuration.setProperty(SEGMENT_END_TIME, endTime);
     }
-    
+    if (crc != null) {
+      configuration.setProperty(SEGMENT_CRC, crc);
+    }
     for (String key : addionalEntries.keySet()) {
       configuration.setProperty(key, addionalEntries.get(key));
     }
@@ -120,4 +124,12 @@ public class SegmentMetadata {
     this.endTime = endTime;
   }
 
+  public String getCrc() {
+    return crc;
+  }
+
+  public void setCrc(String crc) {
+    this.crc = crc;
+  }
+  
 }

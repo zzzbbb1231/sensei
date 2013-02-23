@@ -1,6 +1,7 @@
 package com.senseidb.ba.management;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -118,45 +119,73 @@ public class SegmentTracker {
     logger.info("Finished index boostrap. Total time = " + (System.currentTimeMillis() - time) / 1000 + "secs");
   }
 
-  public void addSegment(final String segmentId, final SegmentInfo segmentInfo, final SegmentLoaderListener loaderListener) {
+  public void addSegment(final String segmentId, final SegmentInfo segmentInfo, boolean asynchronous) {
     if (isStopped) {
       logger.warn("Could not add segment, as the tracker is already stopped");
       return;
     }
     loadingSegments.add(segmentId);
+    if (asynchronous)
     executorService.submit(new Runnable() {
       @Override
       public void run() {
         try {
-          boolean success = instantiateSegment(segmentId, segmentInfo);
-          if (loaderListener ==null) {
+          GazelleIndexSegmentImpl segment = instantiateSegment(segmentId, segmentInfo);        
+          if (segment == null) {
             return;
           }
-          if (success) {
-            loaderListener.segmentLoadedSuccsfully(segmentId);
-          } else {
-            loaderListener.segmentFailedToLoad(segmentId);
-          }
-        } catch (Exception ex) {
-          logger.error("Couldn't instantiate the segment", ex);
-          if (loaderListener !=null) {
-            loaderListener.segmentFailedToLoad(segmentId);
+          synchronized (globalLock) {
+            if (segment == null) {
+              return;
             }
+            segmentsMap.put(segmentId, new SegmentToZoieReaderAdapter(segment, segmentId, senseiDecorator));
+            markSegmentAsLoaded(segmentId);
+            referenceCounts.put(segmentId, new AtomicInteger(1));
+          }
+          currentNumberOfSegments.inc();
+        } catch (Exception ex) {
+          logger.error("Couldn't instantiate the segment", ex);          
         }
       }
     });
+    else {
+      GazelleIndexSegmentImpl segment = instantiateSegment(segmentId, segmentInfo);        
+      synchronized (globalLock) {
+        if (segment == null) {
+          return;
+        }
+        try {
+          segmentsMap.put(segmentId, new SegmentToZoieReaderAdapter(segment, segmentId, senseiDecorator));
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+        markSegmentAsLoaded(segmentId);
+        referenceCounts.put(segmentId, new AtomicInteger(1));
+        currentNumberOfSegments.inc();
+      }
+    }
+  }
+  public void markSegmentAsLoaded(final String segmentId) {
+    if (!activeSegments.contains(segmentId)) {
+      activeSegments.add(segmentId);
+    }
+    loadingSegments.remove(segmentId);
+    if (!referenceCounts.containsKey(segmentId)) {
+      referenceCounts.put(segmentId, new AtomicInteger(1));
+    }
   }
 
-  public boolean instantiateSegment(String segmentId, SegmentInfo segmentInfo) {
+  public GazelleIndexSegmentImpl instantiateSegment(String segmentId, SegmentInfo segmentInfo) {
     long time = System.currentTimeMillis();
     List<String> uris = new ArrayList<String>(segmentInfo.getPathUrls());
+    GazelleIndexSegmentImpl ret = null;
     boolean success = false;
       Collections.shuffle(uris);
       for (String currentUri : uris) {
         currentUri = currentUri.trim();
         logger.info("trying to load segment  + " + segmentId + ", by uri - " + currentUri);
-        success = instantiateSegmentForUri(segmentId, currentUri);
-        if (success) {
+        ret = instantiateSegmentForUri(segmentId, currentUri);
+        if (ret != null) {
           logger.info("Succesfully loaded  segment - " + segmentId + " by the uri " + currentUri);
           break;
         } else {
@@ -170,14 +199,13 @@ public class SegmentTracker {
       segmentFailedInstantiateTime.update(duration, TimeUnit.MILLISECONDS);
       logger.error("[final]Failed to load the segment - " + segmentId + ", by the uris -" + segmentInfo.getPathUrls());
     } else {
-      currentNumberOfSegments.inc();
       segmentSuccesfulInstantiateTime.update(duration, TimeUnit.MILLISECONDS);
      
     }
-    return success;
+    return ret;
   }
 
-  public boolean instantiateSegmentForUri(String segmentId, String uri) {
+  public GazelleIndexSegmentImpl instantiateSegmentForUri(String segmentId, String uri) {
     try {
       List<File> uncompressedFiles = null;
       if (uri.startsWith("hdfs:")) {
@@ -232,20 +260,14 @@ public class SegmentTracker {
         totalDocumentsStoredInInvertedIndex.inc(indexSegment.getTotalInvertedDocCount());
         documentsStoredInInvertedIndex.inc(indexSegment.getInvertedDocCount());
         invertedIndexCompressionRate.inc(indexSegment.getInvertedCompressionRate()/8);
-        synchronized (globalLock) {
-          
-          segmentsMap.put(segmentId, new SegmentToZoieReaderAdapter(indexSegment, segmentId, senseiDecorator));
-          activeSegments.add(segmentId);
-          loadingSegments.remove(segmentId);
-          referenceCounts.put(segmentId, new AtomicInteger(1));
-        }
         
-        return true;
+        
+        return indexSegment;
       }
     } catch (Exception ex) {
       logger.error(ex.getMessage(), ex);
     }
-    return false;
+    return null;
   }
   public void incrementCount(final String segmentId) {
     referenceCounts.get(segmentId).incrementAndGet();
@@ -343,5 +365,14 @@ public class SegmentTracker {
       }
     }
 
+  }
+  public Map<String, SegmentToZoieReaderAdapter> getSegmentsMap() {
+    return segmentsMap;
+  }
+  public Object getGlobalLock() {
+    return globalLock;
+  }
+  public IndexReaderDecorator getSenseiDecorator() {
+    return senseiDecorator;
   }
 }

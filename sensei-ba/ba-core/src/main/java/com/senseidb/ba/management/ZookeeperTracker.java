@@ -21,7 +21,7 @@ import com.yammer.metrics.core.Counter;
 
 
 
-public  class ZookeeperTracker implements IZkChildListener, IZkDataListener, SegmentLoaderListener {
+public  class ZookeeperTracker implements IZkChildListener {
   private static Logger logger =Logger.getLogger(ZookeeperTracker.class);
   private ZkClient zkClient;
   private String partitionPath;
@@ -30,6 +30,7 @@ public  class ZookeeperTracker implements IZkChildListener, IZkDataListener, Seg
   private final String clusterName;
   private final int partitionId;
   private final int nodeId;
+  private SegmentRefreshListener segmentRefreshListener;
   public ZookeeperTracker(ZkClient zkClient, String clusterName, int nodeId, int partitionId, SegmentTracker segmentTracker) {
     this.zkClient = zkClient;
     this.clusterName = clusterName;
@@ -38,18 +39,20 @@ public  class ZookeeperTracker implements IZkChildListener, IZkDataListener, Seg
     partitionPath = SegmentUtils.getActiveSegmentsPathForPartition(clusterName, partitionId);
     this.segmentTracker = segmentTracker;
     zkClient.setZkSerializer(new BytesPushThroughSerializer());
+    segmentRefreshListener = new SegmentRefreshListener(segmentTracker, zkClient, clusterName);
   }
   public void start() {
     if (!zkClient.exists(partitionPath)) {
       zkClient.createPersistent(partitionPath, true);
     }
-    handleChildChange(partitionPath, zkClient.getChildren(partitionPath));
+    refreshSegmentTracker(zkClient.getChildren(partitionPath), true);    
     zkClient.subscribeChildChanges(partitionPath, this);
+    segmentRefreshListener.start();
     
   }
   public void stop() {
     zkClient.unsubscribeChildChanges(partitionPath, this);
-
+    segmentRefreshListener.stop();
   }
   @Override
   public  void handleChildChange(String parentPath, List<String> currentChilds)  {
@@ -57,6 +60,9 @@ public  class ZookeeperTracker implements IZkChildListener, IZkDataListener, Seg
       //deleted
       currentChilds = Collections.EMPTY_LIST;
     }
+    refreshSegmentTracker(currentChilds, false);
+  }
+  public void refreshSegmentTracker(List<String> currentChilds, boolean synchronous) {
     Set<String> toDelete = null;
     Map<String, SegmentInfo> toAdd = null;
     Set<String> currentSegments = new HashSet<String>(segmentTracker.getActiveSegments());
@@ -81,7 +87,7 @@ public  class ZookeeperTracker implements IZkChildListener, IZkDataListener, Seg
   
     if (toAdd != null) {
       for (String newSegment : toAdd.keySet()) {
-        segmentTracker.addSegment(newSegment, toAdd.get(newSegment), this); 
+        segmentTracker.addSegment(newSegment, toAdd.get(newSegment), synchronous); 
         ValidationServlet.lastPushTime.clear();
         ValidationServlet.lastPushTime.inc(System.currentTimeMillis());
       }
@@ -92,66 +98,14 @@ public  class ZookeeperTracker implements IZkChildListener, IZkDataListener, Seg
       }
     }
   }
-  public synchronized void segmentLoadedSuccsfully(String segmentId) {
-    if (failedSegments.containsKey(segmentId)) {
-      logger.info("Segment " + segmentId + "recovered succesfully. Removing specific recovering logic");
-      
-      failedSegments.remove(segmentId);
-      segmentsFailedToLoad.clear();
-      segmentsFailedToLoad.inc(failedSegments.size());
-      try {
-      zkClient.unsubscribeDataChanges(getMetadataPath(segmentId), this);
-      } catch (Exception ex) {
-        logger.warn(ex.getMessage(), ex);
-      }
-    }
-  }
-   private Map<String, String> failedSegments = new ConcurrentHashMap<String, String>();
+ 
    
-  public void segmentFailedToLoad(String segmentId) {
-    logger.warn("The segment " + segmentId + " has not been loaded succesfully");
-    if (failedSegments.containsKey(segmentId)) {
-      logger.info("The segment " + segmentId + " is already marked as failed. Do not need to do anything");
-      return;
-    }
-    failedSegments.put(segmentId, segmentId);
-    segmentsFailedToLoad.clear();
-    segmentsFailedToLoad.inc(failedSegments.size());
-    logger.info("Subscribing to the data changes for the segment - " + segmentId);
-    zkClient.subscribeDataChanges(getMetadataPath(segmentId), this);
-  }
+ 
   public String getMetadataPath(String segmentId) {
     return SegmentUtils.getSegmentInfoPath(clusterName, segmentId) + "/metadata";
   }
   
-  @Override
-  public void handleDataChange(String dataPath, Object data) throws Exception {
-   if (dataPath == null || data == null) {
-     return;
-   }
-   String segmentId = extractSegmentId(dataPath);
-   if (!failedSegments.containsKey(segmentId)) {
-     logger.info("The segment " + segmentId + " is not marked as failed any more");
-     segmentLoadedSuccsfully(segmentId);
-     return;
-   }
-   synchronized(segmentTracker) {
-     if (segmentTracker.getActiveSegments().contains(segmentId)) {
-       segmentLoadedSuccsfully(segmentId);
-       return;
-     }
-   }
-   logger.info("The segment " + segmentId + " was changed. Trying to register it again");
-   SegmentInfo segmentInfo = SegmentInfo.retrieveFromZookeeper(zkClient, clusterName, segmentId);
-   segmentTracker.addSegment(segmentId, segmentInfo, this);
-  }
-  @Override
-  public void handleDataDeleted(String dataPath) throws Exception {
-    String segmentId = extractSegmentId(dataPath);
-    logger.info("Removing segment - " + segmentId);
-    failedSegments.remove(segmentId);
-    
-  }
+ 
   private String extractSegmentId(String dataPath) {
     if (dataPath.endsWith("/")) {
       dataPath = dataPath.substring(0, dataPath.length() - 1);

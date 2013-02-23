@@ -1,21 +1,15 @@
 package com.senseidb.ba.format;
 
-import it.unimi.dsi.fastutil.Swapper;
-import it.unimi.dsi.fastutil.ints.IntComparator;
-
 import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import javax.management.RuntimeErrorException;
 
 import org.apache.log4j.Logger;
 import org.springframework.util.Assert;
 
 import scala.actors.threadpool.Arrays;
 
-import com.browseengine.bobo.facets.data.TermLongList;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
@@ -23,9 +17,7 @@ import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.creators.ForwardIndexCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
-import com.senseidb.ba.gazelle.impl.SecondarySortedForwardIndexImpl;
 import com.senseidb.ba.gazelle.utils.SortUtil;
-import com.senseidb.ba.util.IndexConverter;
 
 public class GenericIndexCreator {
 	private static Logger logger = Logger.getLogger(GenericIndexCreator.class);
