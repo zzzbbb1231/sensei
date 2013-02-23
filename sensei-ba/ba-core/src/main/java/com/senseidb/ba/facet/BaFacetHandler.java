@@ -75,15 +75,7 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
       return null;
     }
     currentColumnTypes.add(forwardIndex.getColumnType());  
-    if(offlineSegment instanceof GazelleIndexSegmentImpl && offlineSegment.getDictionary(columnName).size() >= DICT_SIZE_THRESHOLD_MAX){
-    	return new ZeusDataCache(forwardIndex, ((GazelleIndexSegmentImpl) offlineSegment).getInvertedIndexObject(columnName));
-    }
-    else{
-        return new ZeusDataCache(forwardIndex, offlineSegment.getInvertedIndex(columnName));
-    }
-
-    
-
+    return new ZeusDataCache(forwardIndex, offlineSegment.getInvertedIndex(columnName));
   }
 
   private RandomAccessFilter getDefaultRandomAccessFilter(final String value, Properties selectionProperty) {
@@ -131,14 +123,8 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
     }
     // Go by inverted index path
     if (zeusDataCache.invertedIndexPresent(index)) {
-      if(zeusDataCache.highCardinality()){
-    	  final DocIdSet invertedIndex = zeusDataCache.getInvertedIndex(index);
-    	  return new FacetUtils.InvertedIndexDocIdSet(zeusDataCache, invertedIndex, index);
-      }
-      else{
-    	  final DocIdSet invertedIndex = zeusDataCache.getInvertedIndexes()[index];
-    	  return new FacetUtils.InvertedIndexDocIdSet(zeusDataCache, invertedIndex, index);
-      }
+   	  final DocIdSet invertedIndex = zeusDataCache.getInvertedIndex(index);
+   	  return new FacetUtils.InvertedIndexDocIdSet(zeusDataCache, invertedIndex, index);
     } else if (zeusDataCache.getForwardIndex() instanceof SecondarySortedForwardIndexImpl) {
       SecondarySortedForwardIndexImpl secondarySortedForwardIndexImpl = (SecondarySortedForwardIndexImpl) zeusDataCache.getForwardIndex();
       return new SortedFacetUtils.SecondarySortedForwardDocIdSet(secondarySortedForwardIndexImpl.getSortedRegions(), index);

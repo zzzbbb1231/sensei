@@ -6,6 +6,7 @@ import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.DocIdSetIterator;
 
 import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.InvertedIndexObject;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.yammer.metrics.Metrics;
@@ -17,7 +18,7 @@ import com.yammer.metrics.core.Counter;
  * a minimum, but initialization and iteration time remains similar.
  */
 
-public class GazelleInvertedIndexHighCardinalityImpl {
+public class GazelleInvertedIndexHighCardinalityImpl implements InvertedIndexObject {
 
 	private int[] offsets = null;	
 	private int[] data = null;
@@ -198,4 +199,13 @@ public class GazelleInvertedIndexHighCardinalityImpl {
 		}
 	}
 
+	@Override
+	public int length() {
+		return offsets.length;
+	}
+
+	@Override
+	public Boolean checkNull(int dictionaryIndex) {
+		return dictionaryIndex < offsets.length;
+	}
 }

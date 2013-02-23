@@ -41,6 +41,7 @@ public class InvertedIndexTest{
 		}
 
 		dictionary = new TermStringList(10);
+//		dictionary.add(null);
 		for(int i = 0; i < 10; i++){
 			dictionary.add(Integer.toString(i));
 		}
@@ -49,13 +50,14 @@ public class InvertedIndexTest{
 
 		fIndex = new GazelleForwardIndexImpl(column, data, dictionary, columnMetadata);
 		int optVal = GazelleInvertedIndexImpl.estimateOptimalMinJump(fIndex, dictionary.indexOf("0"));
-		iIndex = new GazelleInvertedIndexImpl(fIndex, dictionary.indexOf("0"), optVal);
+		iIndex = new GazelleInvertedIndexImpl(fIndex, dictionary.size(), optVal, dictionary);
 		for(int i = 0; i < TEST_SIZE; i++){
 			if(fIndex.getReader().getValueIndex(i) == 0){
-				iIndex.addDoc(i);
+				iIndex.addDoc(i, 0);
 			}
 		}
-		iIterator = iIndex.iterator();
+		DocIdSet set = iIndex.getSet(0);
+		iIterator = set.iterator();
 	}
 
 	@After
@@ -70,7 +72,8 @@ public class InvertedIndexTest{
 //
 //		for(int k = 0; k < 10; k++){
 //
-			DocIdSetIterator iIndex2 = iIndex.iterator();
+			DocIdSet set = iIndex.getSet(1);
+			DocIdSetIterator iIndex2 = set.iterator();
 			int current = iIndex2.nextDoc();
 			int i = 0;
 
@@ -102,7 +105,8 @@ public class InvertedIndexTest{
 //
 //		for(int k = 0; k < 10; k++){
 
-			DocIdSetIterator iIndex2 = iIndex.iterator();
+			DocIdSet set = iIndex.getSet(1);
+			DocIdSetIterator iIndex2 = set.iterator();
 
 			int current = iIndex2.advance(0);
 			int i = 0;
