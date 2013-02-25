@@ -6,7 +6,7 @@ import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.DocIdSetIterator;
 
 import com.senseidb.ba.gazelle.ForwardIndex;
-import com.senseidb.ba.gazelle.InvertedIndexObject;
+import com.senseidb.ba.gazelle.InvertedIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.yammer.metrics.Metrics;
@@ -18,14 +18,14 @@ import com.yammer.metrics.core.Counter;
  * a minimum, but initialization and iteration time remains similar.
  */
 
-public class GazelleInvertedIndexHighCardinalityImpl implements InvertedIndexObject {
+public class HighCardinalityInvertedIndex implements InvertedIndex {
 
 	private int[] offsets = null;	
 	private int[] data = null;
 
-	private static final Counter invertedDocCount = Metrics.newCounter(GazelleInvertedIndexImpl.class, "invertedDocCount");
-	private static final Counter invertedCompressedSize = Metrics.newCounter(GazelleInvertedIndexImpl.class, "invertedCompressedSize");
-	private static final Counter invertedTotalDocCount = Metrics.newCounter(GazelleInvertedIndexImpl.class, "invertedTotalDocCount");
+	private static final Counter invertedDocCount = Metrics.newCounter(StandardCardinalityInvertedIndex.class, "invertedDocCount");
+	private static final Counter invertedCompressedSize = Metrics.newCounter(StandardCardinalityInvertedIndex.class, "invertedCompressedSize");
+	private static final Counter invertedTotalDocCount = Metrics.newCounter(StandardCardinalityInvertedIndex.class, "invertedTotalDocCount");
 
 	/** 
 	 * This function prepares the data to be read. This MUST be called after the initializer before using the iterator.
@@ -49,7 +49,7 @@ public class GazelleInvertedIndexHighCardinalityImpl implements InvertedIndexObj
 	 * @param fIndex -> Used to read through the forward index
 	 * @param valCount -> Number of dictionary values for this column
 	 */
-	public GazelleInvertedIndexHighCardinalityImpl(ForwardIndex fIndex, int valCount){
+	public HighCardinalityInvertedIndex(ForwardIndex fIndex, int valCount){
 
 		offsets = new int[valCount + 1];
 		int size = fIndex.getLength();
@@ -130,15 +130,15 @@ public class GazelleInvertedIndexHighCardinalityImpl implements InvertedIndexObj
 
 	class GazelleInvertedHighCardinalitySet extends DocIdSet {
 
-		private int dictValue = 0;
+		private int dataIndex = 0;
 
 		GazelleInvertedHighCardinalitySet(int dictValue){
-			this.dictValue = dictValue - 1;
+			this.dataIndex = dictValue - 1;
 		}
 
 		@Override
 		public DocIdSetIterator iterator() throws IOException {
-			return new GazelleInvertedIndex(dictValue);
+			return new GazelleInvertedIndex(dataIndex);
 		}
 
 		/**
@@ -205,7 +205,7 @@ public class GazelleInvertedIndexHighCardinalityImpl implements InvertedIndexObj
 	}
 
 	@Override
-	public Boolean checkNull(int dictionaryIndex) {
+	public boolean invertedIndexPresent(int dictionaryIndex) {
 		return dictionaryIndex < offsets.length;
 	}
 }

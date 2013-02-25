@@ -5,15 +5,15 @@ import org.apache.lucene.search.DocIdSet;
 import com.browseengine.bobo.facets.data.FacetDataCache;
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ForwardIndex;
-import com.senseidb.ba.gazelle.InvertedIndexObject;
+import com.senseidb.ba.gazelle.InvertedIndex;
 import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 
 public class ZeusDataCache {
   private FacetDataCache fakeCache;
-  private InvertedIndexObject invertedIndexes;
+  private InvertedIndex invertedIndexes;
   private ForwardIndex forwardIndex;
   private TermValueList<?> dictionary;
-  public ZeusDataCache(ForwardIndex forwardIndex, InvertedIndexObject invertedIndexObject) {
+  public ZeusDataCache(ForwardIndex forwardIndex, InvertedIndex invertedIndexObject) {
     this.forwardIndex = forwardIndex;
     this.invertedIndexes = invertedIndexObject;
     dictionary = forwardIndex.getDictionary();
@@ -25,7 +25,7 @@ public class ZeusDataCache {
   }
 
   public boolean invertedIndexPresent(int dictionaryIndex) {
-    return (invertedIndexes != null && dictionaryIndex < invertedIndexes.length() && invertedIndexes.checkNull(dictionaryIndex));
+    return (invertedIndexes != null && dictionaryIndex < invertedIndexes.length() && invertedIndexes.invertedIndexPresent(dictionaryIndex));
   }
 
   public static FacetDataCache createFakeFacetDataCache(ForwardIndex forwardIndex) {
@@ -55,13 +55,13 @@ public class ZeusDataCache {
   public void setFakeCache(FacetDataCache fakeCache) {
     this.fakeCache = fakeCache;
   }
-  public InvertedIndexObject getInvertedIndexes() {
+  public InvertedIndex getInvertedIndexes() {
     return invertedIndexes;
   }
   public DocIdSet getInvertedIndex(int index) {
 	    return invertedIndexes.getSet(index);
 	  }
-  public void setInvertedIndexes(InvertedIndexObject invertedIndexes) {
+  public void setInvertedIndexes(InvertedIndex invertedIndexes) {
     this.invertedIndexes = invertedIndexes;
   }
 

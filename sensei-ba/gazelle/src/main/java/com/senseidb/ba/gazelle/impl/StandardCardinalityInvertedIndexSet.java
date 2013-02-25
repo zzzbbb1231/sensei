@@ -11,9 +11,9 @@ import com.senseidb.ba.gazelle.impl.FacetUtils.ForwardDocIdSet;
 import com.senseidb.ba.gazelle.impl.FacetUtils.ForwardIndexIterator;
 import com.senseidb.ba.gazelle.utils.PForDeltaDocIdSet;
 
-public class GazelleInvertedIndexSet extends DocIdSet {
+public class StandardCardinalityInvertedIndexSet extends DocIdSet {
 
-	ForwardIndexReader iIndex;					//Used when we call getFromForwardIndex
+	ForwardIndexReader indexReader;					//Used when we call getFromForwardIndex
 	ForwardIndex forwardIndex;
 
 	private PForDeltaDocIdSet pForDSet;		//Internal data set of the DocIDs that we will keep
@@ -21,8 +21,8 @@ public class GazelleInvertedIndexSet extends DocIdSet {
 	protected MultiValueForwardIndex multiIndex;	//Used to hold the MultiValueForwardIndex reader
 	protected int[] buffer;					//Used for reading from the MultiValue reader
 
-	protected GazelleForwardIndexImpl fIndex;
-	protected ForwardIndexIterator reader;		//Forward iterator needed for sequential iteration
+	protected GazelleForwardIndexImpl gazelleForwardIndex;
+	protected ForwardIndexIterator forwardIndexReader;		//Forward iterator needed for sequential iteration
 	protected int dictValue = 0;					//Value in the dictionary we need for sequential iteration
 
 	private int lastCandidate = -1;				//Last potential candidate that we looked at to add into PForDSet (Could have been added or not)
@@ -67,7 +67,7 @@ public class GazelleInvertedIndexSet extends DocIdSet {
 	 * @param dictValue -> Needed for sequential iteration
 	 * @throws IOException 
 	 */
-	public GazelleInvertedIndexSet(ForwardIndex forwardIndex, int dictValue, int jumpValue) throws IOException{
+	public StandardCardinalityInvertedIndexSet(ForwardIndex forwardIndex, int dictValue, int jumpValue) throws IOException{
 		
 		this.dictValue = dictValue;
 		this.forwardIndex = forwardIndex;
@@ -75,7 +75,7 @@ public class GazelleInvertedIndexSet extends DocIdSet {
 		//If the jump value is specified (As it should be... Or we may end up taking too much time initializing) we set it.
 		//If not, we go estimate it.
 		if(jumpValue == 0){
-			minJumpValue = GazelleInvertedIndexImpl.estimateOptimalMinJump(forwardIndex, dictValue);
+			minJumpValue = StandardCardinalityInvertedIndex.estimateOptimalMinJump(forwardIndex, dictValue);
 		}
 		else{
 			minJumpValue = jumpValue;
@@ -116,7 +116,7 @@ public class GazelleInvertedIndexSet extends DocIdSet {
 
 	@Override
 	public DocIdSetIterator iterator() throws IOException {
-		return new GazelleInvertedIndex();
+		return new GazelleInvertedIndexIterator();
 	}
 
 	/**
@@ -140,9 +140,9 @@ public class GazelleInvertedIndexSet extends DocIdSet {
 	class SingleValueForwardIndexReader implements ForwardIndexReader{
 
 		public SingleValueForwardIndexReader(ForwardIndex forwardIndex, int dictValue) throws IOException {
-			fIndex = (GazelleForwardIndexImpl) forwardIndex;
+			gazelleForwardIndex = (GazelleForwardIndexImpl) forwardIndex;
 			ForwardDocIdSet docIdSet = new FacetUtils.ForwardDocIdSet((GazelleForwardIndexImpl) forwardIndex, dictValue, finalDoc);
-			reader = (ForwardIndexIterator) docIdSet.iterator();
+			forwardIndexReader = (ForwardIndexIterator) docIdSet.iterator();
 		}
 
 		public int getFromForwardIndex(int index) throws IOException {
@@ -150,7 +150,7 @@ public class GazelleInvertedIndexSet extends DocIdSet {
 				return DocIdSetIterator.NO_MORE_DOCS;
 			}
 			else{
-				return reader.advance(index);
+				return forwardIndexReader.advance(index);
 			}
 		}
 
@@ -184,34 +184,34 @@ public class GazelleInvertedIndexSet extends DocIdSet {
 	 * @author jjung
 	 *
 	 */
-	class GazelleInvertedIndex extends DocIdSetIterator {
+	class GazelleInvertedIndexIterator extends DocIdSetIterator {
 
-		private DocIdSetIterator PForDIt;
+		private DocIdSetIterator pForDIt;
 
 		private int lastDoc = -1;
 		private int currentMin = -1;
 
-		GazelleInvertedIndex() throws IOException{
+		GazelleInvertedIndexIterator() throws IOException{
 			super();
 			
 			if(forwardIndex instanceof MultiValueForwardIndex){
-				iIndex = new MultiValueForwardIndexReader(forwardIndex, dictValue);
+				indexReader = new MultiValueForwardIndexReader(forwardIndex, dictValue);
 			}
 			else{
-				iIndex = new SingleValueForwardIndexReader(forwardIndex, dictValue);
+				indexReader = new SingleValueForwardIndexReader(forwardIndex, dictValue);
 			}
 			
-			GazelleInvertedIndexImpl.invertedTotalDocCount.inc(getCount());
-			GazelleInvertedIndexImpl.invertedDocCount.inc(getTrueCount());
-			GazelleInvertedIndexImpl.invertedCompressedSize.inc(getCompSize());
+			StandardCardinalityInvertedIndex.invertedTotalDocCount.inc(getCount());
+			StandardCardinalityInvertedIndex.invertedDocCount.inc(getTrueCount());
+			StandardCardinalityInvertedIndex.invertedCompressedSize.inc(getCompSize());
 			
-			PForDIt = pForDSet.iterator();
+			pForDIt = pForDSet.iterator();
 
 			currentMin = -1;
 			lastDoc = -1;
 
 			if(docCount > 0){
-				currentMin = PForDIt.nextDoc() - 1;
+				currentMin = pForDIt.nextDoc() - 1;
 			}
 
 		}
@@ -234,14 +234,14 @@ public class GazelleInvertedIndexSet extends DocIdSet {
 			// there are any docs that are between -1 and the current min, return
 			// from the forward iterator.
 			if (docCount == 0 || lastDoc != currentMin){
-				lastDoc = iIndex.getFromForwardIndex(lastDoc + 1);
+				lastDoc = indexReader.getFromForwardIndex(lastDoc + 1);
 			}
 
 			// Else, we are at a jump, return the higher end of the jump and set all
 			// needed variables.
 			else if (lastDoc == currentMin) {
-				lastDoc = PForDIt.nextDoc() - 1;
-				currentMin = PForDIt.nextDoc() - 1;
+				lastDoc = pForDIt.nextDoc() - 1;
+				currentMin = pForDIt.nextDoc() - 1;
 			}
 
 			return lastDoc;
@@ -257,19 +257,19 @@ public class GazelleInvertedIndexSet extends DocIdSet {
 		private int findNext(int target) throws IOException {
 			// This function works as a helper function for advance.
 
-			int curr = PForDIt.advance(target + 1) - 1;
+			int curr = pForDIt.advance(target + 1) - 1;
 		
 			int result = 0;
 			
 			if(curr == DocIdSetIterator.NO_MORE_DOCS){
-				result = iIndex.getFromForwardIndex(target); 
+				result = indexReader.getFromForwardIndex(target); 
 			}
 			else if(pForDSet.jump){
 				result = curr;
-				currentMin = PForDIt.nextDoc() - 1;				
+				currentMin = pForDIt.nextDoc() - 1;				
 			}
 			else{
-				result = iIndex.getFromForwardIndex(target);
+				result = indexReader.getFromForwardIndex(target);
 				currentMin = curr;
 			}
 
@@ -292,7 +292,7 @@ public class GazelleInvertedIndexSet extends DocIdSet {
 
 			//Don't bother with all the cool logic if we don't hold any docs in our class.
 			else if (docCount == 0 || target <= currentMin){
-				lastDoc = iIndex.getFromForwardIndex(target);
+				lastDoc = indexReader.getFromForwardIndex(target);
 			}
 
 			// Okay fine, I guess we'll have to use the helper to find the answer. This is the most expensive option.

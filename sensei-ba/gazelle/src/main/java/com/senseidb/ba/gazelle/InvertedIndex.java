@@ -6,7 +6,7 @@ package com.senseidb.ba.gazelle;
 
 import org.apache.lucene.search.DocIdSet;
 
-public interface InvertedIndexObject{
+public interface InvertedIndex{
 
 	/**
 	 * Returns the DocIdSet of the corresponding dictValue input.
@@ -23,6 +23,6 @@ public interface InvertedIndexObject{
 	 * Check if the given dictionary value has an inverted index set associated with it.
 	 * @param dictionaryIndex
 	 */
-	public Boolean checkNull(int dictionaryIndex);	
+	public boolean invertedIndexPresent(int dictionaryIndex);	
 
 }

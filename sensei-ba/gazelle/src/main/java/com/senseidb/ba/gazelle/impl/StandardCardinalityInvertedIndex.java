@@ -6,7 +6,7 @@ import org.apache.lucene.search.DocIdSet;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ForwardIndex;
-import com.senseidb.ba.gazelle.InvertedIndexObject;
+import com.senseidb.ba.gazelle.InvertedIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
 import com.yammer.metrics.Metrics;
@@ -19,15 +19,15 @@ import com.yammer.metrics.core.Counter;
  * so that compression rate and iteration time is optimized.
  */
 
-public class GazelleInvertedIndexImpl implements InvertedIndexObject{
+public class StandardCardinalityInvertedIndex implements InvertedIndex{
 
 	private final static double THRESHOLD = 0.5;
 
-	private GazelleInvertedIndexSet[] valueSets;
+	private StandardCardinalityInvertedIndexSet[] docIdSets;
 
-	protected static final Counter invertedDocCount = Metrics.newCounter(GazelleInvertedIndexSet.class, "invertedDocCount");
-	protected static final Counter invertedCompressedSize = Metrics.newCounter(GazelleInvertedIndexSet.class, "invertedCompressedSize");
-	protected static final Counter invertedTotalDocCount = Metrics.newCounter(GazelleInvertedIndexSet.class, "invertedTotalDocCount");
+	protected static final Counter invertedDocCount = Metrics.newCounter(StandardCardinalityInvertedIndexSet.class, "invertedDocCount");
+	protected static final Counter invertedCompressedSize = Metrics.newCounter(StandardCardinalityInvertedIndexSet.class, "invertedCompressedSize");
+	protected static final Counter invertedTotalDocCount = Metrics.newCounter(StandardCardinalityInvertedIndexSet.class, "invertedTotalDocCount");
 
 	public static long getTotalCount() {
 		return invertedTotalDocCount.count();
@@ -89,9 +89,9 @@ public class GazelleInvertedIndexImpl implements InvertedIndexObject{
 
 		double size = forwardIndex.getLength();
 		SingleValueForwardIndex index = (SingleValueForwardIndex) forwardIndex;
-		SingleValueRandomReader ireader = index.getReader();
+		SingleValueRandomReader indexReader = index.getReader();
 		for(double i = 0; i < size; i++){
-			if(ireader.getValueIndex((int) i) == dictValue){
+			if(indexReader.getValueIndex((int) i) == dictValue){
 
 				currCount++;
 
@@ -204,26 +204,26 @@ public class GazelleInvertedIndexImpl implements InvertedIndexObject{
 
 	@Override
 	public DocIdSet getSet(int dictValue) {
-		return valueSets[dictValue];
+		return docIdSets[dictValue];
 	}
 
 	@SuppressWarnings("rawtypes")
-	public GazelleInvertedIndexImpl(ForwardIndex fIndex, int size, int optVal, TermValueList values) throws IOException{
-		valueSets = new GazelleInvertedIndexSet[size];
+	public StandardCardinalityInvertedIndex(ForwardIndex fIndex, int size, int optVal, TermValueList values) throws IOException{
+		docIdSets = new StandardCardinalityInvertedIndexSet[size];
 
 		for(int i = 0; i < size; i++){
 			String value = values.get(i);
-			valueSets[i] = new GazelleInvertedIndexSet(fIndex, fIndex.getDictionary().indexOf(value), optVal);
+			docIdSets[i] = new StandardCardinalityInvertedIndexSet(fIndex, fIndex.getDictionary().indexOf(value), optVal);
 		}
 	}
 
 	public void addDoc(int id, int value) throws IOException {
-		valueSets[value].addDoc(id);
+		docIdSets[value].addDoc(id);
 	}
 
 	@Override
-	public Boolean checkNull(int index) {
-		return valueSets[index] != null;
+	public boolean invertedIndexPresent(int index) {
+		return docIdSets[index] != null;
 	}
 	
 	/**
@@ -231,9 +231,9 @@ public class GazelleInvertedIndexImpl implements InvertedIndexObject{
 	 * @throws IOException
 	 */
 	public void flush() throws IOException {
-		for(int i = 0; i < valueSets.length; i++){
-			if(valueSets[i] != null){
-				valueSets[i].flush();
+		for(int i = 0; i < docIdSets.length; i++){
+			if(docIdSets[i] != null){
+				docIdSets[i].flush();
 			}
 		}		
 	}
@@ -242,15 +242,15 @@ public class GazelleInvertedIndexImpl implements InvertedIndexObject{
 	 * Seals off any extra space in arrays, to save more space.
 	 */
 	public void optimize() {
-		for(int i = 0; i < valueSets.length; i++){
-			if(valueSets[i] != null){
-				valueSets[i].optimize();
+		for(int i = 0; i < docIdSets.length; i++){
+			if(docIdSets[i] != null){
+				docIdSets[i].optimize();
 			}
 		}		
 	}
 
 	@Override
 	public int length() {
-		return valueSets.length;
+		return docIdSets.length;
 	}
 }
