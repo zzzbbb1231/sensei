@@ -104,10 +104,10 @@ public class IndexingCoordinator extends SenseiZoieFactory implements SegmentPer
   
  
   public void start() {
-    bootstrap();
-    pendingSegmentsIndexFactory.start();
     realtimeDataProvider.startProvider();
     indexingManager.start();
+    bootstrap();
+    pendingSegmentsIndexFactory.start();
     
     
   }

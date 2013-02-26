@@ -99,6 +99,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
             }
           }
         }
+        logger.info("Found " + segmentsToAdd.size() + " segment to add");
         for (final String key : segmentsToAdd) {
           executorService.submit(new Runnable() {
             @Override
