@@ -24,7 +24,7 @@ public class FieldShardingStrategy implements ShardingStrategy {
     if (obj == null) {
       return 0;
     }
-    return Math.abs(((Number) obj).intValue()) % maxPartitionId;
+    return Math.abs(((Number) obj).intValue()) % (maxPartitionId + 1);
   }
 
 }
