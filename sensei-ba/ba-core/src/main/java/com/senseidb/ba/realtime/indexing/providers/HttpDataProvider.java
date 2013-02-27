@@ -23,6 +23,7 @@ import com.senseidb.ba.realtime.indexing.DataWithVersion;
 import com.senseidb.ba.realtime.indexing.RealtimeDataProvider;
 import com.senseidb.plugin.SenseiPlugin;
 import com.senseidb.plugin.SenseiPluginRegistry;
+import com.senseidb.util.JSONUtil;
 
 public class HttpDataProvider implements RealtimeDataProvider,SenseiPlugin {
   private int port;
@@ -64,12 +65,12 @@ public class HttpDataProvider implements RealtimeDataProvider,SenseiPlugin {
         String str = IOUtils.toString(inputStream);
         str = str.trim();
         if (str.startsWith("[")) {
-          JSONArray jsonArray = new JSONArray(str);
+          JSONArray jsonArray = new JSONUtil.FastJSONArray(str);
           for (int i = 0; i < jsonArray.length(); i++) {
             blockingQueue.put(schema.fromJson(jsonArray.getJSONObject(i)));
           }
         } else {
-          blockingQueue.add(schema.fromJson(new JSONObject(str)));
+          blockingQueue.add(schema.fromJson(new JSONUtil.FastJSONObject(str)));
         }
         } catch (Exception ex) {
           throw new RuntimeException(ex.getMessage(), ex);
