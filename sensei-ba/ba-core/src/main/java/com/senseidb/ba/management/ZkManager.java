@@ -5,19 +5,23 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.log4j.Logger;
 import org.springframework.util.Assert;
 
+import com.senseidb.ba.gazelle.SegmentMetadata;
 import com.senseidb.ba.management.directory.DirectoryBasedFactoryManager;
+import com.senseidb.ba.util.TimerService;
 
 public class ZkManager {
   private static Logger logger = Logger.getLogger(ZkManager.class);    
   private ZkClient zkClient;
     private final String clusterName;
-   
+    
     public ZkManager(String zkString, String clusterName) {
        this.clusterName = clusterName;
       zkClient = new ZkClient(zkString);
@@ -36,7 +40,7 @@ public class ZkManager {
     public void registerSegment(int partition, String segmentId, String pathUrl, Map<String, String> newConf) {
       registerSegment(clusterName, partition, segmentId, pathUrl, newConf);
     }
-    public void registerSegment(String clusterName, int partition, String segmentId, String pathUrl, Map<String, String> newConf) {
+    public void registerSegment(final String clusterName, int partition, String segmentId, String pathUrl, Map<String, String> newConf) {
       
       
       logger.info("Registering the new segment with id = " + segmentId + ", partition = " + partition + ", pathUrl = " + pathUrl);
@@ -52,8 +56,32 @@ public class ZkManager {
         if (!segmentInfo.getPathUrls().contains(pathUrl)) {
           segmentInfo.getPathUrls().add(pathUrl);
         }
+        String oldCrc = segmentInfo.getConfig().get(SegmentMetadata.SEGMENT_CRC);
+        String newCrc = newConf.get(SegmentMetadata.SEGMENT_CRC);
         segmentInfo.getConfig().putAll(newConf);
         segmentInfo.getConfig().put("overriten", String.valueOf(System.currentTimeMillis()));
+        if ((oldCrc == null && newCrc != null) || (oldCrc != null && !oldCrc.equals(newCrc))) {
+          String markerPath = SegmentUtils.getRefreshMarkerPath(clusterName) + "/" + System.currentTimeMillis() + "/" + segmentId;
+          if (!zkClient.exists(markerPath)) {
+            zkClient.createPersistent(markerPath, true);
+            TimerService.timer.schedule(new TimerTask() {
+              @Override
+              public void run() {
+                long time = System.currentTimeMillis();
+                List<String> children = zkClient.getChildren(SegmentUtils.getRefreshMarkerPath(clusterName));
+                for (String child : children) {
+                  if (child == null) {
+                    continue;
+                  }
+                  if (time - Long.parseLong(child) > 4000) {
+                    zkClient.deleteRecursive(SegmentUtils.getRefreshMarkerPath(clusterName) + "/" + child);
+                  }
+                }
+              }
+            }, 5000);
+           
+          }
+        }
       } else {
         List<String> pathUrls = new ArrayList<String>();
         pathUrls.add(pathUrl);

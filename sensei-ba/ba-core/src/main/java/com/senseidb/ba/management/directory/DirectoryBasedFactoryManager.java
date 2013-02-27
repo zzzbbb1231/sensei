@@ -59,6 +59,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
     private int maxPartition;
     private AtomicInteger counter = new AtomicInteger();
     private ReadMode readMode;
+    private String[] invertedColumns;
     public DirectoryBasedFactoryManager() {
       super(null, null, null, null, null);
     }
@@ -98,6 +99,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
             }
           }
         }
+        logger.info("Found " + segmentsToAdd.size() + " segment to add");
         for (final String key : segmentsToAdd) {
           executorService.submit(new Runnable() {
             @Override
@@ -157,7 +159,7 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
         Assert.state(gazelleIndexSegmentImpl != null, "Couldn't create the index segment out of " + file.getAbsolutePath());
         SegmentPersistentManager.flushToDisk(gazelleIndexSegmentImpl, targetDir);
         new File(targetDir, "finishedLoading").createNewFile();
-        gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, readMode);
+        gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, readMode, invertedColumns);
       } else if (fileType == FileType.COMPRESSED_GAZELLE) {
         List<File> uncompressedFiles = TarGzCompressionUtils.unTar(file, explodeDirectory);       
         Thread.sleep(100);
@@ -174,10 +176,10 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
           }
         }
         new File(targetDir, "finishedLoading").createNewFile();
-        gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, readMode);
+        gazelleIndexSegmentImpl = SegmentPersistentManager.read(targetDir, readMode, invertedColumns);
       } else if (fileType == FileType.GAZELLE){
         targetDir = file;
-        gazelleIndexSegmentImpl = SegmentPersistentManager.read(file, readMode);
+        gazelleIndexSegmentImpl = SegmentPersistentManager.read(file, readMode, invertedColumns);
       }
       int hash = Math.abs(counter.incrementAndGet()) % maxPartition;
       SimpleIndexFactory mapBasedIndexFactory = readers.get(hash);
@@ -263,6 +265,11 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
         readMode = ReadMode.DirectMemory;
         logger.info("Initialized the default readmode - " + readMode);
       }
+		String invertedIndexStr = config.get("invertedColumns");
+		if (invertedIndexStr != null) {
+			invertedColumns = invertedIndexStr.split(",");
+			logger.info("Initialized the Inverted Index from the configuration - " + invertedIndexStr);
+		} 
     }
     @Override
     public void stop() {
@@ -342,9 +349,8 @@ public class DirectoryBasedFactoryManager extends SenseiZoieFactory implements S
     public SenseiIndexReaderDecorator getDecorator() {
       return super.getDecorator();
     }
-
-    public File getDirectory() {
-      return directory;
-    }
     
+    public File getDirectory(){
+    	return directory;
+    }
 }

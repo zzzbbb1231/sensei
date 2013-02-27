@@ -1,19 +1,16 @@
 package com.senseidb.ba.realtime.domain;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+
 import java.util.List;
 
 import com.browseengine.bobo.facets.data.TermNumberList;
-import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
-
-import it.unimi.dsi.fastutil.Size64;
-import it.unimi.dsi.fastutil.ints.IntList;
 
 public abstract class AbstractDictionarySnapshot extends TermNumberList implements DictionarySnapshot {
   protected IntList permutationArray;
   protected IntList invPermutationArray;
-  @Override
   public int size() {
     return permutationArray.size();
   }

@@ -43,6 +43,9 @@ public class BQLParserUtils {
         }
       } else {
         JSONArray columns = groupBy.optJSONArray("columns");
+        if (aggreagationFunctions.size() > 0) {
+          groupBy.put("columns", (JSONArray)null);
+        }
         int countSum = 0;
         int top = groupBy.optInt("top");
         for (Pair<String, String> pair: aggreagationFunctions) {

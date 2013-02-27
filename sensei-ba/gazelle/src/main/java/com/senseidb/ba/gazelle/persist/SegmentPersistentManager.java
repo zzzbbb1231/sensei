@@ -44,6 +44,7 @@ public class SegmentPersistentManager {
   
   private static void flush(GazelleIndexSegmentImpl segment, String baseDir, FileSystemMode mode, FileSystem fs) throws IOException, ConfigurationException, IllegalAccessException {
     segment.getSegmentMetadata().put("segment.index.version", VERSION);
+    segment.setAssociatedDirectory(baseDir);
     DictionaryPersistentManager.flush(segment.getColumnMetadataMap(), segment.getDictionaries(), baseDir, mode, fs);
     MetadataPersistentManager.flush(segment.getColumnMetadataMap(), segment.getSegmentMetadata(), baseDir, mode, fs);
     HashMap<String, Integer> dictionarySizeMap = new HashMap<String, Integer>();
@@ -73,14 +74,33 @@ public class SegmentPersistentManager {
   }
   
   public static GazelleIndexSegmentImpl read(File indexDir, ReadMode mode) throws ConfigurationException, IOException {
+	    try {
+	    File file = new File(indexDir, GazelleUtils.METADATA_FILENAME);
+	    PropertiesConfiguration config = new PropertiesConfiguration(file);
+	    SegmentMetadata globalProperties = MetadataPersistentManager.readSegmentMetadata(config);
+	    HashMap<String, ColumnMetadata> metadataMap = MetadataPersistentManager.readFromFile(config);
+	    Map<String, TermValueList> dictionaries = getTermValueListMap(metadataMap, indexDir);
+	    GazelleIndexSegmentImpl ret =  new GazelleIndexSegmentImpl(metadataMap, getForwardIndexesMap(metadataMap, dictionaries, indexDir, mode),
+	        dictionaries, globalProperties, metadataMap.values().iterator().next().getNumberOfElements());
+	    ret.setAssociatedDirectory(indexDir.getAbsolutePath());
+	    return ret;
+	    } catch (Exception ex) {
+	      logger.error("Couldn't read the segment", ex);
+	      return null;
+	    }
+	  }
+  
+  public static GazelleIndexSegmentImpl read(File indexDir, ReadMode mode, String[] invertedColumns) throws ConfigurationException, IOException {
     try {
     File file = new File(indexDir, GazelleUtils.METADATA_FILENAME);
     PropertiesConfiguration config = new PropertiesConfiguration(file);
     SegmentMetadata globalProperties = MetadataPersistentManager.readSegmentMetadata(config);
     HashMap<String, ColumnMetadata> metadataMap = MetadataPersistentManager.readFromFile(config);
     Map<String, TermValueList> dictionaries = getTermValueListMap(metadataMap, indexDir);
-    return new GazelleIndexSegmentImpl(metadataMap, getForwardIndexesMap(metadataMap, dictionaries, indexDir, mode),
-        dictionaries, globalProperties, metadataMap.values().iterator().next().getNumberOfElements());
+    GazelleIndexSegmentImpl ret =   new GazelleIndexSegmentImpl(metadataMap, getForwardIndexesMap(metadataMap, dictionaries, indexDir, mode),
+        dictionaries, globalProperties, metadataMap.values().iterator().next().getNumberOfElements(), invertedColumns);
+    ret.setAssociatedDirectory(indexDir.getAbsolutePath());
+    return ret;
     } catch (Exception ex) {
       logger.error("Couldn't read the segment", ex);
       return null;

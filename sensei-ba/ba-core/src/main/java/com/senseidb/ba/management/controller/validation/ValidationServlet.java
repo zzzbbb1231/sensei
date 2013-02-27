@@ -34,6 +34,7 @@ import org.springframework.util.Assert;
 
 import com.senseidb.ba.gazelle.SegmentMetadata;
 import com.senseidb.ba.management.SegmentInfo;
+import com.senseidb.ba.management.SegmentTracker;
 import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.util.TimerService;
 import com.senseidb.search.client.SenseiServiceProxy;
@@ -53,6 +54,8 @@ public class ValidationServlet extends HttpServlet {
   private static final Counter overlappingPeriodsCounter = Metrics.newCounter(ValidationServlet.class, "overlappingPeriods");
   private static final Counter duplicateSegmentsCounter = Metrics.newCounter(ValidationServlet.class, "duplicateSegments");
   private static final Counter currentDelayInDaysCounter = Metrics.newCounter(ValidationServlet.class, "currentDelayInDays");
+  public static final Counter lastPushTime = Metrics.newCounter(ValidationServlet.class, "lastPushTime");
+  public static final Counter timeInSecondsSinceLastPush = Metrics.newCounter(ValidationServlet.class, "timeInSecondsSinceLastPush");
   @Override
   public void init(ServletConfig config) throws ServletException {   
     String zkUrl = config.getInitParameter("zkUrl");
@@ -71,7 +74,12 @@ public class ValidationServlet extends HttpServlet {
       public void run() {
         logger.info("Updating the validation metrics");
         try {
+          timeInSecondsSinceLastPush.clear();
+          if (lastPushTime.count() > 0) {
+            timeInSecondsSinceLastPush.inc((System.currentTimeMillis() - lastPushTime.count())/ 1000);
+          }
           getValidationDataAsJson();
+          
         } catch (JSONException e) {
          logger.error("An exception in the healthCheck thread", e);
         }

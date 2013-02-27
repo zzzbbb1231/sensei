@@ -102,6 +102,30 @@
                             <outputDirectory>${project.build.directory}/realtime-config-http/ext</outputDirectory>
                         </configuration>
                     </execution>
+                      <execution>
+                        <id>copy5</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        
+                        <configuration>
+                        <includeArtifactIds>sensei-ba-core, sensei-ba-gazelle, commons-compress, zkclient, avro, jackson-core-asl, jackson-mapper-asl, commons-fileupload,sensei-java-client, joda-time</includeArtifactIds>
+                            <outputDirectory>${project.build.directory}/realtime-config-avro/ext</outputDirectory>
+                        </configuration>
+                    </execution>
+                      <execution>
+                        <id>copy6</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        
+                        <configuration>
+                        <includeArtifactIds>sensei-ba-core, sensei-ba-gazelle, commons-compress, zkclient, avro, jackson-core-asl, jackson-mapper-asl, commons-fileupload,sensei-java-client, joda-time</includeArtifactIds>
+                            <outputDirectory>${project.build.directory}/realtime-config-kafka/ext</outputDirectory>
+                        </configuration>
+                    </execution>
 				</executions>
 			</plugin>			
 		</plugins>

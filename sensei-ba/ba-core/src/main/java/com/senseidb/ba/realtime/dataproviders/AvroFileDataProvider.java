@@ -113,12 +113,12 @@ public class AvroFileDataProvider implements RealtimeDataProvider, SenseiPlugin 
   }
 
   @Override
-  public void start() {
+  public void startProvider() {
 
   }
 
   @Override
-  public void stop() {
+  public void stopProvider() {
 
   }
 
@@ -139,6 +139,18 @@ public class AvroFileDataProvider implements RealtimeDataProvider, SenseiPlugin 
     }
     fileIterator = filesToIterate.iterator();
 
+  }
+
+  @Override
+  public void start() {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void stop() {
+    // TODO Auto-generated method stub
+    
   }
 
 }

@@ -8,6 +8,7 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.IndexSegment;
+import com.senseidb.ba.gazelle.InvertedIndex;
 import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.SegmentAppendableIndex;
 
@@ -34,7 +35,7 @@ public class RealtimeSnapshotIndexSegment implements IndexSegment {
    return columnSnapshots.get(column).getDictionary();
   }
   @Override
-  public DocIdSet[] getInvertedIndex(String column) {
+  public InvertedIndex getInvertedIndex(String column) {
     return null;
   }
   @Override

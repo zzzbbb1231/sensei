@@ -21,7 +21,6 @@ import com.senseidb.ba.management.ZkManager;
 import com.senseidb.ba.util.FileUploadUtils;
 import com.senseidb.ba.util.TestUtil;
 import com.senseidb.util.SingleNodeStarter;
-@Ignore
 public class BASegmentRecoverTest  extends Assert {
 
   private static ZkManager zkManager;

@@ -48,9 +48,7 @@ public  class SingleFieldRealtimeIndex implements FieldRealtimeIndex {
     if (searchSnapshot != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray() != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray().size() == realtimeDictionary.size()) {
       searchSnapshot.setForwardIndexSize(currentPosition);
     } else {
-      if (searchSnapshot != null) {
-        searchSnapshot.getDictionarySnapshot().getResurrectingMarker().decRef();
-      }
+     
       int position = currentPosition;
       SingleValueSearchSnapshot singleValueSearchSnapshot = new SingleValueSearchSnapshot();
      DictionarySnapshot dictSnapshot = (DictionarySnapshot)realtimeDictionary.produceDictSnapshot(readWriteLock, reusableIndexObjectsPool, columnName);
@@ -67,8 +65,11 @@ public  class SingleFieldRealtimeIndex implements FieldRealtimeIndex {
   @Override
   public void recycle() {
     Arrays.fill(forwardIndex, 0);
-    currentPosition = 0;
-    searchSnapshot.getDictionarySnapshot().recycle();
+    currentPosition = 0;    
+    while (searchSnapshot.getDictionarySnapshot().getResurrectingMarker().getValue() > 0) {
+      searchSnapshot.getDictionarySnapshot().getResurrectingMarker().decRef();
+    }
+    searchSnapshot = null;
     realtimeDictionary.recycle();
   }
 }

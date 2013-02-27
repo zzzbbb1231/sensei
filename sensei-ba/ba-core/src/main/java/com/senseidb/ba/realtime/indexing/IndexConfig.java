@@ -1,10 +1,15 @@
 package com.senseidb.ba.realtime.indexing;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -40,6 +45,8 @@ public class IndexConfig {
   private String shardedColumn;
   private int maxPartitionId;
   private int partition;
+  private TimeUnit retentionTimeUnit;
+  private long retentionDuration = -1; 
   public IndexConfig(int capacity, long refreshTime, int bufferSize, Schema schema, String indexDir, String clusterName,
       int numServingPartitions, String[] sortedColumns) {
     super();
@@ -142,7 +149,7 @@ public class IndexConfig {
   public void setReadMode(ReadMode readMode) {
     this.readMode = readMode;
   }
-   
+
   public SenseiSchema getSenseiSchema() {
     return senseiSchema;
   }
@@ -166,6 +173,11 @@ public class IndexConfig {
     if (ret.clusterName == null) {
       ret.clusterName = pluginRegistry.getConfiguration().getString(SenseiConfParams.SENSEI_CLUSTER_NAME);
     }
+    String retentionStr= getStringConfig(config, "retention.timeUnit", false);
+    if (retentionStr != null && retentionStr.length() > 0) {
+      ret.retentionTimeUnit = TimeUnit.valueOf(retentionStr.toUpperCase().trim());
+      ret.retentionDuration = getLongConfig(config, "retention.duration", true);
+    }
     Assert.notNull(ret.clusterName);
     ret.numServingPartitions = getIntConfig(config, "numServingPartitions", true);
     ;
@@ -175,46 +187,81 @@ public class IndexConfig {
     } else {
       ret.sortedColumns = sortColumns.split(",");
     }
+    
     String readModeStr = getStringConfig(config, "readMode", false);
     if (readModeStr != null) {
       ret.readMode = ReadMode.valueOf(readModeStr);
     } else {
       ret.readMode = ReadMode.Heap;
     }
-    ret.shardedColumn = getStringConfig(config, "shardedColumn", false);;
+    ret.shardedColumn = getStringConfig(config, "shardedColumn", false);
     ret.maxPartitionId = pluginRegistry.getConfiguration().getInt("sensei.index.manager.default.maxpartition.id", 0);
     ret.partition = pluginRegistry.getConfiguration().getInt("sensei.node.partitions", 0);
     String schemaPath = getStringConfig(config, "schemaPath", false);
-    File schemaFile = null;
-    if (schemaPath != null) {
-      schemaFile = new File(schemaPath);
+    String schema = getStringConfig(config, "schema", false);
+    if (schemaPath != null || schema == null) {
+      File schemaFile = null;
+      if (schemaPath != null) {
+        schemaFile = new File(schemaPath);
+        if (!schemaFile.exists()) {
+          try {
+            schemaFile = new File(IndexConfig.class.getClassLoader().getResource(schemaPath).toURI());
+          } catch (Exception ex) {
+            throw new RuntimeException(ex);
+          }
+        }
+      } else {
+        File baseDir = ((PropertiesConfiguration) pluginRegistry.getConfiguration()).getFile().getParentFile();
+        schemaFile = new File(baseDir, "schema.xml");
+      }
+
+      if (schemaFile != null) {
+
+        FileInputStream fileInputStream = null;
+        try {
+          fileInputStream = new FileInputStream(schemaFile);
+          DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+          dbf.setIgnoringComments(true);
+          DocumentBuilder db = dbf.newDocumentBuilder();
+          Document schemaXml = db.parse(fileInputStream);
+          schemaXml.getDocumentElement().normalize();
+          JSONObject jsonObject = SchemaConverter.convert(schemaXml);
+          ret.senseiSchema = SenseiSchema.build(jsonObject);
+          ret.setSchema(convert(ret.senseiSchema));
+        } catch (Exception ex) {
+          throw new RuntimeException(ex);
+        } finally {
+          IOUtils.closeQuietly(fileInputStream);
+        }
+      }
     } else {
-      File baseDir = ((PropertiesConfiguration) pluginRegistry.getConfiguration()).getFile().getParentFile();
-      schemaFile = new File(baseDir, "schema.xml");
-    }
-    if (schemaFile != null) {
-      FileInputStream fileInputStream = null; 
+      
       try {
-        fileInputStream = new FileInputStream(schemaFile);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setIgnoringComments(true);
         DocumentBuilder db = dbf.newDocumentBuilder();
-        Document schemaXml = db.parse(fileInputStream);
+        Document schemaXml = db.parse(new ByteArrayInputStream(schema.getBytes()));
         schemaXml.getDocumentElement().normalize();
         JSONObject jsonObject = SchemaConverter.convert(schemaXml);
         ret.senseiSchema = SenseiSchema.build(jsonObject);
         ret.setSchema(convert(ret.senseiSchema));
       } catch (Exception ex) {
         throw new RuntimeException(ex);
-      } finally {
-        IOUtils.closeQuietly(fileInputStream);
       }
     }
 
     ret.init(ret.schema, ret.capacity);
+    Set<String> columnNames = new HashSet<String>();
+    for (String column : ret.schema.getColumnNames()) {
+      columnNames.add(column.trim());
+    }
+    for (String sortedColumn : ret.sortedColumns) {
+     Assert.state(columnNames.contains(sortedColumn.trim()), "The sortedColumn " + sortedColumn + " doesn't match columns from the schema - " + columnNames);
+    }
     return ret;
 
   }
+
   public static Schema convert(SenseiSchema senseiSchema) {
     List<String> columns = new ArrayList<String>();
     List<ColumnType> types = new ArrayList<ColumnType>();
@@ -222,7 +269,7 @@ public class IndexConfig {
       FieldDefinition fieldDefinition = senseiSchema.getFieldDefMap().get(column);
       ColumnType type = ColumnType.STRING;
       if (fieldDefinition.type != null) {
-       type = ColumnType.valueOf(fieldDefinition.type);
+        type = ColumnType.valueOf(fieldDefinition.type);
       }
       if (fieldDefinition.isMulti) {
         type = ColumnType.valueOfArrayType(type);
@@ -230,10 +277,11 @@ public class IndexConfig {
       types.add(type);
       columns.add(column);
     }
-    
+
     Schema schema = new Schema(columns.toArray(new String[columns.size()]), types.toArray(new ColumnType[types.size()]));
     return schema;
   }
+
   private static String getStringConfig(Map<String, String> config, String key) {
     return getStringConfig(config, key, true);
   }
@@ -291,5 +339,21 @@ public class IndexConfig {
   public void setPartition(int partition) {
     this.partition = partition;
   }
-  
+
+  public TimeUnit getRetentionTimeUnit() {
+    return retentionTimeUnit;
+  }
+
+  public long getRetentionDuration() {
+    return retentionDuration;
+  }
+
+  public void setRetentionTimeUnit(TimeUnit retentionTimeUnit) {
+    this.retentionTimeUnit = retentionTimeUnit;
+  }
+
+  public void setRetentionDuration(long duration) {
+    this.retentionDuration = duration;
+  }
+
 }

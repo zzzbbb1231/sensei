@@ -97,6 +97,9 @@ public class MetadataPersistentManager {
     if (config.containsKey("segment.time.Type")) {
       segmentMetadata.setTimeType(config.getString("segment.time.Type"));
     }
+    if (config.containsKey(SegmentMetadata.SEGMENT_CRC)) {
+      segmentMetadata.setCrc(config.getString(SegmentMetadata.SEGMENT_CRC));
+    }
     } catch (Exception ex) {
       logger.error(ex.getMessage(), ex);
     }

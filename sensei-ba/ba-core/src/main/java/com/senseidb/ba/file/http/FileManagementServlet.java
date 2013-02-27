@@ -17,6 +17,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
+import java.util.zip.CheckedOutputStream;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -35,6 +38,7 @@ import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.springframework.util.Assert;
 
+import com.senseidb.ba.gazelle.SegmentMetadata;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.management.SegmentType;
@@ -150,23 +154,20 @@ public class FileManagementServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_MULTIPLE_CHOICES);        
         return;
       }
-      
       File file = new File(directory, fileName);
-     
-          
-      
       BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
+      CheckedOutputStream checkedOutputStream = new CheckedOutputStream(outputStream, new CRC32());
       try {
-        IOUtils.copyLarge(req.getInputStream(), outputStream);        
+        IOUtils.copyLarge(req.getInputStream(), checkedOutputStream);        
         resp.setStatus(HttpServletResponse.SC_CREATED);     
       } finally {
-        outputStream.close();
+        checkedOutputStream.close();
       }
-      notifyZookeeperNewFileCreated(file); 
+      notifyZookeeperNewFileCreated(file, checkedOutputStream.getChecksum().getValue()); 
     }
   }
 
-  private void notifyZookeeperNewFileCreated(File file) {
+  private void notifyZookeeperNewFileCreated(File file, long checksum) {
     try {
    
       InputStream metadata = TarGzCompressionUtils.unTarOneFile(new FileInputStream(file), GazelleUtils.METADATA_FILENAME);
@@ -184,6 +185,11 @@ public class FileManagementServlet extends HttpServlet {
         clusterName = segmentMetadata.get("segment.cluster.name");
         logger.info("The deployment cluster name is overriden to - " + clusterName);
       }
+      if (checksum == -1 && segmentMetadata.get(SegmentMetadata.SEGMENT_CRC) == null) {
+        extractCheckSum(file, segmentMetadata);
+      } else if (checksum != -1) {
+        segmentMetadata.put(SegmentMetadata.SEGMENT_CRC, String.valueOf(checksum));
+      }
       Assert.state(clustersMaxPartitions.containsKey(clusterName), "The configuration doesn't contain the maxPartitionId entry for the cluster " + clusterName);
       int partitionId = getPartition(file.getName(), clustersMaxPartitions.get(clusterName));
       if (nasBasePath != null) {
@@ -193,19 +199,37 @@ public class FileManagementServlet extends HttpServlet {
           nasDir.mkdirs();
         }        
         File nasFile = new File(nasDir, file.getName());
-        if (!nasFile.exists() || nasFile.lastModified() < Clock.getTime() - _10_MINUTES) {
+        if (!nasFile.exists() || nasFile.lastModified() < Clock.getTime() - _10_MINUTES || nasFile.length() != file.length()) {
           Assert.state(file.renameTo(nasFile), "Couldn't rename file to " + nasFile.getAbsolutePath());
           zkManager.registerSegment(clusterName, partitionId, file.getName(), nasFile.getAbsolutePath(), segmentMetadata);
         }
+       
       } else {
         zkManager.registerSegment(partitionId, file.getName(), baseUrl + file.getName(), segmentMetadata);
       }
-    
+       
     } catch (Exception ex) {
       logger.error(ex.getMessage(), ex);
       throw new RuntimeException(ex);
     }
     
+  }
+
+  public void extractCheckSum(File file, Map<String, String> segmentMetadata) throws FileNotFoundException, IOException {
+    long checksum;
+    FileInputStream fis = null;
+    try {    
+    fis =    new FileInputStream(file);  
+    CRC32 crc = new CRC32();
+    CheckedInputStream cis = new CheckedInputStream(fis, crc);
+    byte[] buffer = new byte[4096];
+    while(cis.read(buffer)>=0){}
+    checksum = cis.getChecksum().getValue();
+    segmentMetadata.put(SegmentMetadata.SEGMENT_CRC, String.valueOf(checksum));
+    
+   } finally {
+      fis.close();
+    }
   }
 
   public static int getPartition(String segmentId, int maxPartition) {
@@ -225,14 +249,13 @@ public class FileManagementServlet extends HttpServlet {
         if (item == null || item.getName() == null) {
           continue;
         }
-
         File file = new File(directory, item.getFieldName());
         if (file.exists()) {
           logger.warn("The file " + file.getAbsolutePath() + " already exists. Replcaing it with the new one");
           FileUtils.deleteQuietly(file);
         }
         item.write(file);
-        notifyZookeeperNewFileCreated(file);
+        notifyZookeeperNewFileCreated(file, -1);
         logger.info("Finished uploading file - " + item.getFieldName());
       }
     } catch (Exception ex) {

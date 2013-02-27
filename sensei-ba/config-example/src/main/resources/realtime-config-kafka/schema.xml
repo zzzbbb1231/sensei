@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://javasoze.github.com/sensei/schema/sensei-schema.xsd">
+
+  
+  <table uid="id">
+  <column name="id" type="long" />
+    <column name="groupid" type="long" />
+    <column name="color" type="string" />
+    <column name="category" type="string" />
+    <column name="city" type="string" />
+    <column name="makemodel" type="string" />
+    <column name="year" type="int" />
+    <column name="price" type="float" />
+    <column name="mileage" type="int" />
+    <column name="tags" type="string" multi="true" delimiter=","/>
+  </table>
+   <facets>
+   </facets>
+</schema>

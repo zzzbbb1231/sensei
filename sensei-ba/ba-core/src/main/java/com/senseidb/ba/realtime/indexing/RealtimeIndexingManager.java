@@ -2,6 +2,8 @@ package com.senseidb.ba.realtime.indexing;
 
 import org.apache.log4j.Logger;
 
+import proj.zoie.api.ZoieSegmentReader;
+
 import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.Schema;
 import com.senseidb.ba.realtime.SegmentAppendableIndex;
@@ -9,10 +11,13 @@ import com.senseidb.ba.realtime.domain.ColumnSearchSnapshot;
 import com.senseidb.ba.realtime.domain.RealtimeSnapshotIndexSegment;
 import com.senseidb.ba.realtime.domain.primitives.FieldRealtimeIndex;
 import com.senseidb.ba.realtime.scheduler.SnapshotRefreshScheduler;
+import com.senseidb.util.SenseiUncaughtExceptionHandler;
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.Counter;
 
 public class RealtimeIndexingManager {
   private static Logger logger = Logger.getLogger(RealtimeIndexingManager.class);  
- 
+  private static final Counter currentNumberDocsInMemory = Metrics.newCounter(RealtimeIndexingManager.class, "currentNumberDocsInMemory");
     private volatile SegmentAppendableIndex currentIndex;
     private volatile RealtimeSnapshotIndexSegment snapshot;
     
@@ -32,19 +37,30 @@ public class RealtimeIndexingManager {
     
     public void start() {
       currentIndex = indexConfig.getIndexObjectsPool().getAppendableIndex();
-      
+      currentIndex.setIndexingStartTime(System.currentTimeMillis());
       snapshotRefreshScheduler = new SnapshotRefreshScheduler() {
         @Override
         public int refresh() {
-          snapshot = currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool());
-          indexingCoordinator.segmentSnapshotRefreshed(snapshot);
-          //System.out.println("refresh scheduler executed");
+          synchronized(RealtimeIndexingManager.this) {         
+            try {
+            snapshot = currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool());
+            } catch (Throwable ex) {
+              logger.error("Error while refreshing the segment - ", ex);
+              throw new RuntimeException(ex);
+            }
+            if (currentNumberDocsInMemory.count() != snapshot.getLength()) {
+              currentNumberDocsInMemory.clear();
+              currentNumberDocsInMemory.inc(snapshot.getLength());
+            }
+            indexingCoordinator.segmentSnapshotRefreshed(snapshot);
+          }
           return snapshot.getLength();
         }
       };
       snapshotRefreshScheduler.init(indexConfig.getBufferSize(), indexConfig.getCapacity(), indexConfig.getRefreshTime());
       snapshotRefreshScheduler.start();
       indexingThread.setDaemon(true);
+      indexingThread.setUncaughtExceptionHandler(SenseiUncaughtExceptionHandler.getInstance());
       indexingThread.start();
     }
     private Thread indexingThread = new Thread() {
@@ -52,7 +68,6 @@ public class RealtimeIndexingManager {
         while (!stopped) {
           try {           
             DataWithVersion next = dataProvider.next();
-            
             if (next == null) {
               Thread.sleep(100L);
               continue;
@@ -63,13 +78,10 @@ public class RealtimeIndexingManager {
             }            
             
             boolean isFull = currentIndex.add(next.getValues(), next.getVersion());
-             /*if (currentIndex.getCurrenIndex() % 1000 == 0) {
-               System.out.println("!!currentIndex.getCurrenIndex() = " + currentIndex.getCurrenIndex());
-             }*/
+            
             if (isFull) {
               synchronized(RealtimeIndexingManager.this) {
                 retireAndCreateNewSegment();
-                //System.out.println("!Wait till segment persisted - "  + System.currentTimeMillis());
                 RealtimeIndexingManager.this.wait();
               }
             } else {
@@ -102,17 +114,8 @@ public class RealtimeIndexingManager {
     protected void retireAndCreateNewSegment() {
       
       SegmentAppendableIndex appendableIndex = indexConfig.getIndexObjectsPool().getAppendableIndex();
-     /* System.out.flush();
-      for (FieldRealtimeIndex fieldRealtimeIndex : currentIndex.getColumnIndexes()) {
-        System.out.println("fieldRealtimeIndex size = " + fieldRealtimeIndex.getCurrentSize());
-      }
-      System.out.flush();*/
+     
       RealtimeSnapshotIndexSegment refreshedSearchSnapshot = currentIndex.refreshSearchSnapshot(indexConfig.getIndexObjectsPool());
-      /*for (String columnName : refreshedSearchSnapshot.getColumnTypes().keySet()) {
-        ColumnSearchSnapshot forwardIndex = refreshedSearchSnapshot.getForwardIndex(columnName);
-        System.out.println("snapshot's size = " + forwardIndex.getLength());
-      }
-      System.out.flush();*/
       indexingCoordinator.segmentFullAndNewCreated(refreshedSearchSnapshot, currentIndex, appendableIndex);
       currentIndex = appendableIndex;
       
@@ -124,7 +127,6 @@ public class RealtimeIndexingManager {
 
     public void notifySegmentPersisted() {
       synchronized(this) {
-        //System.out.println("release wait until persisted - " + System.currentTimeMillis());
         this.notifyAll();
       }
     }

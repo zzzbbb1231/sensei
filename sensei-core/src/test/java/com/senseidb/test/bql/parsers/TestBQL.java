@@ -1688,7 +1688,7 @@ public class TestBQL extends TestCase
       "FROM cars " +
       "WHERE color = 'red' GROUP BY color, groupid");
     System.out.println(json);
-    assertEquals("{\"groupBy\":{\"columns\":[\"color\",\"groupid\"],\"top\":10},\"mapReduce\":{\"function\":\"sensei.composite\",\"parameters\":{\"array\":[{\"columns\":[\"color\",\"groupid\"],\"function\":\"sum\",\"mapReduce\":\"sensei.groupBy\",\"metric\":\"year\",\"top\":10},{\"columns\":[\"color\",\"groupid\"],\"function\":\"sum\",\"mapReduce\":\"sensei.groupBy\",\"metric\":\"year\",\"top\":10}]}},\"meta\":{\"select_list\":[\"*\"]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
+    assertEquals("{\"groupBy\":{\"top\":10},\"mapReduce\":{\"function\":\"sensei.composite\",\"parameters\":{\"array\":[{\"columns\":[\"color\",\"groupid\"],\"function\":\"sum\",\"mapReduce\":\"sensei.groupBy\",\"metric\":\"year\",\"top\":10},{\"columns\":[\"color\",\"groupid\"],\"function\":\"sum\",\"mapReduce\":\"sensei.groupBy\",\"metric\":\"year\",\"top\":10}]}},\"meta\":{\"select_list\":[\"*\"]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
   }
   @Test
   public void testAggregationFunctionWithSingleGroupBy() throws Exception
@@ -1701,7 +1701,7 @@ public class TestBQL extends TestCase
       "FROM cars " +
       "WHERE color = 'red' GROUP BY color");
     System.out.println(json);
-    assertEquals("{\"facets\":{\"_sumGroupBy\":{\"expand\":false,\"max\":10,\"minhit\":0,\"properties\":{\"dimension\":\"color\",\"metric\":\"year\"}}},\"groupBy\":{\"columns\":[\"color\"],\"top\":10},\"meta\":{\"select_list\":[\"*\"]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
+    assertEquals("{\"facets\":{\"_sumGroupBy\":{\"expand\":false,\"max\":10,\"minhit\":0,\"properties\":{\"dimension\":\"color\",\"metric\":\"year\"}}},\"groupBy\":{\"top\":10},\"meta\":{\"select_list\":[\"*\"]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
   }
   @Test
   public void testCountFunctionWithSingleGroupBy() throws Exception
@@ -1714,7 +1714,7 @@ public class TestBQL extends TestCase
       "FROM cars " +
       "WHERE color = 'red' GROUP BY color");
     System.out.println(json);
-    assertEquals("{\"facets\":{\"color\":{\"expand\":false,\"max\":10,\"minhit\":0}},\"groupBy\":{\"columns\":[\"color\"],\"top\":10},\"meta\":{\"select_list\":[\"*\"]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
+    assertEquals("{\"facets\":{\"color\":{\"expand\":false,\"max\":10,\"minhit\":0}},\"groupBy\":{\"top\":10},\"meta\":{\"select_list\":[\"*\"]},\"selections\":[{\"term\":{\"color\":{\"value\":\"red\"}}}]}", json.toString());
   }
   @Test
   public void testMinFunction() throws Exception

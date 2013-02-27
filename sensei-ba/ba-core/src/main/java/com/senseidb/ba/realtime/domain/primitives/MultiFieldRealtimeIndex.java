@@ -45,7 +45,10 @@ public class MultiFieldRealtimeIndex implements FieldRealtimeIndex {
   public void recycle() {
     forwardIndex.recycle();
     currentPosition = 0;
-    searchSnapshot.getDictionarySnapshot().recycle();
+    while (searchSnapshot.getDictionarySnapshot().getResurrectingMarker().getValue() > 0) {
+      searchSnapshot.getDictionarySnapshot().getResurrectingMarker().decRef();
+    }
+    searchSnapshot = null;
     realtimeDictionary.recycle();
   }
   @Override
@@ -73,9 +76,7 @@ public class MultiFieldRealtimeIndex implements FieldRealtimeIndex {
     if (searchSnapshot != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray() != null && searchSnapshot.getDictionarySnapshot().getDictPermutationArray().size() == realtimeDictionary.size()) {
       searchSnapshot.setForwardIndexSize(currentPosition);
     } else {
-      if (searchSnapshot != null) {
-        searchSnapshot.getDictionarySnapshot().getResurrectingMarker().decRef();
-      }
+     
       MultiValueSearchSnapshot multiValueSearchSnapshot = new MultiValueSearchSnapshot();
       int position = currentPosition;
       DictionarySnapshot dictSnapshot = (DictionarySnapshot)realtimeDictionary.produceDictSnapshot(readWriteLock, reusableIndexObjectsPool,columnName);

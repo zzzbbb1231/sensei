@@ -17,22 +17,19 @@ import com.senseidb.ba.realtime.indexing.RealtimeDataProvider;
 public class SenseiProviderAdapter implements RealtimeDataProvider {
   private final StreamDataProvider<JSONObject> provider;
   private Schema schema;
-
+  private boolean couldCOmmit = true;
   public SenseiProviderAdapter(StreamDataProvider<JSONObject> provider ) {
     this.provider = provider;
-    if (provider != null) {
-     
-       
-    }
+   
   }
   @Override
   public void init(Schema schema, String lastVersion) {
     this.schema = schema;
     
   }
-
+  
   @Override
-  public void start() {
+  public void startProvider() {
     try {
       Field field = StreamDataProvider.class.getDeclaredField("_thread");
       field.setAccessible(true);
@@ -65,7 +62,7 @@ public class SenseiProviderAdapter implements RealtimeDataProvider {
       method.setAccessible(true);
       method.invoke(obj);
       provider.start();
-      method = cls.getMethod("stop");
+      method = cls.getDeclaredMethod("terminate");
       method.setAccessible(true);
       method.invoke(obj);
     } catch (Exception e) {
@@ -76,16 +73,22 @@ public class SenseiProviderAdapter implements RealtimeDataProvider {
   }
 
   @Override
-  public void stop() {
-    //provider.stop();
+  public void stopProvider() {
+    count = 0;
+    System.out.println("!!!stopping");
+    provider.stop();
     
   }
-
+  int count;
   @Override
   public DataWithVersion next() {
     final DataEvent<JSONObject> next = provider.next();
     if (next == null) {
       return null;
+    }
+    count++;
+    if (count % 10000 == 0) {
+      //System.out.println("EventCount = " + count);
     }
     
     return new DataWithVersion() {
@@ -103,7 +106,19 @@ public class SenseiProviderAdapter implements RealtimeDataProvider {
 
   @Override
   public void commit(String version) {
-    
+    if (couldCOmmit && provider != null) {
+      try {
+        Method method = provider.getClass().getMethod("commit");
+       if (method != null) {
+        method.setAccessible(true);
+        method.invoke(provider);
+       }
+       
+      
+      } catch (Exception e) {
+        couldCOmmit = false;
+      }
+    }
   }
 
 }

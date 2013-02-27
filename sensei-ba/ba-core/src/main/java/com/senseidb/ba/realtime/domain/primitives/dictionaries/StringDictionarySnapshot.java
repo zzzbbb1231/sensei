@@ -1,21 +1,16 @@
 package com.senseidb.ba.realtime.domain.primitives.dictionaries;
 
-import it.unimi.dsi.fastutil.Swapper;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntComparator;
-import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap.Entry;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
-import it.unimi.dsi.fastutil.objects.Object2IntMap.Entry;
 
-import java.text.DecimalFormat;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import com.browseengine.bobo.facets.data.TermStringList;
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.senseidb.ba.gazelle.ColumnType;
-import com.senseidb.ba.gazelle.creators.DictionaryCreator;
+import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
 import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
 import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
@@ -56,7 +51,7 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
         permutationArray.set(i, i);
       }
     
-    it.unimi.dsi.fastutil.Arrays.quickSort(2, permutationArray.size(), new IntComparator() {
+      SortUtil.quickSort(2, permutationArray.size(), new SortUtil.IntComparator() {
       @Override
       public int compare(Integer o1, Integer o2) {
         return compare(o1.intValue(), o2.intValue());
@@ -77,7 +72,7 @@ public class StringDictionarySnapshot extends AbstractDictionarySnapshot {
         }
         return val1.compareTo(val2);
       }
-    }, new Swapper() {
+    }, new SortUtil.Swapper() {
       @Override
       public void swap(int a, int b) {
         int tmp = permutationArray.getInt(b);

@@ -7,8 +7,8 @@ import com.senseidb.ba.realtime.Schema;
 
 public interface RealtimeDataProvider {
     public void init(Schema schema, String lastVersion);
-    public void start();
-    public void stop();
+    public void startProvider();
+    public void stopProvider();
     public DataWithVersion next();
     public void commit(String version);
 }

@@ -1,8 +1,6 @@
 package com.senseidb.ba.realtime.domain.primitives.dictionaries;
 
-import it.unimi.dsi.fastutil.Swapper;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntComparator;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
@@ -20,7 +18,6 @@ import com.senseidb.ba.gazelle.creators.DictionaryCreator;
 import com.senseidb.ba.gazelle.utils.SortUtil;
 import com.senseidb.ba.gazelle.utils.SortUtil.ComparableToInt;
 import com.senseidb.ba.realtime.ReusableIndexObjectsPool;
-import com.senseidb.ba.realtime.domain.AbstractDictionarySnapshot;
 import com.senseidb.ba.realtime.domain.DictionarySnapshot;
 
 public class LongDictionarySnapshot extends TermLongList implements DictionarySnapshot {
@@ -69,7 +66,7 @@ public class LongDictionarySnapshot extends TermLongList implements DictionarySn
         permutationArray.set(i, i);
       }
    
-    it.unimi.dsi.fastutil.Arrays.quickSort(0, permutationArray.size(), new IntComparator() {
+      SortUtil.quickSort(0, permutationArray.size(), new SortUtil.IntComparator() {
       @Override
       public int compare(Integer o1, Integer o2) {
         return compare(o1.intValue(), o2.intValue());
@@ -85,7 +82,7 @@ public class LongDictionarySnapshot extends TermLongList implements DictionarySn
           return -1;
         return 0;
       }
-    }, new Swapper() {
+    }, new SortUtil.Swapper() {
       @Override
       public void swap(int a, int b) {
         int tmp = permutationArray.getInt(b);
