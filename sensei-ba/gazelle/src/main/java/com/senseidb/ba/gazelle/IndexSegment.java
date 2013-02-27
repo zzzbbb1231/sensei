@@ -22,7 +22,7 @@ public interface IndexSegment {
    * If the column's cardinality is << 32 we might use compressed bitset index instead of p4delta 
    * We maintain the inverted index per each column value. 
    */
-   DocIdSet[] getInvertedIndex(String column);
+   InvertedIndex getInvertedIndex(String column);
    ForwardIndex  getForwardIndex(String column);
    /**
    * number of docs in the index
