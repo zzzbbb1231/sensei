@@ -18,7 +18,6 @@ public class HeapCompressedThreeShortsArray implements IntArray {
 	/**
 	 * Optimization: Saves one lookup in {@link #get(int)}.
 	 */
-	private final int bpvMinusBlockSize;
 	private final int bitsPerValue;
 	private final int valueCount;
 
@@ -56,8 +55,7 @@ public class HeapCompressedThreeShortsArray implements IntArray {
 		this.blocks = blocks;
 		this.valueCount = valueCount;
 		this.bitsPerValue = bitsPerValue;
-		maskRight = (short) (~0 << (BLOCK_SIZE - bitsPerValue + 16) >>> (BLOCK_SIZE - bitsPerValue + 16));
-		bpvMinusBlockSize = bitsPerValue - BLOCK_SIZE;
+		maskRight = (~0 << (BLOCK_SIZE - bitsPerValue + 16) >>> (BLOCK_SIZE - bitsPerValue + 16));
 	}
 
 	public int size() {
@@ -87,11 +85,7 @@ public class HeapCompressedThreeShortsArray implements IntArray {
 			return (int)((blocks[elementPos] >>> -endBits) & maskRight);
 		}
 		else if(endBits <= 16){
-			// Two blocks
-//			int highBits = blocks[elementPos] << endBits & ~(~0 << bitsPerValue - 1 << 1);
-//			int lowBits = (blocks[elementPos + 1] << 16 >>> (32 - endBits));
-//			return (highBits | lowBits) & maskRight;
-			return (blocks[elementPos] << endBits & ~(~0 << bitsPerValue - 1 << 1) | (blocks[elementPos + 1] << 16 >>> (32 - endBits))) & maskRight;
+			return ((blocks[elementPos] << endBits) | (blocks[elementPos + 1] << 16 >>> (32 - endBits))) & maskRight;
 		}
 		else{
 //			int highBits = blocks[elementPos] << endBits & ~(~0 << bitsPerValue - 1 << 1);
@@ -99,10 +93,10 @@ public class HeapCompressedThreeShortsArray implements IntArray {
 //			int lowBits = blocks[elementPos+2] >>> (16 - (endBits - 16)) & ~(~0 << (endBits - 16));
 //			return (highBits|midBits|lowBits) & maskRight;
 			// Three blocks
-			return (int)(((blocks[elementPos] << endBits & ~(~0 << bitsPerValue - 1 << 1))
+			return (int)(((blocks[elementPos] << endBits)
 						| (blocks[elementPos+1] << (endBits - 16)) & (~0 >>> 16 << (endBits - 16))
-						| blocks[elementPos+2] >>> (16 - (endBits - 16)) & ~(~0 << (endBits - 16)))
-					& maskRight);
+						| blocks[elementPos+2] << 16 >>> 16 >>> (32 - endBits)
+)					& maskRight);
 		}		
 	}
 
@@ -124,18 +118,18 @@ public class HeapCompressedThreeShortsArray implements IntArray {
 		}
 		else if(endBits <= 16){
 			// Two blocks
-			blocks[elementPos] = (short) (((int) blocks[elementPos] & ~(~0 >>> 16 >>> (16 - (bitsPerValue - endBits))))
+			blocks[elementPos] = (short) (((int) blocks[elementPos] & ~(maskRight >>> endBits))
 					| (value >>> endBits));
-			blocks[elementPos + 1] = (short) ((blocks[elementPos + 1] & (~0 >>> (32 - endBits))) & ~(~0 >>> endBits)
+			blocks[elementPos + 1] = (short) ((blocks[elementPos + 1] & (~0 >>> endBits >>> 16))
 					| (value << (16 - endBits)));
 		}
 		else{
 			//Three blocks
-			blocks[elementPos] = (short) (blocks[elementPos] & ~(~0 >>> 16 >>> (16 - (bitsPerValue - endBits)))
-					| (value >>> 16 >>> (endBits - 16)));
+			blocks[elementPos] = (short) (blocks[elementPos] & ~(maskRight >>> endBits)
+					| (value >>> endBits));
 			blocks[elementPos + 1] = (short) (value >>> (endBits - 16));
-			blocks[elementPos + 2] = (short) (blocks[elementPos + 2] & (~maskRight >>> (15 + endBits) >>> 1)
-					| (value << (16 - (endBits - 16))));
+			blocks[elementPos + 2] = (short) (blocks[elementPos + 2] & (~0 >>> 16 >>> endBits)
+					| (value << (32 - endBits)));
 		}
 	}
 	public short[] getBlocks() {
