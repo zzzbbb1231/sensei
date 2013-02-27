@@ -14,7 +14,7 @@ public class HeapCompressedThreeShortsArray implements IntArray {
 	 * A right-aligned mask of width BitsPerValue used by {@link #get(int)}.
 	 */
 	private final int maskRight;
-	
+
 	/**
 	 * Optimization: Saves one lookup in {@link #get(int)}.
 	 */
@@ -73,7 +73,7 @@ public class HeapCompressedThreeShortsArray implements IntArray {
 	 * @return the value at the given index.
 	 */
 	public int getInt(final int index) {
-		
+
 		// The abstract index in a bit stream
 		final long majorBitPos = (long) index * bitsPerValue;
 		// The index in the backing long-array
@@ -88,15 +88,11 @@ public class HeapCompressedThreeShortsArray implements IntArray {
 			return ((blocks[elementPos] << endBits) | (blocks[elementPos + 1] << 16 >>> (32 - endBits))) & maskRight;
 		}
 		else{
-//			int highBits = blocks[elementPos] << endBits & ~(~0 << bitsPerValue - 1 << 1);
-//			int midBits  = (blocks[elementPos+1] << (endBits - 16)) & (~0 >>> 16 << (endBits - 16));
-//			int lowBits = blocks[elementPos+2] >>> (16 - (endBits - 16)) & ~(~0 << (endBits - 16));
-//			return (highBits|midBits|lowBits) & maskRight;
 			// Three blocks
 			return (int)(((blocks[elementPos] << endBits)
-						| (blocks[elementPos+1] << (endBits - 16)) & (~0 >>> 16 << (endBits - 16))
-						| blocks[elementPos+2] << 16 >>> 16 >>> (32 - endBits)
-)					& maskRight);
+					| (blocks[elementPos+1] << (endBits - 16)) & (~0 >>> 16 << (endBits - 16))
+					| blocks[elementPos+2] << 16 >>> 16 >>> (32 - endBits)
+					)					& maskRight);
 		}		
 	}
 
