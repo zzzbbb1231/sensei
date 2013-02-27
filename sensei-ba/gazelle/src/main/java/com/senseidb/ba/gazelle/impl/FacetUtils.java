@@ -21,21 +21,21 @@ public class FacetUtils {
   public static class ForwardIndexIterator extends DocIdSetIterator {
     int doc = -1;   
     private final int index;
-    private final int length;
     private final IntArray compressedIntArray;
+    private int finalDoc;
     
 
-    public ForwardIndexIterator(IntArray compressedIntArray, int length, int index) {
+    public ForwardIndexIterator(IntArray compressedIntArray, int index, int finalDoc) {
       this.compressedIntArray = compressedIntArray;
-      this.length = length;
       this.index = index;
+      this.finalDoc = finalDoc;
     }
 
     @Override
     public int nextDoc() throws IOException {
       while (true) {
         doc++;
-        if (length <= doc)
+        if (doc > finalDoc)
           return NO_MORE_DOCS;
         if (compressedIntArray.getInt(doc) == index) {
           return doc;
@@ -59,15 +59,17 @@ public class FacetUtils {
   public static class ForwardDocIdSet extends RandomAccessDocIdSet {
     private GazelleForwardIndexImpl forwardIndex;
     private int index;
+    private int finalDoc;
 
-    public ForwardDocIdSet(GazelleForwardIndexImpl forwardIndex, int index) {
+    public ForwardDocIdSet(GazelleForwardIndexImpl forwardIndex, int index, int finalDoc) {
       this.forwardIndex = forwardIndex;
       this.index = index;
+      this.finalDoc = finalDoc;
     }
 
     @Override
     public DocIdSetIterator iterator() throws IOException {
-      return new ForwardIndexIterator(forwardIndex.getCompressedIntArray(), forwardIndex.getLength(), index);
+      return new ForwardIndexIterator(forwardIndex.getCompressedIntArray(), index, finalDoc);
     }
 
     @Override

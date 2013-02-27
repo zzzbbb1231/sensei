@@ -53,8 +53,8 @@ public class PForDeltaDocIdSet extends DocSet implements Serializable {
 	transient private int version = 1;
 
 	public PForDeltaDocIdSet() {
-		sequenceOfCompBlocks = new PForDeltaIntSegmentArray();
-		baseListForOnlyCompBlocks = new IntArray();
+		sequenceOfCompBlocks = new PForDeltaIntSegmentArray(1);
+		baseListForOnlyCompBlocks = new IntArray(1);
 		currentNoCompBlock = new int[_blockSize];
 		sizeOfCurrentNoCompBlock = 0;
 		compressedBitSize = 0;
@@ -547,11 +547,26 @@ public class PForDeltaDocIdSet extends DocSet implements Serializable {
 	 *  Flush the data left in the currentNoCompBlock into the compressed data (never called)
 	 * 
 	 */
-	public void flush(int docId)
+	public void flush(int docId) throws IOException
 	{
+		//the last docId of the block      
+		baseListForOnlyCompBlocks.add(lastAdded);
+
+		// compress currentNoCompBlock[] (excluding the input docId), return the compressed block with its compressed bitSize
 		CompResult compRes = PForDeltaCompressCurrentBlock();
+
+		if(compRes == null)
+		{
+			throw new IOException("ERROR in compressing ");
+		}
+
 		compressedBitSize += compRes.getCompressedSize();      
 		sequenceOfCompBlocks.add(compRes.getCompressedBlock());
+
+		// next block
+		sizeOfCurrentNoCompBlock = 0;
+		lastAdded = docId;
+		currentNoCompBlock = null;		
 	}
 
 	/**
