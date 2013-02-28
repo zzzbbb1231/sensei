@@ -19,6 +19,28 @@
 	<build>
 		<plugins>
 			<plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-install-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>install-kafka</id>
+                    <phase>clean</phase>
+                    <configuration>
+                        <file>${basedir}/../config-example/src/main/resources/realtime-config-kafka/ext/kafka-0.7.6.jar</file>
+                        <repositoryLayout>default</repositoryLayout>
+                        <groupId>kafka</groupId>
+                        <artifactId>kafka</artifactId>
+                        <version>0.7.6</version>
+                        <packaging>jar</packaging>
+                        <generatePom>true</generatePom>
+                    </configuration>
+                    <goals>
+                        <goal>install-file</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>2.1</version>
@@ -147,6 +169,11 @@
 			<artifactId>commons-fileupload</artifactId>
 			<version>1.2.2</version>
 		</dependency>
+		<dependency>
+            <groupId>kafka</groupId>
+            <artifactId>kafka</artifactId>
+            <version>0.7.6</version>
+        </dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-core</artifactId>
