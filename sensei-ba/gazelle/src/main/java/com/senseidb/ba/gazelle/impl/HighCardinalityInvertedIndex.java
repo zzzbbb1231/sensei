@@ -92,7 +92,7 @@ public class HighCardinalityInvertedIndex implements InvertedIndex {
 				offsets[i] += offsets[i - 1];
 			}
 			
-			size = offsets[offsets.length];
+			size = offsets[offsets.length - 1];
 			data = new int[size];
 			
 			for(double i = 0; i < size; i++){

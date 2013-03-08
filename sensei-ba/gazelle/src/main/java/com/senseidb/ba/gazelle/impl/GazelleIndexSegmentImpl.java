@@ -32,36 +32,57 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();
 	private SegmentMetadata segmentMetadata;
 	private String[] invertedColumns;
-	
+
 	private Boolean highCardinality = false;
 
-	public static Timer invertedIndicesCreationTime = Metrics.newTimer(new MetricName(GazelleIndexSegmentImpl.class ,"invertedIndicesCreationTime"), TimeUnit.MILLISECONDS, TimeUnit.DAYS);
+	public static Timer invertedIndicesCreationTime = Metrics.newTimer(
+			new MetricName(GazelleIndexSegmentImpl.class,
+					"invertedIndicesCreationTime"), TimeUnit.MILLISECONDS,
+			TimeUnit.DAYS);
 
 	@SuppressWarnings("rawtypes")
-	public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr, TermValueList[] termValueListArr, ColumnMetadata[] columnMetadataArr, SegmentMetadata segmentMetadata, int length) throws IOException {
+	public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr,
+			TermValueList[] termValueListArr,
+			ColumnMetadata[] columnMetadataArr,
+			SegmentMetadata segmentMetadata, int length) throws IOException {
 		this.length = length;
 		for (int i = 0; i < forwardIndexArr.length; i++) {
-			forwardIndexMap.put(columnMetadataArr[i].getName(), forwardIndexArr[i]);
-			termValueListMap.put(columnMetadataArr[i].getName(), termValueListArr[i]);
-			columnMetatdaMap.put(columnMetadataArr[i].getName(), columnMetadataArr[i]);
+			forwardIndexMap.put(columnMetadataArr[i].getName(),
+					forwardIndexArr[i]);
+			termValueListMap.put(columnMetadataArr[i].getName(),
+					termValueListArr[i]);
+			columnMetatdaMap.put(columnMetadataArr[i].getName(),
+					columnMetadataArr[i]);
 		}
 		init();
 		this.segmentMetadata = segmentMetadata;
 	}
+
 	@SuppressWarnings("rawtypes")
-	public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr, TermValueList[] termValueListArr, ColumnMetadata[] columnMetadataArr, SegmentMetadata segmentMetadata, int length, String[] invertedColumns) throws IOException {
+	public GazelleIndexSegmentImpl(ForwardIndex[] forwardIndexArr,
+			TermValueList[] termValueListArr,
+			ColumnMetadata[] columnMetadataArr,
+			SegmentMetadata segmentMetadata, int length,
+			String[] invertedColumns) throws IOException {
 		this.length = length;
 		for (int i = 0; i < forwardIndexArr.length; i++) {
-			forwardIndexMap.put(columnMetadataArr[i].getName(), forwardIndexArr[i]);
-			termValueListMap.put(columnMetadataArr[i].getName(), termValueListArr[i]);
-			columnMetatdaMap.put(columnMetadataArr[i].getName(), columnMetadataArr[i]);
+			forwardIndexMap.put(columnMetadataArr[i].getName(),
+					forwardIndexArr[i]);
+			termValueListMap.put(columnMetadataArr[i].getName(),
+					termValueListArr[i]);
+			columnMetatdaMap.put(columnMetadataArr[i].getName(),
+					columnMetadataArr[i]);
 		}
 		this.invertedColumns = invertedColumns;
 		init();
 		this.segmentMetadata = segmentMetadata;
 	}
+
 	@SuppressWarnings("rawtypes")
-	public GazelleIndexSegmentImpl(Map<String, ColumnMetadata> metadataMap, Map<String, ForwardIndex> forwardIndexMap, Map<String, TermValueList> termValueListMap, SegmentMetadata segmentMetadata, int length) throws IOException {
+	public GazelleIndexSegmentImpl(Map<String, ColumnMetadata> metadataMap,
+			Map<String, ForwardIndex> forwardIndexMap,
+			Map<String, TermValueList> termValueListMap,
+			SegmentMetadata segmentMetadata, int length) throws IOException {
 		this.forwardIndexMap = forwardIndexMap;
 		this.columnMetatdaMap = metadataMap;
 		this.termValueListMap = termValueListMap;
@@ -69,8 +90,13 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 		this.length = length;
 		init();
 	}
+
 	@SuppressWarnings("rawtypes")
-	public GazelleIndexSegmentImpl(Map<String, ColumnMetadata> metadataMap, Map<String, ForwardIndex> forwardIndexMap, Map<String, TermValueList> termValueListMap, SegmentMetadata segmentMetadata, int length, String[] invertedColumns) throws IOException {
+	public GazelleIndexSegmentImpl(Map<String, ColumnMetadata> metadataMap,
+			Map<String, ForwardIndex> forwardIndexMap,
+			Map<String, TermValueList> termValueListMap,
+			SegmentMetadata segmentMetadata, int length,
+			String[] invertedColumns) throws IOException {
 		this.forwardIndexMap = forwardIndexMap;
 		this.columnMetatdaMap = metadataMap;
 		this.termValueListMap = termValueListMap;
@@ -79,27 +105,32 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 		this.invertedColumns = invertedColumns;
 		init();
 	}
+
 	public GazelleIndexSegmentImpl() {
 		segmentMetadata = new SegmentMetadata();
 	}
+
 	private void init() throws IOException {
 		columnTypes = new HashMap<String, ColumnType>();
 		for (String columnName : columnMetatdaMap.keySet()) {
-			columnTypes.put(columnName, columnMetatdaMap.get(columnName).getColumnType());      
+			columnTypes.put(columnName, columnMetatdaMap.get(columnName)
+					.getColumnType());
 		}
 		initInvertedIndex(invertedColumns);
 	}
 
-
 	public Map<String, ColumnMetadata> getColumnMetadataMap() {
 		return columnMetatdaMap;
 	}
+
 	public Map<String, TermValueList> getDictionaries() {
 		return termValueListMap;
 	}
+
 	public Map<String, ForwardIndex> getForwardIndexes() {
 		return forwardIndexMap;
 	}
+
 	@Override
 	public Map<String, ColumnType> getColumnTypes() {
 		return columnTypes;
@@ -111,85 +142,109 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	}
 
 	/**
-	 * This method initializes inverted indices (We don't use a vanilla implementation of inverted indices, read GazelleInvertedIndex class for more info.
-	 * @param columns --> Specifies the column on which we want to build inverted indices on
-	 * @throws IOException --> Comes from addDoc
+	 * This method initializes inverted indices (We don't use a vanilla
+	 * implementation of inverted indices, read GazelleInvertedIndex class for
+	 * more info.
+	 * 
+	 * @param columns
+	 *            --> Specifies the column on which we want to build inverted
+	 *            indices on
+	 * @throws IOException
+	 *             --> Comes from addDoc
 	 */
-	public void initInvertedIndex(String[] columns) throws IOException{
-		if(columns != null){
+	public void initInvertedIndex(String[] columns) throws IOException {
+		if (columns != null) {
 			long elapsedTime = System.currentTimeMillis();
-			for(String column : columns){
-				//Fetch all values that this column could take
+			for (String column : columns) {
+				// Fetch all values that this column could take
 				TermValueList values = termValueListMap.get(column);
 				ForwardIndex forwardIndex = forwardIndexMap.get(column);
 
-				if (forwardIndex instanceof SortedForwardIndexImpl || forwardIndex instanceof SecondarySortedForwardIndexImpl || values == null || forwardIndex == null){
+				if (forwardIndex instanceof SortedForwardIndexImpl
+						|| forwardIndex instanceof SecondarySortedForwardIndexImpl
+						|| values == null || forwardIndex == null) {
 					continue;
 				}
 
-				//Create correct number of inverted indices for this column
+				// Create correct number of inverted indices for this column
 				int size = values.size();
-				
-				int ratio = forwardIndex.getLength()/size;
-				
-				if(ratio > 100000){
+
+				int ratio = forwardIndex.getLength() / size;
+
+				if (ratio > 100000) {
 					continue;
 				}
 
-				//Create the normal GazelleInvertedIndexImpl if the size of the dictionary isn't too large
-				if(ratio > 100){
+				// Create the normal GazelleInvertedIndexImpl if the size of the
+				// dictionary isn't too large
+				if (ratio > 100) {
 					InvertedIndex invertedIndices;
-					//We estimate the jump value for one dictionary value and assume it will work for the others (Otherwise, we waste too much time
-					//on estimation of the jump value.
-					int optimalValue = StandardCardinalityInvertedIndex.estimateOptimalMinJump(forwardIndex, forwardIndex.getDictionary().indexOf(values.get(1)));
-					invertedIndices = new StandardCardinalityInvertedIndex(forwardIndex, size, optimalValue, values);
+					// We estimate the jump value for one dictionary value and
+					// assume it will work for the others (Otherwise, we waste
+					// too much time
+					// on estimation of the jump value.
+					int optimalValue = StandardCardinalityInvertedIndex
+							.estimateOptimalMinJump(forwardIndex, forwardIndex
+									.getDictionary().indexOf(values.get(1)));
+					invertedIndices = new StandardCardinalityInvertedIndex(
+							forwardIndex, size, optimalValue, values);
 
-					//If it's a MultiValueForwardIndex, we have to deal with it differently.
-					if(forwardIndex instanceof MultiValueForwardIndexImpl1){
+					// If it's a MultiValueForwardIndex, we have to deal with it
+					// differently.
+					if (forwardIndex instanceof MultiValueForwardIndexImpl1) {
 						MultiValueForwardIndexImpl1 multiIndex = (MultiValueForwardIndexImpl1) forwardIndex;
-						int[] buffer = new int[multiIndex.getMaxNumValuesPerDoc()];
+						int[] buffer = new int[multiIndex
+								.getMaxNumValuesPerDoc()];
 
-						for(int i = 0; i < length; i++) {
+						for (int i = 0; i < length; i++) {
 							int count = multiIndex.randomRead(buffer, i);
 							for (int j = 0; j < count; j++) {
 								int valueId = buffer[j];
-								((StandardCardinalityInvertedIndex) invertedIndices).addDoc(i, valueId);
+								((StandardCardinalityInvertedIndex) invertedIndices)
+										.addDoc(i, valueId);
 							}
 						}
 
-					}
-					else{
+					} else {
 						size = forwardIndex.getLength();
 						SingleValueForwardIndex temp = (SingleValueForwardIndex) forwardIndex;
 						SingleValueRandomReader reader = temp.getReader();
 
-						//Insert DocID into the correct index.
-						for(int i = 0; i < size; i++){
-							if(!((StandardCardinalityInvertedIndex) invertedIndices).invertedIndexPresent(reader.getValueIndex(i))){
+						// Insert DocID into the correct index.
+						for (int i = 0; i < size; i++) {
+							if (!((StandardCardinalityInvertedIndex) invertedIndices)
+									.invertedIndexPresent(reader
+											.getValueIndex(i))) {
 								continue;
 							}
-							((StandardCardinalityInvertedIndex) invertedIndices).addDoc(i, reader.getValueIndex(i));
+							((StandardCardinalityInvertedIndex) invertedIndices)
+									.addDoc(i, reader.getValueIndex(i));
 						}
 					}
-					((StandardCardinalityInvertedIndex) invertedIndices).flush();
-					((StandardCardinalityInvertedIndex) invertedIndices).optimize();
+					((StandardCardinalityInvertedIndex) invertedIndices)
+							.flush();
+					((StandardCardinalityInvertedIndex) invertedIndices)
+							.optimize();
 
 					invertedIndexMap.put(column, invertedIndices);
 				}
-				
-				//If the size of the dictionary is too large, we create a specialized GazelleInvertedIndexHighCardinalityImpl
-				else{
+
+				// If the size of the dictionary is too large, we create a
+				// specialized GazelleInvertedIndexHighCardinalityImpl
+				else {
 					highCardinality = true;
-					
-					HighCardinalityInvertedIndex invertedIndices = new HighCardinalityInvertedIndex(forwardIndex, size);
-					
-					//Prepare the data for use.
+
+					HighCardinalityInvertedIndex invertedIndices = new HighCardinalityInvertedIndex(
+							forwardIndex, size);
+
+					// Prepare the data for use.
 					invertedIndices.prepData();
 
 					invertedIndexMap.put(column, invertedIndices);
 				}
 			}
-			invertedIndicesCreationTime.update(System.currentTimeMillis() - elapsedTime, TimeUnit.MILLISECONDS); 
+			invertedIndicesCreationTime.update(System.currentTimeMillis()
+					- elapsedTime, TimeUnit.MILLISECONDS);
 		}
 	}
 
@@ -215,38 +270,41 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	public int getLength() {
 		return length;
 	}
+
 	public void setLength(int length) {
 		this.length = length;
 	}
+
 	public long getInvertedDocCount() {
-		if(highCardinality == false){
+		if (highCardinality == false) {
 			return StandardCardinalityInvertedIndex.getTotalCount();
-		}
-		else{
+		} else {
 			return HighCardinalityInvertedIndex.getTotalCount();
 		}
 	}
+
 	public long getInvertedCompressionRate() {
-		if(highCardinality == false){
+		if (highCardinality == false) {
 			return StandardCardinalityInvertedIndex.getTotalCompSize();
-		}
-		else{
+		} else {
 			return HighCardinalityInvertedIndex.getTotalCompSize();
 		}
 	}
+
 	public long getTotalInvertedDocCount() {
-		if(highCardinality == false){
+		if (highCardinality == false) {
 			return StandardCardinalityInvertedIndex.getTotalTrueCount();
-		}
-		else{
+		} else {
 			return HighCardinalityInvertedIndex.getTotalTrueCount();
 		}
 	}
-  public String getAssociatedDirectory() {
-    return associatedDirectory;
-  }
-  public void setAssociatedDirectory(String associatedDirectory) {
-    this.associatedDirectory = associatedDirectory;
-  }
+
+	public String getAssociatedDirectory() {
+		return associatedDirectory;
+	}
+
+	public void setAssociatedDirectory(String associatedDirectory) {
+		this.associatedDirectory = associatedDirectory;
+	}
 
 }
