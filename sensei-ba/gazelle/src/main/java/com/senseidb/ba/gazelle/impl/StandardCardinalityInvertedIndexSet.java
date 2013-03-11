@@ -165,7 +165,7 @@ public class StandardCardinalityInvertedIndexSet extends DocIdSet {
 
 		public int getFromForwardIndex(int index) {
 
-			for (int i = index + 1; i <= finalDoc; i++) {
+			for (int i = index; i <= finalDoc; i++) {
 				int count = multiIndex.randomRead(buffer, i);
 				for(int j = 0; j < count; j++){
 					if (buffer[j] == dictValue) {
