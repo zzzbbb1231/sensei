@@ -74,7 +74,7 @@ public class StandardCardinalityInvertedIndexSet extends DocIdSet {
 
 		//If the jump value is specified (As it should be... Or we may end up taking too much time initializing) we set it.
 		//If not, we go estimate it.
-		if(jumpValue == 0){
+		if(jumpValue < 0){
 			minJumpValue = StandardCardinalityInvertedIndex.estimateOptimalMinJump(forwardIndex, dictValue);
 		}
 		else{
