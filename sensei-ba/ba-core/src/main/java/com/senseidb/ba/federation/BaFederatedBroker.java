@@ -108,6 +108,9 @@ public class BaFederatedBroker extends LayeredBroker {
       brokerConfig.getNetworkClient().shutdown();
       brokerConfig.getClusterClient().shutdown();
     }
+    for (BrokerProxy brokerProxy : brokers.values()) {
+      brokerProxy.shutdown();
+    }
   }
   
   public void warmUp() {
