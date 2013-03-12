@@ -8,14 +8,12 @@ import java.util.List;
 import java.util.Properties;
 
 import junit.framework.Assert;
-
 import kafka.javaapi.producer.Producer;
 import kafka.javaapi.producer.ProducerData;
 import kafka.message.Message;
 import kafka.producer.ProducerConfig;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
-
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Level;
@@ -24,12 +22,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import com.senseidb.ba.BASentinelTest;
 import com.senseidb.ba.util.TestUtil;
-import com.senseidb.gateway.kafka.DefaultJsonDataSourceFilter;
 import com.senseidb.util.SingleNodeStarter;
 *//**
  * You need to include jars from sensei-ba/config-example/src/main/resources/realtime-config-kafka/ext directory into the classpath
@@ -74,10 +69,13 @@ public class RealtimeIndexingFromKafkaTest  extends Assert {
           for (int i = 0; i < jsonArray.length(); i++) {
             Message m = new Message(jsonArray.getJSONObject(i).toString().getBytes());
             ProducerData<String,Message> msg = new ProducerData<String,Message>("test1",m);
-            msgList.add(msg);
+            for (int j = 0; j < 10000; j++) {
+              msgList.add(msg);
+            }
+            kafkaProducer.send(msgList);
+            msgList.clear();
           }
-          kafkaProducer.send(msgList);
-          msgList.clear();
+         
         }
         kafkaProducer.close();
         } catch (Exception ex) {
@@ -90,7 +88,7 @@ public class RealtimeIndexingFromKafkaTest  extends Assert {
     
     Logger rootLogger = Logger.getRootLogger();
     rootLogger.setLevel(Level.INFO);
-    SingleNodeStarter.start(ConfDir1, 10000);
+    SingleNodeStarter.start(ConfDir1, 1000000000);
     
   }
   @Test

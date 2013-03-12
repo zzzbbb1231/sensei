@@ -16,7 +16,6 @@ public class RealtimeIndexNotFlushedIntegrationTest extends BASentinelTest {
     FileUtils.deleteDirectory(new File("ba-index/ba-data"));
     SingleNodeStarter.start(ConfDir1, 20000);
   }
-  @Override
   public void test9ManagementBackend() throws Exception {
     
   }
@@ -25,5 +24,8 @@ public class RealtimeIndexNotFlushedIntegrationTest extends BASentinelTest {
     SingleNodeStarter.shutdown(); 
     //SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
     FileUtils.deleteDirectory(new File("ba-index/ba-data"));
+  }
+public void test19TestFederatedBroker() throws Exception {
+    
   }
 }

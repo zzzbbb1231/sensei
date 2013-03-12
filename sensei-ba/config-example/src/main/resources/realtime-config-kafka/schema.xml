@@ -2,8 +2,6 @@
 <schema 
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://javasoze.github.com/sensei/schema/sensei-schema.xsd">
-
-  
   <table uid="id">
   <column name="id" type="long" />
     <column name="groupid" type="long" />

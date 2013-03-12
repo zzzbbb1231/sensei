@@ -21,10 +21,10 @@ public class HttpLoadTest  {
   @BeforeClass
   public static void setUp() throws Exception {
     SingleNodeStarter.rmrf(new File("/tmp/realtimeIndexHttp/test"));
-    File ConfDir1 = new File("/home/vzhabiuk/work/sensei-ba/sensei/sensei-ba/config-example/src/main/resources/realtime-config-http");
+    File ConfDir1 = new File("/home/vzhabiuk/work/sensei-ba/sensei/sensei-ba/config-example/src/main/resources/realtime-config-cluster-http/node1");
     Logger rootLogger = Logger.getRootLogger();
     rootLogger.setLevel(Level.WARN);
-    SingleNodeStarter.start(ConfDir1, 100);
+    SingleNodeStarter.start(ConfDir1, 100000000);
     
   }
   @Test
@@ -41,13 +41,14 @@ public class HttpLoadTest  {
           long time = System.currentTimeMillis();
           while (true) {
             String req = "{\"bql\":\"select * \"}";
-            JSONObject resp = TestUtil.search(new URL("http://localhost:8080/sensei"), new JSONObject(req).toString());
+            JSONObject resp = TestUtil.search(new URL("http://localhost:8077/sensei"), new JSONObject(req).toString());
             /*if (System.currentTimeMillis() - time > 25000) {
               break;
             }*/
             if (ext == 0 && count %10 == 0) {
               System.out.println("numhits = " + resp.getInt("numhits"));
             }
+            Thread.sleep(500);
             //System.out.println("errors = " + resp.getJSONArray("errors"));
             
           }

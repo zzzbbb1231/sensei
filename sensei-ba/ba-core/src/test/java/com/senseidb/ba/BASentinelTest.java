@@ -37,6 +37,7 @@ public class BASentinelTest  extends Assert {
   
   @BeforeClass
   public static void setUp() throws Exception {
+    //System.setProperty("com.linkedin.norbert.disableJMX", "true");
     indexDir = new File("testIndex");
     ZkClient zkClient = new ZkClient("localhost:2181");
     zkClient.deleteRecursive("/sensei-ba/partitions/testCluster2");    
@@ -808,4 +809,13 @@ public class BASentinelTest  extends Assert {
     assertEquals("numhits is wrong", 15278, resp.getInt("numhits"));
    
   }
+  
+  public void ntest19TestFederatedBroker() throws Exception {
+    String req = "{\"bql\":\"select sum(met_impressionCount) where dim_memberAge <= 5000000\"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei/federatedBroker/"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals( 4722, resp.getInt("numhits"));
+    assertEquals( 11954, resp.getJSONObject("mapReduceResult").getInt("sum"));
+  }
+
 }

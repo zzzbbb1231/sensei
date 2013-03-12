@@ -389,6 +389,9 @@ public class DictionaryCreator {
         if (stringSet != null && stringSet.size() > 0) {
             return produceStringDictionary();
         }
+        if (floatAVLTreeSet != null && floatAVLTreeSet.size() > 0) {
+          return produceFloatDictionary();
+      }
         throw new UnsupportedOperationException();
     }
 

@@ -16,7 +16,6 @@ public class RealtimeIndexingIntegrationTest extends BASentinelTest {
     FileUtils.deleteDirectory(new File("ba-index/ba-data"));
     SingleNodeStarter.start(ConfDir1, 20000);
   }
-  @Override
   public void test9ManagementBackend() throws Exception {
     //Thread.sleep(Integer.MAX_VALUE);
   }
@@ -27,8 +26,10 @@ public class RealtimeIndexingIntegrationTest extends BASentinelTest {
     //SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
     FileUtils.deleteDirectory(new File("ba-index/ba-data"));
   }
-  @Override
   public void test4RangeQueryOnMultivaluedColumn() throws Exception {
+    
+  }
+  public void test19TestFederatedBroker() throws Exception {
     
   }
 }

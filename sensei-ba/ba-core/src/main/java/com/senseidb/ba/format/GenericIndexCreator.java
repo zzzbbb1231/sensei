@@ -284,5 +284,8 @@ public class GenericIndexCreator {
 		}
 
 	}
-
+public static void main(String[] args) throws Exception {
+  GazelleIndexSegmentImpl create = GenericIndexCreator.create(new File("/home/vzhabiuk/work/part-m-00000.avro"));
+  System.out.println(create);
+}
 }
