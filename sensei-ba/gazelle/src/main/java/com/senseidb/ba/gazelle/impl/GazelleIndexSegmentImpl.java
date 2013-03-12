@@ -122,6 +122,8 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 				//Fetch all values that this column could take
 				TermValueList values = termValueListMap.get(column);
 				ForwardIndex forwardIndex = forwardIndexMap.get(column);
+				
+				int maxMultiVals = -1;
 
 				if (forwardIndex instanceof SortedForwardIndexImpl || forwardIndex instanceof SecondarySortedForwardIndexImpl || values == null || forwardIndex == null){
 					continue;
@@ -135,14 +137,19 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 				if(ratio > 100000){
 					continue;
 				}
+				
+				if(forwardIndex instanceof MultiValueForwardIndexImpl1){
+					MultiValueForwardIndexImpl1 multiIndex = (MultiValueForwardIndexImpl1) forwardIndex;
+					maxMultiVals = multiIndex.getMaxNumValuesPerDoc();
+				}
 
 				//Create the normal GazelleInvertedIndexImpl if the size of the dictionary isn't too large
-				if(ratio > 100){
+				if(ratio > 100 || maxMultiVals > 100){
 					InvertedIndex invertedIndices;
 					//We estimate the jump value for one dictionary value and assume it will work for the others (Otherwise, we waste too much time
 					//on estimation of the jump value.
 					int optimalValue = StandardCardinalityInvertedIndex.estimateOptimalMinJump(forwardIndex, forwardIndex.getDictionary().indexOf(values.get(1)));
-					invertedIndices = new StandardCardinalityInvertedIndex(forwardIndex, size, optimalValue, values);
+					invertedIndices = new StandardCardinalityInvertedIndex(forwardIndex, size, maxMultiVals > -1 ? 0 : optimalValue, values);
 
 					//If it's a MultiValueForwardIndex, we have to deal with it differently.
 					if(forwardIndex instanceof MultiValueForwardIndexImpl1){
