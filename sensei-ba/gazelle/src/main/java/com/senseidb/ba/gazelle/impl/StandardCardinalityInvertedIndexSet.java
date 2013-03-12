@@ -74,7 +74,7 @@ public class StandardCardinalityInvertedIndexSet extends DocIdSet {
 
 		//If the jump value is specified (As it should be... Or we may end up taking too much time initializing) we set it.
 		//If not, we go estimate it.
-		if(jumpValue == 0){
+		if(jumpValue < 0){
 			minJumpValue = StandardCardinalityInvertedIndex.estimateOptimalMinJump(forwardIndex, dictValue);
 		}
 		else{
@@ -165,7 +165,7 @@ public class StandardCardinalityInvertedIndexSet extends DocIdSet {
 
 		public int getFromForwardIndex(int index) {
 
-			for (int i = index + 1; i <= finalDoc; i++) {
+			for (int i = index; i <= finalDoc; i++) {
 				int count = multiIndex.randomRead(buffer, i);
 				for(int j = 0; j < count; j++){
 					if (buffer[j] == dictValue) {
