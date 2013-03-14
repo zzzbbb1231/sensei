@@ -41,7 +41,8 @@ public class RestSegmentManagementTest  extends Assert {
   @AfterClass
   public static void tearDown() throws Exception {
     SingleNodeStarter.shutdown(); 
-    SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
+    SingleNodeStarter.rmrf(new File("ba-index"));
+    SingleNodeStarter.rmrf(indexDir);
     FileUtils.deleteDirectory(new File(httpUploadDirectory));
   }
   

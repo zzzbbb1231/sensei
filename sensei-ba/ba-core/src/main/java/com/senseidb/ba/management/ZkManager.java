@@ -61,6 +61,7 @@ public class ZkManager {
         segmentInfo.getConfig().putAll(newConf);
         segmentInfo.getConfig().put("overriten", String.valueOf(System.currentTimeMillis()));
         if ((oldCrc == null && newCrc != null) || (oldCrc != null && !oldCrc.equals(newCrc))) {
+          logger.info("Trying to override the existing segment");
           String markerPath = SegmentUtils.getRefreshMarkerPath(clusterName) + "/" + System.currentTimeMillis() + "/" + segmentId;
           if (!zkClient.exists(markerPath)) {
             zkClient.createPersistent(markerPath, true);
@@ -135,11 +136,16 @@ public class ZkManager {
     
     public boolean removeSegment(int partition, String segmentId) {
       String segmentPath = SegmentUtils.getActiveSegmentsPath(clusterName, partition, segmentId);
+      String segmentInfoPath = SegmentUtils.getSegmentInfoPath(clusterName, segmentId);
+      boolean ret = false;
       if (zkClient.exists(segmentPath)) {
-        zkClient.deleteRecursive(segmentPath);
-        return true;
+        zkClient.deleteRecursive(segmentPath); 
+        ret = true;
       }
-    return false;
+      if (zkClient.exists(segmentInfoPath)) {
+        zkClient.deleteRecursive(segmentInfoPath);        
+      }
+    return ret;
     }
     public boolean removeSegment(String segmentPath) {
       if (zkClient.exists(segmentPath)) {

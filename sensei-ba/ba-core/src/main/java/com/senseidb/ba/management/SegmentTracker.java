@@ -186,6 +186,7 @@ public class SegmentTracker {
         logger.info("trying to load segment  + " + segmentId + ", by uri - " + currentUri);
         ret = instantiateSegmentForUri(segmentId, currentUri);
         if (ret != null) {
+          success = true;
           logger.info("Succesfully loaded  segment - " + segmentId + " by the uri " + currentUri);
           break;
         } else {
@@ -213,7 +214,7 @@ public class SegmentTracker {
       } else {
         if (uri.startsWith("http:")) {
           
-          File tempFile = new File(indexDir, segmentId + "tar.gz");
+          File tempFile = new File(indexDir, segmentId + ".tar.gz");
           long downloadTime = System.currentTimeMillis();
           FileUploadUtils.getFile(uri, tempFile);
           long duration = System.currentTimeMillis() - downloadTime;

@@ -2,11 +2,17 @@ package com.senseidb.ba.federation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.json.JSONException;
@@ -15,6 +21,7 @@ import org.springframework.util.Assert;
 
 import com.browseengine.bobo.api.BrowseSelection;
 import com.linkedin.norbert.javacompat.network.PartitionedLoadBalancerFactory;
+import com.senseidb.ba.management.SegmentTracker;
 import com.senseidb.cluster.routing.SenseiPartitionedLoadBalancerFactory;
 import com.senseidb.conf.SenseiConfParams;
 import com.senseidb.plugin.SenseiPluginRegistry;
@@ -33,12 +40,20 @@ import com.senseidb.util.JSONUtil;
 import com.senseidb.util.JSONUtil.FastJSONObject;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
+import com.yammer.metrics.core.MetricName;
 
 public class BaFederatedBroker extends LayeredBroker {
   private static Logger logger = Logger.getLogger(BaFederatedBroker.class);
   private static final Counter numRelevantHistoricalEvents = Metrics.newCounter(BaFederatedBroker.class, "numRelevantHistoricalEvents");
   private static final Counter numRelevantRealtimeEvents = Metrics.newCounter(BaFederatedBroker.class, "numfRelevantRealtimeEvents");
-  private static Timer timer = new Timer(true);
+  private static final com.yammer.metrics.core.Timer historicalClusterTime = Metrics.newTimer(new MetricName(BaFederatedBroker.class ,"historicalClusterTime"), TimeUnit.MILLISECONDS, TimeUnit.SECONDS);
+  private static final com.yammer.metrics.core.Timer realtimeClusterTime = Metrics.newTimer(new MetricName(BaFederatedBroker.class ,"realtimeClusterTime"), TimeUnit.MILLISECONDS, TimeUnit.SECONDS);
+  private static final com.yammer.metrics.core.Timer mergeTime = Metrics.newTimer(new MetricName(BaFederatedBroker.class ,"mergeTime"), TimeUnit.MILLISECONDS, TimeUnit.SECONDS);
+  private static final Counter currentTimeBoundaryCounter = Metrics.newCounter(BaFederatedBroker.class, "currentTimeBoundaryCounter");
+  
+  private ExecutorService executorService = Executors.newCachedThreadPool();
+  
+  private Timer timer = new Timer(true);
   private static final String CLUSTERS = "clusters";
   private static final String HISTORICAL_CLUSTER = "historicalCluster";
   private static final String REFRESH_FREQUENCY = "refreshFrequency";
@@ -52,9 +67,11 @@ public class BaFederatedBroker extends LayeredBroker {
   private Map<String, CompoundBrokerConfig> clusterBrokerConfig = new HashMap<String, CompoundBrokerConfig>() ;
   private Map<String, BrokerProxy> brokers = new HashMap<String, BrokerProxy>() ;
   private LayeredClusterPruner federatedPruner;
+  private BrokerProxy historicalBroker;
   
   @Override
   public void init(Map<String, String> config, SenseiPluginRegistry pluginRegistry) {
+    System.setProperty("com.linkedin.norbert.disableJMX", "true");
     String clustersConfig = config.get(CLUSTERS);
     if (clustersConfig == null) {
       throw new IllegalArgumentException("Clusters param should be present");
@@ -99,17 +116,28 @@ public class BaFederatedBroker extends LayeredBroker {
         
       }
     }, Math.min(10 * 1000, frequency), frequency);
+     historicalBroker = brokers.get(historicalCluster);
   }
 
   @Override
   public void stop() {
+    timer.cancel();
+    executorService.shutdownNow();
     for (CompoundBrokerConfig brokerConfig : clusterBrokerConfig.values()) {
-      brokerConfig.getSenseiBroker().shutdown();
+      if (brokerConfig.getSenseiBroker() != null) {
+        brokerConfig.getSenseiBroker().shutdown();
+      }
+      if (brokerConfig.getNetworkClient() != null) {
       brokerConfig.getNetworkClient().shutdown();
-      brokerConfig.getClusterClient().shutdown();
+      }
+      if (brokerConfig.getClusterClient() != null) {
+        brokerConfig.getClusterClient().shutdown();
+      }
     }
     for (BrokerProxy brokerProxy : brokers.values()) {
-      brokerProxy.shutdown();
+      if (brokerProxy != null) {
+        brokerProxy.shutdown();
+      }
     }
   }
   
@@ -131,6 +159,8 @@ public class BaFederatedBroker extends LayeredBroker {
     long newTimeBoundary = (long)jsonRes.getDouble("max");
     if (newTimeBoundary != timeBoundary) {
       timeBoundary = newTimeBoundary;
+      currentTimeBoundaryCounter.clear();
+      currentTimeBoundaryCounter.inc(timeBoundary);
       areClusterBoundariesDefined = true;      
       req = new SenseiRequest();
       BrowseSelection sel = new BrowseSelection(timeColumn);
@@ -165,31 +195,56 @@ public class BaFederatedBroker extends LayeredBroker {
   
   
   public SenseiResult browse(final SenseiRequest req) throws SenseiException {
+   long totalTime = System.currentTimeMillis();
    if (!areClusterBoundariesDefined) {
      refreshTime();
    }
    try {
-   SenseiRequest cloned = req.clone();
-   BrokerProxy historicalBroker = brokers.get(historicalCluster);
    List<SenseiResult> senseiResults = new ArrayList<SenseiResult>();
-   JSONObject historicalExpression;
-    historicalExpression = new FastJSONObject().put("range", new FastJSONObject().put(timeColumn, new FastJSONObject().put("to", timeBoundary).put("include_upper", false)));
+   Future<List<SenseiResult>> historicalResults = executorService.submit(new Callable<List<SenseiResult>>() {
+
+    @Override
+    public List<SenseiResult> call() throws Exception {
+      long time = System.currentTimeMillis();
+      try {
+      SenseiRequest cloned = req.clone();
+      JSONObject historicalExpression;
+      historicalExpression = new FastJSONObject().put("range", new FastJSONObject().put(timeColumn, new FastJSONObject().put("to", timeBoundary).put("include_upper", false)));
+      enhanceWithTimeBoundary(cloned, historicalExpression);    
+      return historicalBroker.doQuery(cloned);
+      } catch (Exception ex) {
+        logger.error("An exception happened when queried historical cluster", ex);
+        return Collections.EMPTY_LIST;
+     }finally {
+        historicalClusterTime.update(System.currentTimeMillis() - time, TimeUnit.MILLISECONDS);
+      }
+    }  
+   });
    
-   enhanceWithTimeBoundary(cloned, historicalExpression);
-   senseiResults.addAll(historicalBroker.doQuery(cloned));
-   cloned = req.clone();
+   
+   long time = System.currentTimeMillis();
+   SenseiRequest cloned = req.clone();
    JSONObject realtimeExpression = new FastJSONObject().put("range", new FastJSONObject().put(timeColumn, new FastJSONObject().put("from", timeBoundary).put("include_lower", true)));
    enhanceWithTimeBoundary(cloned, realtimeExpression);   
+   try {
    for (String cluster : brokers.keySet()) {
      if (cluster.equalsIgnoreCase(historicalCluster)) {
        continue;
      }
      BrokerProxy senseiBroker = brokers.get(cluster);
      senseiResults.addAll(senseiBroker.doQuery(cloned));   
-   }   
-    SenseiResult res = ResultMerger.merge(req, senseiResults, false); 
-    return res;
-   } catch (JSONException e) {
+   }  
+   } catch (Exception ex) {
+     logger.error("An exception happened when queried realtimeCluster", ex);
+  }
+   realtimeClusterTime.update(System.currentTimeMillis() - time, TimeUnit.MILLISECONDS); 
+   senseiResults.addAll(historicalResults.get());
+   time = System.currentTimeMillis();   
+   SenseiResult res = ResultMerger.merge(req, senseiResults, false); 
+   mergeTime.update(System.currentTimeMillis() - time, TimeUnit.MILLISECONDS); 
+   logger.info("Federated request took - " + (System.currentTimeMillis() - totalTime) + " ms");
+   return res;
+   } catch (Exception e) {
      throw new RuntimeException(e);
    }
   }

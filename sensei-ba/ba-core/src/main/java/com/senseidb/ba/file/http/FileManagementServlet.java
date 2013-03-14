@@ -201,11 +201,15 @@ public class FileManagementServlet extends HttpServlet {
         File nasFile = new File(nasDir, file.getName());
         if (!nasFile.exists() || nasFile.lastModified() < Clock.getTime() - _10_MINUTES || nasFile.length() != file.length()) {
           Assert.state(file.renameTo(nasFile), "Couldn't rename file to " + nasFile.getAbsolutePath());
+          logger.info("Registering the segment  " + nasFile.getAbsolutePath() + " in nas");
           zkManager.registerSegment(clusterName, partitionId, file.getName(), nasFile.getAbsolutePath(), segmentMetadata);
+        } else {
+          logger.info("Ignoring the segment  " + file.getName() + " as its already there");
         }
        
       } else {
         zkManager.registerSegment(partitionId, file.getName(), baseUrl + file.getName(), segmentMetadata);
+        logger.info("Registering the segment  " + (baseUrl + file.getName()) + " in nas");
       }
        
     } catch (Exception ex) {

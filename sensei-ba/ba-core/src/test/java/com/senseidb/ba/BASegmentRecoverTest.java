@@ -30,7 +30,7 @@ public class BASegmentRecoverTest  extends Assert {
   @AfterClass
   public static void tearDown() throws Exception {
     SingleNodeStarter.shutdown(); 
-    SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
+    SingleNodeStarter.rmrf(new File("ba-index"));
     zkManager = new ZkManager("localhost:2181", "testCluster2");
     zkManager.removePartition(0);
     zkManager.removePartition(1);
@@ -42,8 +42,8 @@ public class BASegmentRecoverTest  extends Assert {
     
     ZkClient zkClient = new ZkClient("localhost:2181");
     zkClient.deleteRecursive("/sensei-ba/partitions/testCluster2");    
-    SingleNodeStarter.rmrf(new File("ba-index/ba-data"));
-    
+    SingleNodeStarter.rmrf(new File("ba-index"));
+   
     File ConfDir1 = new File(BASegmentRecoverTest.class.getClassLoader().getResource("ba-conf").toURI());
      httpUploadDirectory = "/tmp/fileUpload";
     FileUtils.deleteDirectory(new File(httpUploadDirectory));
