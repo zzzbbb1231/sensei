@@ -119,6 +119,14 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 		if(columns != null){
 			long elapsedTime = System.currentTimeMillis();
 			for(String column : columns){
+				int option = column.indexOf("(");
+				String optionValue = null;
+				
+				if(option != -1){
+					optionValue = column.substring(option + 1, column.length() - 1);
+					column = column.substring(0, option);
+				}
+				
 				//Fetch all values that this column could take
 				TermValueList values = termValueListMap.get(column);
 				ForwardIndex forwardIndex = forwardIndexMap.get(column);
@@ -134,7 +142,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 				
 				int ratio = forwardIndex.getLength()/size;
 				
-				if(ratio > 100000){
+				if((ratio > 100000 || optionValue.equalsIgnoreCase("none")) && (!optionValue.equalsIgnoreCase("standard") || !optionValue.equalsIgnoreCase("high"))){
 					continue;
 				}
 				
@@ -144,7 +152,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 				}
 
 				//Create the normal GazelleInvertedIndexImpl if the size of the dictionary isn't too large
-				if(ratio > 100 || maxMultiVals > 100){
+				if((ratio > 100 || optionValue.equalsIgnoreCase("standard")) && !optionValue.equalsIgnoreCase("high")){
 					InvertedIndex invertedIndices;
 					//We estimate the jump value for one dictionary value and assume it will work for the others (Otherwise, we waste too much time
 					//on estimation of the jump value.
