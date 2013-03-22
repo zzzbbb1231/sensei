@@ -16,6 +16,10 @@ public enum ColumnType {
     if ("DOUBLE".equals(name)) {
       return FLOAT;
     }
+    if ("BOOLEAN".equals(name)) {
+      return STRING;
+    }
+    
     return valueOf(name);
   }
   public static ColumnType valueOf(Class<?> cls) {
@@ -41,6 +45,9 @@ public enum ColumnType {
       return LONG;
     }
     if (type == Type.STRING) {
+      return STRING;
+    }
+    if (type == Type.BOOLEAN) {
       return STRING;
     }
     if (type == Type.DOUBLE || type == Type.FLOAT) {
