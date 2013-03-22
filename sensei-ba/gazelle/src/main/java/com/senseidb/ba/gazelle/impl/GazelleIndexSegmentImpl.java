@@ -120,7 +120,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 			long elapsedTime = System.currentTimeMillis();
 			for(String column : columns){
 				int option = column.indexOf("(");
-				String optionValue = null;
+				String optionValue = new String("default");
 				
 				if(option != -1){
 					optionValue = column.substring(option + 1, column.length() - 1);
