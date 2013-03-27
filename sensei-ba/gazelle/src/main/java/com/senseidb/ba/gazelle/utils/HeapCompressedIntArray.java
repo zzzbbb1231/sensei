@@ -63,7 +63,7 @@ public class HeapCompressedIntArray implements IntArray {
       return valueCount;
     }
 
-    private static int size(int valueCount, int bitsPerValue) {
+    public static int size(int valueCount, int bitsPerValue) {
       final long totBitCount = (long) valueCount * bitsPerValue;
       return (int) (totBitCount / 64 + ((totBitCount % 64 == 0) ? 0 : 1));
     }

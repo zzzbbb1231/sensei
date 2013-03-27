@@ -14,34 +14,43 @@ import org.apache.log4j.Logger;
 
 import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ColumnType;
+import com.senseidb.ba.gazelle.IndexSegment;
+import com.senseidb.ba.gazelle.MetadataAware;
 import com.senseidb.ba.gazelle.SegmentMetadata;
+import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
+import com.senseidb.ba.gazelle.index.custom.GazelleCustomIndex;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.GazelleUtils;
 import com.senseidb.ba.gazelle.utils.StreamUtils;
 
 public class MetadataPersistentManager {
   private static Logger logger = Logger.getLogger(MetadataPersistentManager.class);  
-  public static void flush(Map<String, ColumnMetadata> metadataMap, SegmentMetadata segmentMetadata, String basePath, FileSystemMode mode, FileSystem fs) throws ConfigurationException, IOException {
+  public static void flush(IndexSegment segment, String basePath, FileSystemMode mode, FileSystem fs) throws ConfigurationException, IOException {
+    GazelleIndexSegmentImpl indexSegmentImpl = (GazelleIndexSegmentImpl) segment;
+    
     String fileName = basePath + "/" + GazelleUtils.METADATA_FILENAME;
     Path path = new Path(fileName);
     DataOutputStream ds = StreamUtils.getOutputStream(fileName, mode, fs);
     PropertiesConfiguration config = new PropertiesConfiguration();
     try {
-      for (String column : metadataMap.keySet()) {
-        ColumnMetadata columnMetadata = metadataMap.get(column);       
-        columnMetadata.addToConfig(config);
+      for (String column : indexSegmentImpl.getColumnTypes().keySet()) {
+        ColumnMetadata columnMetadata = indexSegmentImpl.getColumnMetadataMap().get(column);       
+        if (columnMetadata != null) {
+          columnMetadata.addToConfig(config);
+        }
       }
-      if (segmentMetadata != null) {
-        segmentMetadata.addToConfig(config);
+      if (indexSegmentImpl.getSegmentMetadata() != null) {
+        indexSegmentImpl.getSegmentMetadata().addToConfig(config);
+      }
+      for (GazelleCustomIndex customIndex : indexSegmentImpl.getCustomIndexes().values()) {
+       customIndex.getCreator().saveToProperties(config);
       }
     } finally {
       config.save(ds);
     }
   }
 
-  public static void flush(Map<String, ColumnMetadata> metadataMap, SegmentMetadata segmentMetadataImpl, String basePath, FileSystemMode mode) throws ConfigurationException, IOException {
-    flush(metadataMap, segmentMetadataImpl, basePath, mode, null);
-  }
+  
   
   public static HashMap<String, ColumnMetadata> readFromFile(PropertiesConfiguration config) {
     HashMap<String, ColumnMetadata> columnMetadataMap = new HashMap<String, ColumnMetadata>();
@@ -49,16 +58,7 @@ public class MetadataPersistentManager {
     while (columns.hasNext()) {
       String key = (String) columns.next();
       String columnName = key.split("\\.")[1];
-      ColumnMetadata metadata = new ColumnMetadata();
-      metadata.setByteLength(config.getLong("column." + columnName + ".byteLength"));
-      metadata.setNumberOfElements(config.getInt("column." + columnName + ".numberOfElements"));
-      metadata.setNumberOfDictionaryValues(config.getInt("column." + columnName + ".numberOfDictionaryValues"));
-      metadata.setBitsPerElement(config.getInt("column." + columnName + ".bitsPerElement"));
-      metadata.setColumnType(ColumnType.valueOfStr(config.getString("column." + columnName + ".columnType")));
-      metadata.setSorted(config.getBoolean("column." + columnName + ".sorted"));
-      metadata.setMulti(config.getBoolean("column." + columnName + ".multi"));
-      metadata.setSecondarySorted(config.getBoolean("column." + columnName + ".secondarySorted", false));
-      metadata.setName(columnName);
+      ColumnMetadata metadata = ColumnMetadata.valueOf(config, columnName);    
       if (!columnMetadataMap.containsKey(columnName)) {
         columnMetadataMap.put(columnName, metadata);
       }

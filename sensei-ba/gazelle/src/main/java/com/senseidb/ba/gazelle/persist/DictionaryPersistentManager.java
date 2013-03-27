@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,50 +39,56 @@ public class DictionaryPersistentManager {
     for (String column : metadataMap.keySet()) {
       String dictFileName =
           baseDirPath + "/" + metadataMap.get(column).getName() + ".dict";
-
-      DataOutputStream ds = StreamUtils.getOutputStream(dictFileName, mode, fs);
-      try {
-        ColumnType columnType = metadataMap.get(column).getColumnType();
-        if (columnType.isMulti()) {
-            columnType = columnType.getElementType();
-        }
-        
-        switch (columnType) {
-          case STRING:
-            TermStringList stringList =
-                (TermStringList) termValueListMap.get(column);
-            for (int i = 0; i < stringList.size(); i++) {
-              String entry = stringList.get(i);
-              byte[] entryInBytes = entry.getBytes("UTF8");
-              ds.writeShort(entryInBytes.length);
-              ds.write(entryInBytes);
-            }
-            break;
-          case INT:
-            TermIntList intList = (TermIntList) termValueListMap.get(column);
-            for (int i = 0; i < intList.size(); i++) {
-              ds.writeInt(intList.getPrimitiveValue(i));
-            }
-            break;
-          case LONG:
-            TermLongList longList = (TermLongList) termValueListMap.get(column);
-            for (int i = 0; i < longList.size(); i++) {
-              ds.writeLong(longList.getPrimitiveValue(i));
-            }
-            break;
-          case FLOAT:
-            TermFloatList floatList =
-                (TermFloatList) termValueListMap.get(column);
-            for (int i = 0; i < floatList.size(); i++) {
-              ds.writeFloat(floatList.getPrimitiveValue(i));
-            }
-            break;
-          default:
-            throw new UnsupportedOperationException();
-        }
-      } finally {
-        ds.close();
+      ColumnType columnType = metadataMap.get(column).getColumnType();
+      if (columnType.isMulti()) {
+        columnType = columnType.getElementType();
       }
+      TermValueList termValueList = termValueListMap.get(column);
+      persistDictionary(mode, fs, dictFileName, columnType, termValueList);
+    }
+  }
+
+  public static void persistDictionary(FileSystemMode mode, FileSystem fs, String dictFileName, ColumnType columnType,
+      TermValueList termValueList) throws IOException, UnsupportedEncodingException {
+    DataOutputStream ds = StreamUtils.getOutputStream(dictFileName, mode, fs);
+    try {
+      
+      
+      switch (columnType) {
+        case STRING:
+          TermStringList stringList =
+              (TermStringList) termValueList;
+          for (int i = 0; i < stringList.size(); i++) {
+            String entry = stringList.get(i);
+            byte[] entryInBytes = entry.getBytes("UTF8");
+            ds.writeShort(entryInBytes.length);
+            ds.write(entryInBytes);
+          }
+          break;
+        case INT:
+          TermIntList intList = (TermIntList) termValueList;
+          for (int i = 0; i < intList.size(); i++) {
+            ds.writeInt(intList.getPrimitiveValue(i));
+          }
+          break;
+        case LONG:
+          TermLongList longList = (TermLongList) termValueList;
+          for (int i = 0; i < longList.size(); i++) {
+            ds.writeLong(longList.getPrimitiveValue(i));
+          }
+          break;
+        case FLOAT:
+          TermFloatList floatList =
+              (TermFloatList) termValueList;
+          for (int i = 0; i < floatList.size(); i++) {
+            ds.writeFloat(floatList.getPrimitiveValue(i));
+          }
+          break;
+        default:
+          throw new UnsupportedOperationException();
+      }
+    } finally {
+      ds.close();
     }
   }
 
@@ -190,7 +197,9 @@ public class DictionaryPersistentManager {
     } catch (Exception e) {
       throw new RuntimeException(e);
     } finally {
-      dIs.close();     
+      if (dIs != null) { 
+        dIs.close();     
+      }
     }
     return list;
   }

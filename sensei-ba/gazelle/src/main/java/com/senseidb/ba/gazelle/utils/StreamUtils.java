@@ -30,7 +30,8 @@ public class StreamUtils {
     return is;
   }
   
-  public static DataOutputStream getOutputStream(String filePath, FileSystemMode mode ,FileSystem fs) throws IOException {
+  public static DataOutputStream getOutputStream(String filePath, FileSystemMode mode ,FileSystem fs)  {
+    try {
     DataOutputStream is = null;
     switch(mode) {
       case DISK:
@@ -43,5 +44,8 @@ public class StreamUtils {
         throw new UnsupportedOperationException();
     }
     return is;
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
   }
 }

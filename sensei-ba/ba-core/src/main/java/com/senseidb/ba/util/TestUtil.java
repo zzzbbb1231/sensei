@@ -3,11 +3,14 @@ package com.senseidb.ba.util;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Arrays;
+import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
@@ -15,6 +18,7 @@ import org.json.JSONObject;
 import com.senseidb.ba.gazelle.creators.AvroSegmentCreator;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
+import com.senseidb.ba.gazelle.utils.FileSystemMode;
 
 public class TestUtil {
   private static Logger logger = Logger.getLogger(TestUtil.class);
@@ -26,7 +30,15 @@ public class TestUtil {
     indexSegmentImpl.getSegmentMetadata().setStartTime("50");
     return indexSegmentImpl;
   }
-
+  public static File flushIndexSegmentForCompositeMetricsAndCompress(File tempIndexDir, String segmentId) throws URISyntaxException, Exception {
+    File avroFile = new File(TestUtil.class.getClassLoader().getResource("compressedMetrics/manyMetrics.avro").toURI());
+     AvroSegmentCreator.flushSegmentFromAvroFileWithCompositeMetrics(new AvroSegmentCreator.CreateSegmentInfo().setAvroSegment(avroFile).setOutputDirInfo(new File(tempIndexDir, segmentId).getAbsolutePath(),FileSystemMode.DISK,null).setCompositeMetrics(Arrays.asList("metric*")) );
+      
+     File compressedFile = new File(tempIndexDir, segmentId + ".tar.gz");
+     TarGzCompressionUtils.createTarGzOfDirectory(new File(tempIndexDir, segmentId) + "/", compressedFile.getAbsolutePath());
+     
+    return compressedFile;
+  }
   public static File createCompressedSegment(String segmentId, GazelleIndexSegmentImpl indexSegmentImpl, File tempIndexDir) throws Exception {
     File segmentDir = new File(tempIndexDir, segmentId);
   

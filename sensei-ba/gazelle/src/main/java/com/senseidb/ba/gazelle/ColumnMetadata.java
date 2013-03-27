@@ -1,5 +1,7 @@
 package com.senseidb.ba.gazelle;
 
+import java.util.Properties;
+
 import org.apache.commons.configuration.Configuration;
 
 /**
@@ -19,7 +21,7 @@ public class ColumnMetadata {
   private boolean _sorted;
   private boolean multi;
   private boolean secondarySorted;
- 
+  private String customIndexerType;
   
   public ColumnMetadata(String name, ColumnType type) {
     _name = name;
@@ -38,6 +40,9 @@ public class ColumnMetadata {
     configuration.setProperty("column." + _name + ".columnType", _columnType);
     configuration.setProperty("column." + _name + ".multi", multi);
     configuration.setProperty("column." + _name + ".secondarySorted", secondarySorted);
+    if (customIndexerType != null) {
+      configuration.setProperty("column." + _name + ".customIndexerType", customIndexerType);
+    }
   }
 
   public String getName() {
@@ -127,6 +132,28 @@ public void setSecondarySorted(boolean secondarySorted) {
   
 }
 
+  public String getCustomIndexerType() {
+  return customIndexerType;
+}
+
+public void setCustomIndexerType(String customIndexerType) {
+  this.customIndexerType = customIndexerType;
+}
+
+  public static ColumnMetadata valueOf(Configuration config, String columnName) {
+    ColumnMetadata metadata = new ColumnMetadata();
+    metadata.setByteLength(config.getLong("column." + columnName + ".byteLength"));
+    metadata.setNumberOfElements(config.getInt("column." + columnName + ".numberOfElements"));
+    metadata.setNumberOfDictionaryValues(config.getInt("column." + columnName + ".numberOfDictionaryValues"));
+    metadata.setBitsPerElement(config.getInt("column." + columnName + ".bitsPerElement"));
+    metadata.setColumnType(ColumnType.valueOfStr(config.getString("column." + columnName + ".columnType")));
+    metadata.setSorted(config.getBoolean("column." + columnName + ".sorted"));
+    metadata.setMulti(config.getBoolean("column." + columnName + ".multi"));
+    metadata.setSecondarySorted(config.getBoolean("column." + columnName + ".secondarySorted", false));
+    metadata.setCustomIndexerType(config.getString("column." + columnName + ".customIndexerType", null));
+    metadata.setName(columnName);
+    return metadata;
+  }
  
   
 }

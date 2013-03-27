@@ -18,6 +18,7 @@ import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.ba.facet.BaFacetHandler;
 import com.senseidb.ba.facet.SumGroupByFacetHandler;
 import com.senseidb.ba.gazelle.IndexSegment;
+import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.conf.SenseiFacetHandlerBuilder;
 import com.senseidb.plugin.SenseiPlugin;
 import com.senseidb.plugin.SenseiPluginRegistry;
@@ -53,7 +54,11 @@ public BoboIndexReader decorate(ZoieIndexReader<BoboIndexReader> zoieReader) thr
   
  
   for (String column : offlineSegment.getColumnTypes().keySet()) {
-    facetHandlers.add(getFacetHandler(column));
+    if (offlineSegment instanceof GazelleIndexSegmentImpl && ((GazelleIndexSegmentImpl)offlineSegment).getCustomIndexes().containsKey(column)) {
+      facetHandlers.add(((GazelleIndexSegmentImpl)offlineSegment).getCustomIndexes().get(column).getFacetHandler(column));
+    } else {
+      facetHandlers.add(getFacetHandler(column));
+    }
   }
   if (customFacetHandlers != null) {
     facetHandlers.addAll((List) customFacetHandlers);

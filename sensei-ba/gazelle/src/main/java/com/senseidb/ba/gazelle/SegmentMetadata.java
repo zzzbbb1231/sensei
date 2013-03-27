@@ -47,12 +47,6 @@ public class SegmentMetadata {
     }
   }
 
-  private boolean inNotNull(Object someVariable) {
-    if (someVariable != null) {
-      return true;
-    }
-    return false;
-  }
   public static boolean isFromDefaultList(String key) {
     for (String entry : defaultList) {
       if (key.equals(entry)) {
@@ -62,12 +56,12 @@ public class SegmentMetadata {
     return false;
   }
 
-  public void put(String key, String value) throws IllegalAccessException {
+  public void put(String key, String value)  {
     if (StringUtils.isEmpty(key) && StringUtils.isEmpty(value)) {
-      throw new IllegalAccessException("Cannot have an empty key or value");
+      throw new IllegalStateException("Cannot have an empty key or value");
     }
     if (!StringUtils.startsWith(key, "segment.")) {
-      throw new IllegalAccessException("keys should start with segment.");
+      throw new IllegalStateException("keys should start with segment.");
     }
     addionalEntries.put(key, value);
   }
