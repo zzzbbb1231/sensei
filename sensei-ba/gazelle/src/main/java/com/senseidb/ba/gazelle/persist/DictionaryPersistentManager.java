@@ -1,5 +1,7 @@
 package com.senseidb.ba.gazelle.persist;
 
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
+
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -157,7 +159,16 @@ public class DictionaryPersistentManager {
                 public Float getRawValue(int index) {
                   return   super.getPrimitiveValue(index);
                 }
-            
+                @Override
+                public int indexOf(Object o)
+                {
+                  float val;
+                  if (o instanceof String)
+                    val = Float.parseFloat((String) o);
+                  else
+                    val = (Float)o;
+                  return Arrays.binarySearch(floatArr, val);
+                }
                 public int size() {
                   return floatArr.length;
                 }

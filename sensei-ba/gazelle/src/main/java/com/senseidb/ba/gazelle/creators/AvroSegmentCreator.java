@@ -32,9 +32,9 @@ import org.apache.log4j.Logger;
 import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.ForwardIndex;
+import com.senseidb.ba.gazelle.custom.CompositeMetricCustomIndex;
+import com.senseidb.ba.gazelle.custom.GazelleCustomIndex;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
-import com.senseidb.ba.gazelle.index.custom.CompositeMetricCustomIndex;
-import com.senseidb.ba.gazelle.index.custom.GazelleCustomIndex;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
 

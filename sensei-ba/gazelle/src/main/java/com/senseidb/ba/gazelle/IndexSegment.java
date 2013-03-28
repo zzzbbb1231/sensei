@@ -5,7 +5,7 @@ import java.util.Map;
 import org.apache.lucene.search.DocIdSet;
 
 import com.browseengine.bobo.facets.data.TermValueList;
-import com.senseidb.ba.gazelle.index.custom.GazelleCustomIndex;
+import com.senseidb.ba.gazelle.custom.GazelleCustomIndex;
 
 
 /**
