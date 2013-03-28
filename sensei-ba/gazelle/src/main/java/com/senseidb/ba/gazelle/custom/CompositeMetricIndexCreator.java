@@ -9,6 +9,7 @@ import java.util.Map;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnMetadata;
@@ -85,15 +86,16 @@ public class CompositeMetricIndexCreator implements GazelleCustomIndexCreator {
     String filePath = baseDir + "/compositeMetricIndexes.dict";
     DataOutputStream ds = null;
     try {
+      if (mode == FileSystemMode.HDFS) {
+        if (fs.exists(new Path(filePath))) {
+          return;
+        }
+      }
       ds = StreamUtils.getOutputStream(filePath, mode, fs);
       DictionaryPersistentManager.persistDictionary(mode, fs, filePath, columnType, dictionary);
 
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      if (ds != null) {
-        IOUtils.closeQuietly(ds);
-      }
     }   
   }
 
