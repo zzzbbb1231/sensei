@@ -42,7 +42,7 @@ public class CompositeMetricCustomIndex implements GazelleCustomIndex {
   private IntArray compressedIntArray;
   private TermValueList dictionary;
   private static final Timer segmentLoadTime = Metrics.newTimer(new MetricName(CompositeMetricCustomIndex.class ,"segmentLoadTime"), TimeUnit.MILLISECONDS, TimeUnit.SECONDS);
-  p
+  
   @Override
   public void init(Map<String, ColumnMetadata> properties) {
     this.properties = properties;
