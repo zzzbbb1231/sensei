@@ -72,7 +72,7 @@ public class CompositeMetricCustomIndex implements GazelleCustomIndex {
     ColumnMetadata columnMetadata = properties.get(columns.get(0));
     compressedIntArray = CompositeMetricsIndexStreamer.getMemoryMapped(baseDir.getAbsolutePath(), columnMetadata.getNumberOfElements(), columns.size(), columnMetadata.getNumberOfDictionaryValues());
      try {
-      dictionary = DictionaryPersistentManager.read(new File(baseDir, "modifiedCompositeMetricIndexes.dict"), columnType, columnMetadata.getNumberOfDictionaryValues());
+      dictionary = DictionaryPersistentManager.read(new File(baseDir, "compositeMetricIndexes.dict"), columnType, columnMetadata.getNumberOfDictionaryValues());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

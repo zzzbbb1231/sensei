@@ -52,9 +52,9 @@ public class DictionaryPersistentManager {
 
   public static void persistDictionary(FileSystemMode mode, FileSystem fs, String dictFileName, ColumnType columnType,
       TermValueList termValueList) throws IOException, UnsupportedEncodingException {
-    DataOutputStream ds = StreamUtils.getOutputStream(dictFileName, mode, fs);
+    DataOutputStream ds = null;
     try {
-      
+       ds = StreamUtils.getOutputStream(dictFileName, mode, fs);
       
       switch (columnType) {
         case STRING:
@@ -90,7 +90,9 @@ public class DictionaryPersistentManager {
           throw new UnsupportedOperationException();
       }
     } finally {
-      ds.close();
+      if (ds != null) {
+        ds.close();
+      }
     }
   }
 

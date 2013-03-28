@@ -87,17 +87,14 @@ public class CompositeMetricIndexCreator implements GazelleCustomIndexCreator {
       return;
     }
     indexStreamer.flush();
-    String filePath = baseDir + "/modifiedCompositeMetricIndexes.dict";
-    DataOutputStream ds = null;
+    String filePath = baseDir + "/compositeMetricIndexes.dict";   
     try {
       if (mode == FileSystemMode.HDFS) {
         if (fs.exists(new Path(filePath))) {
           return;
         }
-      }
-      ds = StreamUtils.getOutputStream(filePath, mode, fs);
+      }      
       DictionaryPersistentManager.persistDictionary(mode, fs, filePath, columnType, dictionary);
-
     } catch (Exception ex) {
       logger.error(ex.getMessage(), ex);
     }   
