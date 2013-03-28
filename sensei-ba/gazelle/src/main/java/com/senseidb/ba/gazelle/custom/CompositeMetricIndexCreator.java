@@ -10,18 +10,22 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 
 import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.ColumnType;
 import com.senseidb.ba.gazelle.creators.DictionaryCreator;
 import com.senseidb.ba.gazelle.persist.DictionaryPersistentManager;
+import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.HeapCompressedIntArray;
 import com.senseidb.ba.gazelle.utils.OffHeapCompressedIntArray;
 import com.senseidb.ba.gazelle.utils.StreamUtils;
 
 public class CompositeMetricIndexCreator implements GazelleCustomIndexCreator {
+  private static Logger logger = Logger.getLogger(CompositeMetricIndexCreator.class);
+  
   private final ColumnType columnType;
   private final List<String> columns;
   private Map<String, Integer> columnIndexes = new HashMap<String, Integer>();
@@ -83,7 +87,7 @@ public class CompositeMetricIndexCreator implements GazelleCustomIndexCreator {
       return;
     }
     indexStreamer.flush();
-    String filePath = baseDir + "/compositeMetricIndexes.dict";
+    String filePath = baseDir + "/modifiedCompositeMetricIndexes.dict";
     DataOutputStream ds = null;
     try {
       if (mode == FileSystemMode.HDFS) {
@@ -94,8 +98,8 @@ public class CompositeMetricIndexCreator implements GazelleCustomIndexCreator {
       ds = StreamUtils.getOutputStream(filePath, mode, fs);
       DictionaryPersistentManager.persistDictionary(mode, fs, filePath, columnType, dictionary);
 
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    } catch (Exception ex) {
+      logger.error(ex.getMessage(), ex);
     }   
   }
 
