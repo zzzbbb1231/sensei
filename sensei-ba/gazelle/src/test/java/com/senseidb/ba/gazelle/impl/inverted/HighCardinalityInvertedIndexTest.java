@@ -15,17 +15,18 @@ import com.browseengine.bobo.facets.data.TermValueList;
 import com.senseidb.ba.gazelle.ColumnMetadata;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.impl.GazelleForwardIndexImpl;
+import com.senseidb.ba.gazelle.impl.HighCardinalityInvertedIndex;
 import com.senseidb.ba.gazelle.impl.StandardCardinalityInvertedIndex;
 import com.senseidb.ba.gazelle.utils.HeapCompressedIntArray;
 
-public class InvertedIndexTest{
+public class HighCardinalityInvertedIndexTest{
 	private String column;
 	private HeapCompressedIntArray data;
 	private TermValueList<?> dictionary;
 	private ColumnMetadata columnMetadata;
 
 	private SingleValueForwardIndex fIndex;
-	private StandardCardinalityInvertedIndex iIndex;
+	private HighCardinalityInvertedIndex iIndex;
 	private DocIdSetIterator iIterator;
 
 	private int TEST_SIZE = 10000000;
@@ -41,7 +42,7 @@ public class InvertedIndexTest{
 		}
 
 		dictionary = new TermStringList(10);
-//		dictionary.add(null);
+		dictionary.add(null);
 		for(int i = 0; i < 10; i++){
 			dictionary.add(Integer.toString(i));
 		}
@@ -49,13 +50,9 @@ public class InvertedIndexTest{
 		columnMetadata = new ColumnMetadata();
 
 		fIndex = new GazelleForwardIndexImpl(column, data, dictionary, columnMetadata);
-		iIndex = new StandardCardinalityInvertedIndex(fIndex, dictionary.size(), 6, dictionary);
-		for(int i = 0; i < TEST_SIZE; i++){
-			if(fIndex.getReader().getValueIndex(i) == 0){
-				iIndex.addDoc(i, 0);
-			}
-		}
-		DocIdSet set = iIndex.getSet(0);
+		iIndex = new HighCardinalityInvertedIndex(fIndex, dictionary.size());
+		iIndex.prepData();
+		DocIdSet set = iIndex.getSet(2);
 		iIterator = set.iterator();
 	}
 
@@ -71,10 +68,10 @@ public class InvertedIndexTest{
 //
 //		for(int k = 0; k < 10; k++){
 //
-			DocIdSet set = iIndex.getSet(0);
+			DocIdSet set = iIndex.getSet(2);
 			DocIdSetIterator iIndex2 = set.iterator();
 			int current = iIndex2.nextDoc();
-			int i = 0;
+			int i = 2;
 
 //			start = System.currentTimeMillis();
 			while(current != DocIdSetIterator.NO_MORE_DOCS){
@@ -104,11 +101,11 @@ public class InvertedIndexTest{
 //
 //		for(int k = 0; k < 10; k++){
 
-			DocIdSet set = iIndex.getSet(0);
+			DocIdSet set = iIndex.getSet(2);
 			DocIdSetIterator iIndex2 = set.iterator();
 
 			int current = iIndex2.advance(0);
-			int i = 0;
+			int i = 2;
 //			start = System.currentTimeMillis();
 			while(current != DocIdSetIterator.NO_MORE_DOCS){
 				assertEquals(i, current, 0);
@@ -133,7 +130,7 @@ public class InvertedIndexTest{
 	public void test3nextDocadvanceBasic() throws IOException {
 
 		int current = iIterator.nextDoc();
-		int i = 0;
+		int i = 2;
 
 		while(current != DocIdSetIterator.NO_MORE_DOCS){
 			assertEquals(i, current, 0);
@@ -153,7 +150,7 @@ public class InvertedIndexTest{
 	public void test4advancenextDocBasic() throws IOException {
 
 		int current = iIterator.advance(0);
-		int i = 0;
+		int i = 2;
 
 		while(current != DocIdSetIterator.NO_MORE_DOCS){
 			assertEquals(i, current, 0);
@@ -173,7 +170,7 @@ public class InvertedIndexTest{
 	public void test5advanceSkip() throws IOException {
 
 		int current = iIterator.advance(0);
-		int i = 0;
+		int i = 2;
 
 		while(current != DocIdSetIterator.NO_MORE_DOCS){
 			assertEquals(i, current, 0);
@@ -194,7 +191,7 @@ public class InvertedIndexTest{
 	public void test6advanceBack() throws IOException {
 
 		int current = iIterator.advance(0);
-		int i = 0;
+		int i = 2;
 
 		while(current != DocIdSetIterator.NO_MORE_DOCS){
 			assertEquals(i, current, 0);
@@ -214,7 +211,7 @@ public class InvertedIndexTest{
 	public void test7advanceForward() throws IOException {
 
 		int current = iIterator.advance(0);
-		int i = 0;
+		int i = 2;
 
 		while(current != DocIdSetIterator.NO_MORE_DOCS){
 			assertEquals(i, current, 0);
@@ -244,7 +241,7 @@ public class InvertedIndexTest{
 	public void test9advanceWithinJumps() throws IOException {
 
 		int current = iIterator.advance(10);
-		int i = 15;
+		int i = 17;
 
 		while(current != DocIdSetIterator.NO_MORE_DOCS){
 			assertEquals(i, current, 0);
@@ -264,11 +261,11 @@ public class InvertedIndexTest{
 	public void test10advanceBetweenJumps() throws IOException {
 
 		int current = iIterator.advance(17);
-		int i = 20;
+		int i = 17;
 
 		while(current != DocIdSetIterator.NO_MORE_DOCS){
 			assertEquals(i, current, 0);
-			i += 10;
+			i += 5;
 			current = iIterator.nextDoc();
 
 			if(current == DocIdSetIterator.NO_MORE_DOCS)
@@ -276,7 +273,7 @@ public class InvertedIndexTest{
 
 			assertEquals(i, current, 0);
 			current = iIterator.advance(i + 3);
-			i += 5;
+			i += 10;
 		}		
 	}
 
