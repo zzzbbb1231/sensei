@@ -231,8 +231,12 @@ public class SegmentTracker {
         File file = new File(indexDir, segmentId);
         logger.info("Uncompressed segment into " + file.getAbsolutePath());
         Thread.sleep(100);
-        if (!file.exists()) {
-          if (uncompressedFiles.size() > 0) {
+        
+          if (uncompressedFiles.size() > 0 && !segmentId.equals(uncompressedFiles.get(0).getName())) {
+            if (file.exists()) {
+              logger.info("Deleting the directory and recreating it again- " + file.getAbsolutePath());
+              FileUtils.deleteDirectory(file);
+            }
             File srcDir = uncompressedFiles.get(0);
             logger.warn("The directory - " + file.getAbsolutePath() + " doesn't exist. Would try to rename the dir - " + srcDir.getAbsolutePath() + " to it. The segment id is - " + segmentId);
             FileUtils.moveDirectory(srcDir, file);
@@ -242,7 +246,6 @@ public class SegmentTracker {
               logger.info("Was able to succesfully rename the dir to match the segmentId - " + segmentId);
             }
           }          
-        }
         new File(file, "finishedLoading").createNewFile();
         long loadTime = System.currentTimeMillis();
 
