@@ -41,7 +41,7 @@ public class MatchAllDocsStaticQuery extends MatchAllDocsQuery {
 
     @Override
     public int nextDoc() throws IOException {
-      return doc =  doc < readerAdapter.maxDoc() ? doc + 1 : NO_MORE_DOCS;
+      return doc =  doc < readerAdapter.maxDoc() - 1 ? doc + 1 : NO_MORE_DOCS;
     }
     
     @Override

@@ -97,6 +97,7 @@ public class CompositeMetricIndexCreator implements GazelleCustomIndexCreator {
       DictionaryPersistentManager.persistDictionary(mode, fs, filePath, columnType, dictionary);
     } catch (Exception ex) {
       logger.error(ex.getMessage(), ex);
+      throw new RuntimeException(ex);
     }   
   }
 

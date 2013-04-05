@@ -80,7 +80,7 @@ public class ValidationServlet extends HttpServlet {
           }
           getValidationDataAsJson();
           
-        } catch (JSONException e) {
+        } catch (Exception e) {
          logger.error("An exception in the healthCheck thread", e);
         }
       }

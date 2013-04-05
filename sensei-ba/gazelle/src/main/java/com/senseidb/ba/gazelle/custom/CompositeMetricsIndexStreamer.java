@@ -16,6 +16,7 @@ import org.apache.hadoop.fs.FileSystem;
 import com.senseidb.ba.gazelle.utils.Bits;
 import com.senseidb.ba.gazelle.utils.FileSystemMode;
 import com.senseidb.ba.gazelle.utils.HeapCompressedIntArray;
+import com.senseidb.ba.gazelle.utils.IntArray;
 import com.senseidb.ba.gazelle.utils.OffHeapCompressedIntArray;
 import com.senseidb.ba.gazelle.utils.StreamUtils;
 
@@ -78,7 +79,7 @@ public class CompositeMetricsIndexStreamer {
     }
   }
 
-  public  static OffHeapCompressedIntArray getMemoryMapped(String baseDir, int docCount, int metricCount, int dictionaryCount) {
+ /* public  static IntArray getMemoryMapped(String baseDir, int docCount, int metricCount, int dictionaryCount) {
     File processedFile = new File(baseDir, "compositeMetricIndexes_processed.fwd");
     try {
       synchronized(CompositeMetricsIndexStreamer.class) {        
@@ -94,8 +95,35 @@ public class CompositeMetricsIndexStreamer {
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
+  }*/
+  public  static IntArray getMemoryMapped(String baseDir, int docCount, int metricCount, int dictionaryCount) {
+    try {
+      RandomAccessFile forwardIndexFile = new RandomAccessFile(new File(baseDir, "compositeMetricIndexes.fwd"), "r");
+      HeapCompressedIntArray rawBasedIndex = null;
+      try {
+        ByteBuffer byteBuffer = forwardIndexFile.getChannel().map(MapMode.READ_ONLY, 0,
+            8 * HeapCompressedIntArray.size(docCount * metricCount, OffHeapCompressedIntArray.getNumOfBits(dictionaryCount)));
+        rawBasedIndex = new HeapCompressedIntArray(docCount * metricCount, OffHeapCompressedIntArray.getNumOfBits(dictionaryCount));
+        for (int i = 0; i < rawBasedIndex.getBlocks().length; i++) {
+          rawBasedIndex.getBlocks()[i] = Bits.getLong(byteBuffer, i);
+        }
+      } finally {
+        forwardIndexFile.getChannel().close();
+        forwardIndexFile.close();
+      }
+      //rotating our matrix to use column major order
+      HeapCompressedIntArray processedCompressedIntArray = new HeapCompressedIntArray(docCount * metricCount,
+          OffHeapCompressedIntArray.getNumOfBits(dictionaryCount));
+      for (int i = 0; i < docCount; i++) {
+        for (int j = 0; j < metricCount; j++) {
+          processedCompressedIntArray.setInt(j * docCount + i, rawBasedIndex.getInt(i * metricCount + j));
+        }
+      }
+      return processedCompressedIntArray;
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
   }
-
   public static void createProcessedFile(String baseDir, int docCount, int metricCount, int dictionaryCount, File processedFile)
       throws FileNotFoundException, IOException {
     RandomAccessFile forwardIndexFile = new RandomAccessFile(new File(baseDir, "compositeMetricIndexes.fwd"), "r");

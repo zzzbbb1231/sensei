@@ -82,5 +82,14 @@ public class CompositeMetricsIntegrationTest  extends Assert {
     assertEquals("15405.88200", resp.getJSONObject("mapReduceResult").getString("avg"));
    
   }
+  @Test
+  public void test3SelectSumGroupBy() throws Exception {
   
+    String req = "{\"bql\":\"select sum(metric_46_n_mu) group by country_code limit 0\"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong", 1000, resp.getInt("numhits"));
+    assertEquals(12418343, resp.getJSONObject("facets").getJSONArray("_sumGroupBy").getJSONObject(0).getInt("count"));
+   
+  }
 }

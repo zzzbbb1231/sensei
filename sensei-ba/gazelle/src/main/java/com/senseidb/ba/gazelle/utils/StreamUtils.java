@@ -22,6 +22,7 @@ public class StreamUtils {
         is = new BufferedInputStream(new FileInputStream(new File(filePath)));
         break;
       case HDFS:
+        
         is = new BufferedInputStream(fs.open(new Path(filePath)));
         break;
       default:

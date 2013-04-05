@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.senseidb.search.req.ErrorType;
@@ -22,7 +23,15 @@ public class BARequestPostProcessor implements RequestPostProcessor {
     if (query != null) {
       return Arrays.asList(new SenseiError("Queries are not supported for SenseiBA", ErrorType.JsonParsingError));
     }
-   
+    if (senseiRequest.optInt("size", 10) > 20000) {
+      try {
+        
+        senseiRequest.put("size", 20000);
+        return Arrays.asList(new SenseiError("Size shouldn't be bigger than 20000", ErrorType.BoboExecutionError));
+      } catch (JSONException e) {
+       throw new RuntimeException(e);
+      }
+    }
     return null;
   }
 
