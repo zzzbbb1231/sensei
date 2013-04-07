@@ -16,6 +16,7 @@ import com.browseengine.bobo.api.BoboIndexReader;
 import com.browseengine.bobo.facets.FacetHandler;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
 import com.senseidb.ba.facet.BaFacetHandler;
+import com.senseidb.ba.facet.SegmentNameFacetHandler;
 import com.senseidb.ba.facet.SumGroupByFacetHandler;
 import com.senseidb.ba.gazelle.IndexSegment;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
@@ -64,6 +65,7 @@ public BoboIndexReader decorate(ZoieIndexReader<BoboIndexReader> zoieReader) thr
     facetHandlers.addAll((List) customFacetHandlers);
   }
   facetHandlers.add(new SumGroupByFacetHandler(SenseiFacetHandlerBuilder.SUM_GROUP_BY_FACET_NAME));
+  //facetHandlers.add(new SegmentNameFacetHandler("segmentName"));
   BoboIndexReader indexReader =  new BoboIndexReader(adapter,  facetHandlers, Collections.EMPTY_LIST, new BoboIndexReader.WorkArea(), false) {
     public void facetInit() throws IOException {
       putFacetData(IndexSegment.class.getSimpleName(), offlineSegment);

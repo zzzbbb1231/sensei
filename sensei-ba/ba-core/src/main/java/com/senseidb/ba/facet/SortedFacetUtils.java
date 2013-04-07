@@ -131,8 +131,10 @@ public class SortedFacetUtils {
         int doc = -1;
         int currentRegionId = -1;
         int currentMaxDoc = -1;
+       
         @Override
         public int nextDoc() throws IOException {
+          //TODO fix when the advance method is used
           if (doc == -1) {
             currentRegionId = 0;
             doc = minDocIds[currentRegionId];
@@ -221,9 +223,10 @@ public class SortedFacetUtils {
         SortedRegion currentRegion = regions[minRegion];
         int currentValueIndex = minIndex;
         int maxDocId = currentRegion.maxDocIds[currentValueIndex];
+        int minDocId = currentRegion.minDocIds[minIndex];
         @Override
         public int nextDoc() throws IOException {
-          if (doc == -1) {
+          if (doc < minDocId) {
             doc = currentRegion.minDocIds[currentValueIndex];
           } else {
             doc++;
@@ -286,10 +289,10 @@ public class SortedFacetUtils {
       }
       return new DocIdSetIterator() {
         int doc = -1;
-
+        final int minDocId =  minDocIds[valueId];
         @Override
         public int nextDoc() throws IOException {
-          if (doc == -1) {
+          if (doc < minDocId) {
             doc = minDocIds[valueId];
           } else {
             doc++;
@@ -350,7 +353,7 @@ public class SortedFacetUtils {
 
         @Override
         public int nextDoc() throws IOException {
-          if (doc == -1) {
+          if (doc < startIndex) {
             doc = startIndex;
           } else {
             doc++;

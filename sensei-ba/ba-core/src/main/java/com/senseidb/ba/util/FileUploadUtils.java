@@ -90,6 +90,9 @@ public class FileUploadUtils {
       GetMethod httpget = new GetMethod("http://" + host + ":" + port + "/files/" + remoteFileName);
       httpClient.executeMethod(httpget);
       long ret = httpget.getResponseContentLength();
+      if (file.getParentFile() != null && !file.getParentFile().exists()) {
+        file.getParentFile().mkdirs();
+      }
       BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file));
       IOUtils.copyLarge(httpget.getResponseBodyAsStream(), output);
       IOUtils.closeQuietly(output);
