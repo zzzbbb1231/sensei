@@ -32,17 +32,37 @@ public static void main(String[] args) throws Exception {
   dumpAvro();
 }
 public static void dumpAvro() throws URISyntaxException, FileNotFoundException, IOException {
-  File avroFile = new File(AvroConverter.class.getClassLoader().getResource("data/sample_data.avro").toURI());
+  File avroFile = new File("/home/vzhabiuk/work/tmp/tesla/tesla.avro");
   DatumReader<GenericRecord> datumReader = new GenericDatumReader<GenericRecord>();
   FileInputStream inputStream1 = new FileInputStream(avroFile);
     DataFileStream<GenericRecord> dataFileReader = new DataFileStream<GenericRecord>(inputStream1, datumReader);
 
   Schema schema = dataFileReader.getSchema();
   int i = 0;
-  while (dataFileReader.hasNext() && i < 1000) {
+  while (dataFileReader.hasNext() && i < 2) {
     System.out.println(dataFileReader.next());
     i++;
   }
+  //FileUtils.writeStringToFile(new File("avro.schema"), schema.toString(true));
+}
+public static void createSmallerAvro() throws URISyntaxException, FileNotFoundException, IOException {
+  File avroFile = new File("/home/vzhabiuk/work/tmp/tesla/tesla.avro");
+  DatumReader<GenericRecord> datumReader = new GenericDatumReader<GenericRecord>();
+  FileInputStream inputStream1 = new FileInputStream(avroFile);
+    DataFileStream<GenericRecord> dataFileReader = new DataFileStream<GenericRecord>(inputStream1, datumReader);
+
+  Schema schema = dataFileReader.getSchema();
+  int i = 0;
+  DatumWriter<GenericRecord> writer=new GenericDatumWriter<GenericRecord>(schema);
+  DataFileWriter<GenericRecord> dataFileWriter=new DataFileWriter<GenericRecord>(writer);
+
+  
+  dataFileWriter.create(schema, new File("/home/vzhabiuk/work/tmp/tesla/manyMetrics.avro"));
+  while (dataFileReader.hasNext() && i < 1000) {
+    dataFileWriter.append(dataFileReader.next());
+    i++;
+  }
+  dataFileWriter.close();
   FileUtils.writeStringToFile(new File("avro.schema"), schema.toString(true));
 }
   public static void jsonToAvro(File jsonFile, File avroSchema, String avroFilePath) throws Exception {

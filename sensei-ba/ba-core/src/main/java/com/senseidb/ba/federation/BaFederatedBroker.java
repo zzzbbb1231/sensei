@@ -71,6 +71,7 @@ public class BaFederatedBroker extends LayeredBroker {
   
   @Override
   public void init(Map<String, String> config, SenseiPluginRegistry pluginRegistry) {
+    try {
     System.setProperty("com.linkedin.norbert.disableJMX", "true");
     String clustersConfig = config.get(CLUSTERS);
     if (clustersConfig == null) {
@@ -96,11 +97,14 @@ public class BaFederatedBroker extends LayeredBroker {
     Assert.state(config.containsKey(TIME_COLUMN), "timeColumn property is not defined");
    historicalCluster = config.get(HISTORICAL_CLUSTER);
    timeColumn = config.get(TIME_COLUMN);
-   
+    } catch (Exception ex) {
+      logger.error(ex.getMessage(), ex);
+    }
   }
   
   @Override
   public void start() {
+    try {
     for (String cluster : clusters) {
       CompoundBrokerConfig brokerConfig = clusterBrokerConfig.get(cluster);
       brokerConfig.init();
@@ -110,17 +114,23 @@ public class BaFederatedBroker extends LayeredBroker {
       
       @Override
       public void run() {
-       
+         try {
           refreshTime();
-       
+         } catch (Exception ex) {
+           logger.error(ex.getMessage(), ex);
+         }
         
       }
     }, Math.min(10 * 1000, frequency), frequency);
      historicalBroker = brokers.get(historicalCluster);
+    } catch (Exception ex) {
+      logger.error(ex.getMessage(), ex);
+    }
   }
 
   @Override
   public void stop() {
+    try {
     timer.cancel();
     executorService.shutdownNow();
     for (CompoundBrokerConfig brokerConfig : clusterBrokerConfig.values()) {
@@ -138,6 +148,9 @@ public class BaFederatedBroker extends LayeredBroker {
       if (brokerProxy != null) {
         brokerProxy.shutdown();
       }
+    }
+    } catch (Exception ex) {
+      logger.error(ex.getMessage(), ex);
     }
   }
   

@@ -20,6 +20,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
@@ -136,6 +137,9 @@ public class TarGzCompressionUtils {
                   if (!outputFile.mkdirs()) {
                       throw new IllegalStateException(String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
                   }
+              } else {
+                logger.error("The directory a;ready there. Deleting - " + outputFile.getAbsolutePath());
+                FileUtils.deleteDirectory(outputFile);
               }
           } else {
             logger.debug(String.format("Creating output file %s.", outputFile.getAbsolutePath()));

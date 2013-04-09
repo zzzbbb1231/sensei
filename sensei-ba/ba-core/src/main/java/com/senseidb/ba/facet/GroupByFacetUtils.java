@@ -7,6 +7,7 @@ import com.browseengine.bobo.facets.data.TermIntList;
 import com.browseengine.bobo.facets.data.TermLongList;
 import com.browseengine.bobo.facets.impl.DefaultFacetCountCollector;
 import com.browseengine.bobo.util.LazyBigIntArray;
+import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
@@ -17,14 +18,13 @@ public class GroupByFacetUtils {
 
   public static  class MultiValueFacetCountCollector extends DefaultFacetCountCollector {
     private final MultiValueForwardIndex dimensionForwardIndex;
-    private final SingleValueForwardIndex metricForwardIndex;
     private int[] buffer;
     private MultiFacetIterator iterator;
     private SingleValueRandomReader metricReader;
     private final DictionaryNumberAccessor numberAccessor;
 
     @SuppressWarnings("rawtypes")
-    public MultiValueFacetCountCollector(String name, FacetDataCache dataCache, int docBase, BrowseSelection sel, FacetSpec ospec, DictionaryNumberAccessor numberAccessor, MultiValueForwardIndex dimensionForwardIndex, SingleValueForwardIndex metricForwardIndex, boolean isRealtime) {
+    public MultiValueFacetCountCollector(String name, FacetDataCache dataCache, int docBase, BrowseSelection sel, FacetSpec ospec, DictionaryNumberAccessor numberAccessor, MultiValueForwardIndex dimensionForwardIndex, SingleValueRandomReader metricReader, boolean isRealtime) {
       super(name, dataCache, docBase, sel, ospec);
       if (isRealtime) {
         _countlength = dataCache.valArray.size();
@@ -39,8 +39,7 @@ public class GroupByFacetUtils {
       }
       this.dimensionForwardIndex = dimensionForwardIndex;
       this.numberAccessor = numberAccessor;
-      this.metricForwardIndex = metricForwardIndex;
-      metricReader = metricForwardIndex.getReader();
+      this.metricReader = metricReader;
       iterator = dimensionForwardIndex.getIterator();
       buffer = new int[dimensionForwardIndex.getMaxNumValuesPerDoc()];
     }
@@ -65,14 +64,13 @@ public class GroupByFacetUtils {
     }
   }
   public static class SingleValueFacetCountCollector extends DefaultFacetCountCollector {
-    private final SingleValueForwardIndex metricForwardIndex;
     private final SingleValueForwardIndex dimensionForwardIndex;
     private SingleValueRandomReader dimensionReader;
     private SingleValueRandomReader metricReader;
     private final DictionaryNumberAccessor numberAccessor;
 
     @SuppressWarnings("rawtypes")
-    public SingleValueFacetCountCollector(String name, FacetDataCache dataCache, int docBase, BrowseSelection sel, FacetSpec ospec, DictionaryNumberAccessor numberAccessor, SingleValueForwardIndex dimensionForwardIndex, SingleValueForwardIndex metricForwardIndex, boolean isRealtime) {
+    public SingleValueFacetCountCollector(String name, FacetDataCache dataCache, int docBase, BrowseSelection sel, FacetSpec ospec, DictionaryNumberAccessor numberAccessor, SingleValueForwardIndex dimensionForwardIndex, SingleValueRandomReader metricReader, boolean isRealtime) {
       super(name, dataCache, docBase, sel, ospec);
       this.numberAccessor = numberAccessor;
       if (isRealtime) {
@@ -86,11 +84,10 @@ public class GroupByFacetUtils {
           intarraylist.add(_count);
         }
       }
-      this.metricForwardIndex = metricForwardIndex;
+      this.metricReader = metricReader;
      
       this.dimensionForwardIndex = dimensionForwardIndex;
       dimensionReader = dimensionForwardIndex.getReader();
-      metricReader = metricForwardIndex.getReader();
     }
 
     @Override

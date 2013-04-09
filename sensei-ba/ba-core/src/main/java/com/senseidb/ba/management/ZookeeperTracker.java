@@ -13,6 +13,7 @@ import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.log4j.Logger;
+import org.mortbay.log.Log;
 import org.springframework.util.Assert;
 
 import com.senseidb.ba.management.controller.validation.ValidationServlet;
@@ -73,7 +74,12 @@ public  class ZookeeperTracker implements IZkChildListener {
         if (!currentSegments.contains(child)) {
           if (toAdd == null) toAdd = new HashMap<String, SegmentInfo>();
           SegmentInfo segmentInfo = SegmentInfo.retrieveFromZookeeper(zkClient, clusterName, child);
-          Assert.notNull(segmentInfo, "Segment " + child + " was registered as the active segment, but the corresponding segmentInfo is not present in zookeeper");
+          if (segmentInfo == null) {
+            logger.warn("Segment " + child + " was registered as the active segment, but the corresponding segmentInfo is not present in zookeeper");
+            if (toDelete == null) toDelete = new HashSet<String>();
+            toDelete.add(child);
+            continue;
+          }
           toAdd.put(child, segmentInfo);
         }
       }

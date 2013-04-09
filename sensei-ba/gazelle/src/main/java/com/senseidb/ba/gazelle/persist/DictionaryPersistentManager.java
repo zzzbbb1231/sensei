@@ -1,11 +1,14 @@
 package com.senseidb.ba.gazelle.persist;
 
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
+
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,48 +41,56 @@ public class DictionaryPersistentManager {
     for (String column : metadataMap.keySet()) {
       String dictFileName =
           baseDirPath + "/" + metadataMap.get(column).getName() + ".dict";
+      ColumnType columnType = metadataMap.get(column).getColumnType();
+      if (columnType.isMulti()) {
+        columnType = columnType.getElementType();
+      }
+      TermValueList termValueList = termValueListMap.get(column);
+      persistDictionary(mode, fs, dictFileName, columnType, termValueList);
+    }
+  }
 
-      DataOutputStream ds = StreamUtils.getOutputStream(dictFileName, mode, fs);
-      try {
-        ColumnType columnType = metadataMap.get(column).getColumnType();
-        if (columnType.isMulti()) {
-            columnType = columnType.getElementType();
-        }
-        
-        switch (columnType) {
-          case STRING:
-            TermStringList stringList =
-                (TermStringList) termValueListMap.get(column);
-            for (int i = 0; i < stringList.size(); i++) {
-              String entry = stringList.get(i);
-              byte[] entryInBytes = entry.getBytes("UTF8");
-              ds.writeShort(entryInBytes.length);
-              ds.write(entryInBytes);
-            }
-            break;
-          case INT:
-            TermIntList intList = (TermIntList) termValueListMap.get(column);
-            for (int i = 0; i < intList.size(); i++) {
-              ds.writeInt(intList.getPrimitiveValue(i));
-            }
-            break;
-          case LONG:
-            TermLongList longList = (TermLongList) termValueListMap.get(column);
-            for (int i = 0; i < longList.size(); i++) {
-              ds.writeLong(longList.getPrimitiveValue(i));
-            }
-            break;
-          case FLOAT:
-            TermFloatList floatList =
-                (TermFloatList) termValueListMap.get(column);
-            for (int i = 0; i < floatList.size(); i++) {
-              ds.writeFloat(floatList.getPrimitiveValue(i));
-            }
-            break;
-          default:
-            throw new UnsupportedOperationException();
-        }
-      } finally {
+  public static void persistDictionary(FileSystemMode mode, FileSystem fs, String dictFileName, ColumnType columnType,
+      TermValueList termValueList) throws IOException, UnsupportedEncodingException {
+    DataOutputStream ds = null;
+    try {
+       ds = StreamUtils.getOutputStream(dictFileName, mode, fs);
+      
+      switch (columnType) {
+        case STRING:
+          TermStringList stringList =
+              (TermStringList) termValueList;
+          for (int i = 0; i < stringList.size(); i++) {
+            String entry = stringList.get(i);
+            byte[] entryInBytes = entry.getBytes("UTF8");
+            ds.writeShort(entryInBytes.length);
+            ds.write(entryInBytes);
+          }
+          break;
+        case INT:
+          TermIntList intList = (TermIntList) termValueList;
+          for (int i = 0; i < intList.size(); i++) {
+            ds.writeInt(intList.getPrimitiveValue(i));
+          }
+          break;
+        case LONG:
+          TermLongList longList = (TermLongList) termValueList;
+          for (int i = 0; i < longList.size(); i++) {
+            ds.writeLong(longList.getPrimitiveValue(i));
+          }
+          break;
+        case FLOAT:
+          TermFloatList floatList =
+              (TermFloatList) termValueList;
+          for (int i = 0; i < floatList.size(); i++) {
+            ds.writeFloat(floatList.getPrimitiveValue(i));
+          }
+          break;
+        default:
+          throw new UnsupportedOperationException();
+      }
+    } finally {
+      if (ds != null) {
         ds.close();
       }
     }
@@ -150,7 +161,16 @@ public class DictionaryPersistentManager {
                 public Float getRawValue(int index) {
                   return   super.getPrimitiveValue(index);
                 }
-            
+                @Override
+                public int indexOf(Object o)
+                {
+                  float val;
+                  if (o instanceof String)
+                    val = Float.parseFloat((String) o);
+                  else
+                    val = (Float)o;
+                  return Arrays.binarySearch(floatArr, val);
+                }
                 public int size() {
                   return floatArr.length;
                 }
@@ -190,7 +210,9 @@ public class DictionaryPersistentManager {
     } catch (Exception e) {
       throw new RuntimeException(e);
     } finally {
-      dIs.close();     
+      if (dIs != null) { 
+        dIs.close();     
+      }
     }
     return list;
   }

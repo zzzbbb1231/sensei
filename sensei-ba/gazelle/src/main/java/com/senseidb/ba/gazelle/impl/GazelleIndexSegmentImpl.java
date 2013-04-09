@@ -17,6 +17,7 @@ import com.senseidb.ba.gazelle.InvertedIndex;
 import com.senseidb.ba.gazelle.SegmentMetadata;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
+import com.senseidb.ba.gazelle.custom.GazelleCustomIndex;
 import com.senseidb.ba.gazelle.impl.HighCardinalityInvertedIndex.GazelleInvertedHighCardinalitySet;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.MetricName;
@@ -27,6 +28,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 	private Map<String, TermValueList> termValueListMap = new HashMap<String, TermValueList>();
 	private Map<String, ForwardIndex> forwardIndexMap = new HashMap<String, ForwardIndex>();
 	private Map<String, InvertedIndex> invertedIndexMap = new HashMap<String, InvertedIndex>();
+	private Map<String, GazelleCustomIndex> customIndexes = new HashMap<String, GazelleCustomIndex>();
 	private int length;
 	private String associatedDirectory;
 	private Map<String, ColumnType> columnTypes = new HashMap<String, ColumnType>();
@@ -60,15 +62,7 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 		init();
 		this.segmentMetadata = segmentMetadata;
 	}
-	@SuppressWarnings("rawtypes")
-	public GazelleIndexSegmentImpl(Map<String, ColumnMetadata> metadataMap, Map<String, ForwardIndex> forwardIndexMap, Map<String, TermValueList> termValueListMap, SegmentMetadata segmentMetadata, int length) throws IOException {
-		this.forwardIndexMap = forwardIndexMap;
-		this.columnMetatdaMap = metadataMap;
-		this.termValueListMap = termValueListMap;
-		this.segmentMetadata = segmentMetadata;
-		this.length = length;
-		init();
-	}
+	
 	@SuppressWarnings("rawtypes")
 	public GazelleIndexSegmentImpl(Map<String, ColumnMetadata> metadataMap, Map<String, ForwardIndex> forwardIndexMap, Map<String, TermValueList> termValueListMap, SegmentMetadata segmentMetadata, int length, String[] invertedColumns) throws IOException {
 		this.forwardIndexMap = forwardIndexMap;
@@ -98,16 +92,17 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
 		return termValueListMap;
 	}
 	public Map<String, ForwardIndex> getForwardIndexes() {
-		return forwardIndexMap;
+		
+	  return forwardIndexMap;
 	}
 	@Override
-	public Map<String, ColumnType> getColumnTypes() {
-		return columnTypes;
+	public Map<String, ColumnType> getColumnTypes() {		
+	  return columnTypes;
 	}
 
 	@Override
-	public TermValueList<?> getDictionary(String column) {
-		return termValueListMap.get(column);
+	public TermValueList<?> getDictionary(String column) {		
+	  return termValueListMap.get(column);
 	}
 
 	/**
@@ -255,5 +250,29 @@ public class GazelleIndexSegmentImpl implements IndexSegment {
   public void setAssociatedDirectory(String associatedDirectory) {
     this.associatedDirectory = associatedDirectory;
   }
-
+  public Map<String, GazelleCustomIndex> getCustomIndexes() {
+    return customIndexes;
+  }
+  public void setCustomIndexes(Map<String, GazelleCustomIndex> customIndexes) {
+    this.customIndexes = customIndexes;
+  }
+  public void addCustomIndex(GazelleCustomIndex gazelleCustomIndex, String column) {
+    getCustomIndexes().put(column, gazelleCustomIndex);
+  }
+  public void addCustomIndex(GazelleCustomIndex gazelleCustomIndex, Map<String, ColumnMetadata> properties) {
+    getColumnMetadataMap().putAll(properties);
+    for (String column : properties.keySet()) {
+      getCustomIndexes().put(column, gazelleCustomIndex);
+      getColumnTypes().put(column, gazelleCustomIndex.getColumnType(column));
+      getForwardIndexes().put(column, gazelleCustomIndex.getForwardIndex(column));
+      getDictionaries().put(column, gazelleCustomIndex.getDictionary(column));
+      InvertedIndex invertedIndex = gazelleCustomIndex.getInvertedIndex(column);
+      if (invertedIndex != null) {
+        invertedIndexMap.put(column, invertedIndex);
+      }
+      
+    }
+    
+  }
+ 
 }

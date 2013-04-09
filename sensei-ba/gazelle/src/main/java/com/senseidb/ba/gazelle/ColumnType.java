@@ -44,6 +44,9 @@ public enum ColumnType {
     if (type == Type.LONG) {
       return LONG;
     }
+    if (type == Type.BOOLEAN) {
+      return STRING;
+    }
     if (type == Type.STRING) {
       return STRING;
     }

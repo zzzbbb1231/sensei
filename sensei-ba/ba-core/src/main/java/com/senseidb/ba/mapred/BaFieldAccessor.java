@@ -70,6 +70,7 @@ public class BaFieldAccessor implements FieldAccessor {
     this.segmentToZoieReaderAdapter = segmentToZoieReaderAdapter;
     this.indexSegment = segmentToZoieReaderAdapter.getOfflineSegment();  
     int maxBufferSize = 0;
+    
     for (String column : indexSegment.getColumnTypes().keySet()) {
       ForwardIndex forwardIndex = indexSegment.getForwardIndex(column);
       if (forwardIndex instanceof SingleValueForwardIndex) {

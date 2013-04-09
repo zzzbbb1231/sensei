@@ -810,7 +810,49 @@ public class BASentinelTest  extends Assert {
     assertEquals("numhits is wrong", 15278, resp.getInt("numhits"));
    
   }
+  @Test
+  public void test19SortedUniqueValues() throws Exception {
   
+    String req = "{\"bql\":\"select * where dim_memberAge > 5000000 EXECUTE(com.senseidb.ba.mapred.impl.SortedUniqueValues, 'valueColumn':'met_impressionCount', 'sortColumn':'met_impressionCount', 'offset':'0', 'size':'100')\"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong", 15278, resp.getInt("numhits"));
+   
+  }
+  @Test
+  public void test20SortedForwardIndex() throws Exception {
+  
+    String req = "{\"bql\":\"select met_impressionCount order by met_impressionCount DESC \"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong", 53, Long.parseLong(resp.getJSONArray("hits").getJSONObject(0).getJSONArray("met_impressionCount").getString(0)));
+    req = "{\"bql\":\"select met_impressionCount order by met_impressionCount ASC \"}";
+     resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    assertEquals("numhits is wrong", 1, Long.parseLong(resp.getJSONArray("hits").getJSONObject(0).getJSONArray("met_impressionCount").getString(0)));
+  }
+  @Test
+  public void test21TwoCountFunctionsAreTheSame() throws Exception {
+    
+    String req = "{\"bql\":\"select count(*), Count(*) where dim_memberIndustry <= 100 group by met_impressionCount limit 0\"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals( 784, resp.getInt("numhits"));
+    
+  }
+  //@Test
+  public void ntest22MaxSize() throws Exception {
+    String req = "{\"bql\":\"select count(*), Count(*)  group by met_impressionCount limit 20000\"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals( 20000, resp.getInt("numhits"));
+  }
+  
+  public void ntest23MaxSize() throws Exception {
+    String req = "{\"bql\":\"select count(*), Count(*)  group by met_impressionCount limit 2\"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    Thread.sleep(Long.MAX_VALUE);
+  }
   public void ntest19TestFederatedBroker() throws Exception {
     String req = "{\"bql\":\"select sum(met_impressionCount) where dim_memberAge <= 5000000\"}";
     JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei/federatedBroker/"), new JSONObject(req).toString());
