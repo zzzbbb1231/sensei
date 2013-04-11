@@ -47,6 +47,8 @@ public class MetadataPersistentManager {
       }
     } finally {
       config.save(ds);
+      ds.flush();
+      ds.close();
     }
   }
 
