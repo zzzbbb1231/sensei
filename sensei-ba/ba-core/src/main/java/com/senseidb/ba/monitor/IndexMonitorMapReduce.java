@@ -27,9 +27,8 @@ import com.senseidb.search.req.mapred.IntArray;
 import com.senseidb.search.req.mapred.SenseiMapReduce;
 import com.senseidb.util.JSONUtil;
 
-
 class MapResult implements Serializable {
-	
+
   public Map<String, InvertedIndexStatistics> invertedIndexStatisticsMap = new HashMap<String, InvertedIndexStatistics>();
   public Map<String, String> sortedStrategyMap = new HashMap<String, String>();
   public String segmentName;
@@ -38,49 +37,49 @@ class MapResult implements Serializable {
   public InvertedIndexStatistics totalInvertedIndexStatistics = new InvertedIndexStatistics();
 
   public MapResult(String segmentName, GazelleIndexSegmentImpl indexSeg) {
-  	this.segmentName = segmentName;	
-  	for (String columnName : indexSeg.getColumnMetadataMap().keySet()) {	  
-  	  ForwardIndex forwardIndex = indexSeg.getForwardIndex(columnName);		
-  	  if (forwardIndex instanceof SortedForwardIndexImpl) {
-  	    sortedStrategyMap.put(columnName, "Sorted");
-  	  } else {
-  	    if (forwardIndex instanceof SecondarySortedForwardIndexImpl) {
-  	      sortedStrategyMap.put(columnName, "SecondarySorted");
-  		  } else {
-  		    sortedStrategyMap.put(columnName, "UnSorted");  
-  		  }
-  	  }
-  	  
-  	  InvertedIndex invertedIndex = indexSeg.getInvertedIndex(columnName);
-  	  if (invertedIndex != null) {	  
-  	    invertedIndexStatisticsMap.put(columnName, invertedIndex.getIndexStatistics());	
-  	    if (invertedIndex instanceof HighCardinalityInvertedIndex) {
-  	      highCardinalityInvertedIndexStatistics.incrementStatisticsCount(invertedIndex.getIndexStatistics());
-  	    } else {
-  	      standardCardinalityInvertedIndexStatistics.incrementStatisticsCount(invertedIndex.getIndexStatistics());
-  	    }
-  		  totalInvertedIndexStatistics.incrementStatisticsCount(invertedIndex.getIndexStatistics());
-  	  } else {
-  	    invertedIndexStatisticsMap.put(columnName, new InvertedIndexStatistics());
-  	  }
-  	}
+    this.segmentName = segmentName;
+    for (String columnName : indexSeg.getColumnMetadataMap().keySet()) {
+      ForwardIndex forwardIndex = indexSeg.getForwardIndex(columnName);
+      if (forwardIndex instanceof SortedForwardIndexImpl) {
+        sortedStrategyMap.put(columnName, "Sorted");
+      } else {
+        if (forwardIndex instanceof SecondarySortedForwardIndexImpl) {
+          sortedStrategyMap.put(columnName, "SecondarySorted");
+        } else {
+          sortedStrategyMap.put(columnName, "UnSorted");
+        }
+      }
+
+      InvertedIndex invertedIndex = indexSeg.getInvertedIndex(columnName);
+      if (invertedIndex != null) {
+        invertedIndexStatisticsMap.put(columnName, invertedIndex.getIndexStatistics());
+        if (invertedIndex instanceof HighCardinalityInvertedIndex) {
+          highCardinalityInvertedIndexStatistics.incrementStatisticsCount(invertedIndex.getIndexStatistics());
+        } else {
+          standardCardinalityInvertedIndexStatistics.incrementStatisticsCount(invertedIndex.getIndexStatistics());
+        }
+        totalInvertedIndexStatistics.incrementStatisticsCount(invertedIndex.getIndexStatistics());
+      } else {
+        invertedIndexStatisticsMap.put(columnName, new InvertedIndexStatistics());
+      }
+    }
   }
 }
 
-public class IndexMonitorMapReduce implements SenseiMapReduce<Serializable, ArrayList<Serializable>>{  
+public class IndexMonitorMapReduce implements SenseiMapReduce<Serializable, ArrayList<Serializable>> {
   @Override
   public void init(JSONObject params) {
   }
-  
+
   @Override
   public Serializable map(IntArray docIds, int docIdCount, long[] uids, FieldAccessor accessor, FacetCountAccessor facetCountsAccessor) {
-	if (!(facetCountsAccessor == FacetCountAccessor.EMPTY)) {
-	  BoboIndexReader boboIndexReader = ((BaFieldAccessor) accessor).getBoboIndexReader();	  
-	  SegmentToZoieReaderAdapter adapter =  (SegmentToZoieReaderAdapter) boboIndexReader.getInnerReader();	  
-	  MapResult mapResult = new MapResult(adapter.getSegmentName(), (GazelleIndexSegmentImpl) adapter.getOfflineSegment());
-	  return mapResult;
-	}	    
-	return null; 
+    if (!(facetCountsAccessor == FacetCountAccessor.EMPTY)) {
+      BoboIndexReader boboIndexReader = ((BaFieldAccessor) accessor).getBoboIndexReader();
+      SegmentToZoieReaderAdapter adapter = (SegmentToZoieReaderAdapter) boboIndexReader.getInnerReader();
+      MapResult mapResult = new MapResult(adapter.getSegmentName(), (GazelleIndexSegmentImpl) adapter.getOfflineSegment());
+      return mapResult;
+    }
+    return null;
   }
 
   @Override
@@ -100,19 +99,19 @@ public class IndexMonitorMapReduce implements SenseiMapReduce<Serializable, Arra
       JSONArray segmentArray = new JSONUtil.FastJSONArray();
       InvertedIndexStatistics totalInvertedIndexStatisticsByAllSegments = new InvertedIndexStatistics();
       for (Serializable reduceResult : reduceResults) {
-    	  JSONObject segmentEntry = segmentEntryToJSONObject(reduceResult);
+        JSONObject segmentEntry = segmentEntryToJSONObject(reduceResult);
         segmentArray.put(segmentEntry);
-        totalInvertedIndexStatisticsByAllSegments.incrementStatisticsCount(((MapResult) reduceResult).totalInvertedIndexStatistics);        
+        totalInvertedIndexStatisticsByAllSegments.incrementStatisticsCount(((MapResult) reduceResult).totalInvertedIndexStatistics);
       }
       renderResult.put("allSegments__indexMonitor", segmentArray);
       renderResult.put("allSegments_memoryConsumption_invertedIndex", totalInvertedIndexStatisticsByAllSegments.getCompressedSize());
       renderResult.put("allSegments_totalDocumentsCount_invertedIndex", totalInvertedIndexStatisticsByAllSegments.getDocCount());
       renderResult.put("allSegments_documentsCount_invertedIndex", totalInvertedIndexStatisticsByAllSegments.getTrueDocCount());
-      
+
       return renderResult;
     } catch (JSONException e) {
       throw new RuntimeException(e);
-    }	
+    }
   }
 
   private JSONObject segmentEntryToJSONObject(Serializable reduceResult) {
@@ -122,11 +121,11 @@ public class IndexMonitorMapReduce implements SenseiMapReduce<Serializable, Arra
     InvertedIndexStatistics standardCardinalityInvertedIndexStatistics = ((MapResult) reduceResult).standardCardinalityInvertedIndexStatistics;
     InvertedIndexStatistics totalInvertedIndexStatistics = ((MapResult) reduceResult).totalInvertedIndexStatistics;
     JSONArray indexArray = new JSONUtil.FastJSONArray();
-    for (String columnName : invertedIndexStatisticsMap.keySet()) {      
+    for (String columnName : invertedIndexStatisticsMap.keySet()) {
       try {
         JSONObject indexEntry = new JSONUtil.FastJSONObject();
         indexEntry.put("column_name", columnName);
-        indexEntry.put("column_sortedStrategy", sortedStrategyMap.get(columnName));        
+        indexEntry.put("column_sortedStrategy", sortedStrategyMap.get(columnName));
         indexEntry.put("column_invertedIndexStrategy", invertedIndexStatisticsMap.get(columnName).getInvertedIndexStrategy());
         indexEntry.put("column_memoryConsumption_invertedIndex", invertedIndexStatisticsMap.get(columnName).getCompressedSize());
         indexEntry.put("column_documentsCount_invertedIndex", invertedIndexStatisticsMap.get(columnName).getTrueDocCount());
@@ -134,31 +133,24 @@ public class IndexMonitorMapReduce implements SenseiMapReduce<Serializable, Arra
         indexArray.put(indexEntry);
       } catch (JSONException e) {
         throw new RuntimeException(e);
-      }      
+      }
     }
-  	
+
     try {
       JSONObject segmentEntry = new JSONUtil.FastJSONObject();
-	    segmentEntry.put("segment_name", ((MapResult) reduceResult).segmentName);
-	    segmentEntry.put("segment__indexMonitor", indexArray);
-	    segmentEntry.put("segment_memoryConsumption_invertedIndex_total", 
-	        totalInvertedIndexStatistics.getCompressedSize());
-	    segmentEntry.put("segment_memoryConsumption_invertedIndex_standardCardinality", 
-	        standardCardinalityInvertedIndexStatistics.getCompressedSize());
-	    segmentEntry.put("segment_totalDocumentsCount_invertedIndex_standardCardinality", 
-	        standardCardinalityInvertedIndexStatistics.getDocCount());
-	    segmentEntry.put("segment_documentsCount_invertedIndex_standardCardinality",         
-	        standardCardinalityInvertedIndexStatistics.getTrueDocCount());        
-	    segmentEntry.put("segment_memoryConsumption_invertedIndex_highCardinality",
-	        highCardinalityInvertedIndexStatistics.getCompressedSize());
-	    segmentEntry.put("segment_totalDocumentsCount_invertedIndex_highCardinality",
-	        highCardinalityInvertedIndexStatistics.getDocCount());
-	    segmentEntry.put("segment_documentsCount_invertedIndex_highCardinality",
-	        highCardinalityInvertedIndexStatistics.getTrueDocCount());
-	    return segmentEntry;		
+      segmentEntry.put("segment_name", ((MapResult) reduceResult).segmentName);
+      segmentEntry.put("segment__indexMonitor", indexArray);
+      segmentEntry.put("segment_memoryConsumption_invertedIndex_total", totalInvertedIndexStatistics.getCompressedSize());
+      segmentEntry.put("segment_memoryConsumption_invertedIndex_standardCardinality", standardCardinalityInvertedIndexStatistics.getCompressedSize());
+      segmentEntry.put("segment_totalDocumentsCount_invertedIndex_standardCardinality", standardCardinalityInvertedIndexStatistics.getDocCount());
+      segmentEntry.put("segment_documentsCount_invertedIndex_standardCardinality", standardCardinalityInvertedIndexStatistics.getTrueDocCount());
+      segmentEntry.put("segment_memoryConsumption_invertedIndex_highCardinality", highCardinalityInvertedIndexStatistics.getCompressedSize());
+      segmentEntry.put("segment_totalDocumentsCount_invertedIndex_highCardinality", highCardinalityInvertedIndexStatistics.getDocCount());
+      segmentEntry.put("segment_documentsCount_invertedIndex_highCardinality", highCardinalityInvertedIndexStatistics.getTrueDocCount());
+      return segmentEntry;
     } catch (JSONException e) {
-		  throw new RuntimeException(e);
-    }   	
+      throw new RuntimeException(e);
+    }
   }
-  
+
 }
