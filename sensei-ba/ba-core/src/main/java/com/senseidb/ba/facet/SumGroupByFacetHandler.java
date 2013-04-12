@@ -20,6 +20,8 @@ import com.browseengine.bobo.facets.filter.RandomAccessFilter;
 import com.browseengine.bobo.sort.DocComparatorSource;
 import com.senseidb.ba.gazelle.MultiValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
+import com.senseidb.ba.gazelle.SingleValueRandomReader;
+import com.senseidb.ba.gazelle.custom.GazelleCustomIndex;
 import com.senseidb.search.req.mapred.impl.dictionary.AccessorFactory;
 import com.senseidb.search.req.mapred.impl.dictionary.DictionaryNumberAccessor;
 
@@ -78,10 +80,23 @@ public class SumGroupByFacetHandler extends FacetHandler<Serializable> {
        if (metric == null) {
          metric = SumGroupByFacetHandler.this.metric;
        }
-        ZeusDataCache groupByCache = (ZeusDataCache) reader.getFacetData(dimension);
+        
+       ZeusDataCache groupByCache = (ZeusDataCache) reader.getFacetData(dimension);
 
-        final ZeusDataCache sumOverDataCache = (ZeusDataCache) reader.getFacetData(metric);
-        final TermValueList valList = (TermValueList) sumOverDataCache.getDictionary();
+        Object sumOverDataCacheObj = reader.getFacetData(metric);
+        final SingleValueRandomReader metricReader ;
+        final TermValueList valList;
+        if (sumOverDataCacheObj instanceof ZeusDataCache) {
+          SingleValueForwardIndex singleValueForwardIndex = (SingleValueForwardIndex)((ZeusDataCache)sumOverDataCacheObj).getForwardIndex();
+          metricReader = singleValueForwardIndex.getReader();
+          valList = singleValueForwardIndex.getDictionary();
+        } else if (sumOverDataCacheObj instanceof GazelleCustomIndex) {
+          GazelleCustomIndex gazelleCustomIndex = (GazelleCustomIndex)sumOverDataCacheObj;
+          metricReader = gazelleCustomIndex.getReader(metric);
+          valList = gazelleCustomIndex.getDictionary(metric);
+        } else {
+          throw new UnsupportedOperationException(sumOverDataCacheObj.getClass().toString());
+        }
         boolean isRealtime = false;
         DictionaryNumberAccessor numberAccessor = null; 
         if (valList instanceof DictionaryNumberAccessor) {
@@ -91,14 +106,13 @@ public class SumGroupByFacetHandler extends FacetHandler<Serializable> {
         } else {
           numberAccessor = AccessorFactory.get(valList);
         }
-        final SingleValueForwardIndex metricForwardIndex = (SingleValueForwardIndex) sumOverDataCache.getForwardIndex();
         if (groupByCache.getForwardIndex() instanceof SingleValueForwardIndex) {
           final SingleValueForwardIndex dimensionForwardIndex = (SingleValueForwardIndex) groupByCache.getForwardIndex();
-            return new GroupByFacetUtils.SingleValueFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, numberAccessor, dimensionForwardIndex, metricForwardIndex, isRealtime);
+            return new GroupByFacetUtils.SingleValueFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, numberAccessor, dimensionForwardIndex, metricReader, isRealtime);
         } else if (groupByCache.getForwardIndex() instanceof MultiValueForwardIndex) {
          
           final MultiValueForwardIndex dimensionForwardIndex = (MultiValueForwardIndex) groupByCache.getForwardIndex();
-            return new GroupByFacetUtils.MultiValueFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, numberAccessor, dimensionForwardIndex, metricForwardIndex, isRealtime);
+            return new GroupByFacetUtils.MultiValueFacetCountCollector(_name, groupByCache.getFakeCache(), docBase, sel, fspec, numberAccessor, dimensionForwardIndex, metricReader, isRealtime);
           
         } else {
           throw new UnsupportedOperationException("Either single or multi column value are supported");

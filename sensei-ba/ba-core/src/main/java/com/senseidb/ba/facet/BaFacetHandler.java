@@ -1,5 +1,7 @@
 package com.senseidb.ba.facet;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Collections;
@@ -320,8 +322,9 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
     return new DocComparatorSource() {
       @Override
       public DocComparator getComparator(IndexReader reader, int docbase) throws IOException {
-        final ZeusDataCache zeusDataCache =
-            BaFacetHandler.this.load((BoboIndexReader) reader);
+        final ZeusDataCache zeusDataCache = BaFacetHandler.this.load((BoboIndexReader) reader);
+        
+        
         if (zeusDataCache.getForwardIndex() instanceof SortedForwardIndex) {
           if (currentColumnTypes.size() > 1) {
             final DecimalFormat formatter =  SortedFacetUtils.formatter.get();
@@ -340,6 +343,33 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
           }
           return new SortedFacetUtils.SortedDocComparator();
         }
+        if (zeusDataCache.getForwardIndex() instanceof SingleValueSearchSnapshot) {
+          final SingleValueSearchSnapshot singleValueSearchSnapshot = (SingleValueSearchSnapshot) zeusDataCache.getForwardIndex();
+          final SingleValueRandomReader randomReader =
+              singleValueSearchSnapshot.getReader();
+          final IntList dictPermutationArray = singleValueSearchSnapshot.getDictionarySnapshot().getInvPermutationArray();
+          return new DocComparator() {
+            @Override
+            public Comparable value(ScoreDoc doc) {
+              
+              int index = randomReader.getValueIndex(doc.doc);
+              return (Comparable) singleValueSearchSnapshot.getDictionary().getRawValue(index);
+            }
+
+            @Override
+            public int compare(ScoreDoc doc1, ScoreDoc doc2) {
+             /* System.out.println("---------------------------------------------------------------");
+              System.out.println("First value " + singleValueSearchSnapshot.getDictionary().getRawValue(randomReader.getValueIndex(doc1.doc)));
+              System.out.println("Second value " + singleValueSearchSnapshot.getDictionary().getRawValue(randomReader.getValueIndex(doc2.doc)));
+              System.out.println("First score " + dictPermutationArray.getInt(randomReader.getValueIndex(doc1.doc)));
+              System.out.println("Second score " + dictPermutationArray.getInt(randomReader.getValueIndex(doc2.doc)));*/
+              
+              return dictPermutationArray.getInt(randomReader.getValueIndex(doc1.doc))
+                  - dictPermutationArray.getInt(randomReader.getValueIndex(doc2.doc));
+            }
+          };
+          
+        }
         if (zeusDataCache.getForwardIndex() instanceof SingleValueForwardIndex) {
           final SingleValueRandomReader randomReader =
               ((SingleValueForwardIndex) zeusDataCache.getForwardIndex()).getReader();
@@ -354,22 +384,23 @@ public class BaFacetHandler extends FacetHandler<ZeusDataCache> {
 
               @Override
               public int compare(ScoreDoc doc1, ScoreDoc doc2) {
-                return randomReader.getValueIndex(doc2.doc)
-                    - randomReader.getValueIndex(doc1.doc);
+                return randomReader.getValueIndex(doc1.doc)
+                    - randomReader.getValueIndex(doc2.doc);
               }
             };
           } else 
           return new DocComparator() {
             @Override
             public Comparable value(ScoreDoc doc) {
+              
               int index = randomReader.getValueIndex(doc.doc);
               return (Comparable) zeusDataCache.getForwardIndex().getDictionary().getRawValue(index);
             }
 
             @Override
             public int compare(ScoreDoc doc1, ScoreDoc doc2) {
-              return randomReader.getValueIndex(doc2.doc)
-                  - randomReader.getValueIndex(doc1.doc);
+              return randomReader.getValueIndex(doc1.doc)
+                  - randomReader.getValueIndex(doc2.doc);
             }
           };
           

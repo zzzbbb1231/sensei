@@ -60,7 +60,7 @@ public class SegmentToZoieReaderAdapter<R extends IndexReader> extends ZoieSegme
 
   @Override
   public int maxDoc() {
-    return offlineSegment.getLength() - 1;
+    return offlineSegment.getLength();
   }
 
   @Override

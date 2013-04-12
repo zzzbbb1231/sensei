@@ -808,8 +808,18 @@ public class BASentinelTest  extends Assert {
     assertEquals("numhits is wrong", 15278, resp.getInt("numhits"));
    
   }
+  @Test
+  public void test19SortedUniqueValues() throws Exception {
   
-  public void test19TestFederatedBroker() throws Exception {
+    String req = "{\"bql\":\"select * where dim_memberAge > 5000000 EXECUTE(com.senseidb.ba.mapred.impl.SortedUniqueValues, 'valueColumn':'met_impressionCount', 'sortColumn':'met_impressionCount', 'offset':'0', 'size':'100')\"}";
+    JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei"), new JSONObject(req).toString());
+    System.out.println(resp.toString(1));
+    assertEquals("numhits is wrong", 15278, resp.getInt("numhits"));
+   
+  }
+  @Test
+  public void test20SortedForwardIndex() throws Exception {
+  
     String req = "{\"bql\":\"select sum(met_impressionCount) where dim_memberAge <= 5000000\"}";
     JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei/federatedBroker/"), new JSONObject(req).toString());
     System.out.println(resp.toString(1));

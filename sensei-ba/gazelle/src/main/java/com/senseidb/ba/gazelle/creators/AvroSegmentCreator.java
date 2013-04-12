@@ -146,8 +146,10 @@ public class AvroSegmentCreator {
         if (elementSchema.getType() == Type.RECORD) {
           if (elementSchema.getField("token") != null) {
             elementSchema = elementSchema.getField("token").schema();
-          } else {
+          } else if (elementSchema.getField("null") != null){
             elementSchema = elementSchema.getField("null").schema();
+          } else {
+            elementSchema = elementSchema.getField("item_id").schema();
           }
           elementSchema = extractSchemaFromUnionIfNeeded(elementSchema);
         }

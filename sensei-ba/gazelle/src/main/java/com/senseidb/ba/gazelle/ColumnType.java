@@ -16,6 +16,10 @@ public enum ColumnType {
     if ("DOUBLE".equals(name)) {
       return FLOAT;
     }
+    if ("BOOLEAN".equals(name)) {
+      return STRING;
+    }
+    
     return valueOf(name);
   }
   public static ColumnType valueOf(Class<?> cls) {
@@ -25,9 +29,10 @@ public enum ColumnType {
     if (cls == long.class || cls == Long.class) {
       return LONG;
     }
-    if (cls == String.class) {
+    if (cls == String.class || cls == Boolean.class || cls == boolean.class) {
       return STRING;
     }
+
     if (cls == Double.class || cls == Float.class || cls == float.class || cls == double.class) {
       return FLOAT;
     }
@@ -40,30 +45,34 @@ public enum ColumnType {
     if (type == Type.LONG) {
       return LONG;
     }
-    if (type == Type.BOOLEAN) {
+
+    if (type == Type.STRING || type == Type.BOOLEAN) {
       return STRING;
     }
-    if (type == Type.STRING) {
-      return STRING;
-    }
+
     if (type == Type.DOUBLE || type == Type.FLOAT) {
       return FLOAT;
     }
+
     throw new UnsupportedOperationException(type.toString());
   }
   public static ColumnType valueOfArrayType(Type type) {
-      if (type == Type.INT) {
+    if (type == Type.INT) {
       return INT_ARRAY;
     }
+
     if (type == Type.LONG) {
       return LONG_ARRAY;
     }
-    if (type == Type.STRING) {
+
+    if (type == Type.STRING || type == Type.BOOLEAN) {
       return STRING_ARRAY;
     }
+
     if (type == Type.DOUBLE || type == Type.FLOAT) {
       return FLOAT_ARRAY;
     }
+
     throw new UnsupportedOperationException(type.toString());
   }
   public static ColumnType valueOfArrayType(ColumnType type) {

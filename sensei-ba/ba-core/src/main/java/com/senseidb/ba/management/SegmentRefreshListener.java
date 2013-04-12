@@ -97,9 +97,12 @@ public class SegmentRefreshListener implements IZkChildListener {
         if (crc != null && !crc.equals(existingCrcs.get(segment))) {
           SegmentInfo segmentInfo = SegmentInfo.retrieveFromZookeeper(zkClient, clusterName, segment);
           GazelleIndexSegmentImpl newSegment = segmentTracker.instantiateSegment(segment, segmentInfo);
-          logger.warn("Failed to refresh a segment - " + segment);
+          
           if (newSegment != null) {
+           
             newSegmentsToRefresh.put(segment, newSegment);
+          } else {
+            logger.warn("Failed to refresh a segment - " + segment);
           }
         }
       }
@@ -110,7 +113,7 @@ public class SegmentRefreshListener implements IZkChildListener {
       synchronized(segmentTracker.getGlobalLock()) {
       for  (String segment : newSegmentsToRefresh.keySet()) {
         if (segmentTracker.getSegmentsMap().containsKey(segment) || segmentTracker.getLoadingSegments().contains(segment)) {
-          logger.info("Refresehed a segment - " + segment);
+          logger.info("Refreshed a segment - " + segment);
           segmentTracker.getSegmentsMap().put(segment, new SegmentToZoieReaderAdapter(newSegmentsToRefresh.get(segment), segment, segmentTracker.getSenseiDecorator()));
           segmentTracker.markSegmentAsLoaded(segment);
           
