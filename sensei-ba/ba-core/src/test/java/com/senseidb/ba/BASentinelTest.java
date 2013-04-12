@@ -25,7 +25,6 @@ public class BASentinelTest  extends Assert {
 
   private static ZkManager zkManager;
   private static File indexDir;
-  private static File compressedSegment;
   private static GazelleIndexSegmentImpl indexSegmentImpl;
   private static String httpUploadDirectory;
   @AfterClass
@@ -737,7 +736,6 @@ public class BASentinelTest  extends Assert {
     
     String req = "{\"filter\":{\"term\":{\"dim_memberGender\":\"m\"}}" +
         ", \"mapReduce\":{\"function\":\"sensei.avg\",\"parameters\":{\"column\":\"met_impressionCount\"}}}";
-    JSONObject reqJson = new JSONObject(req);
     JSONObject res = TestUtil.search(new URL("http://localhost:8075/sensei"), req);
     System.out.println(res.toString(1));
     JSONObject mapReduceResult = res.getJSONObject("mapReduceResult");
@@ -811,12 +809,27 @@ public class BASentinelTest  extends Assert {
    
   }
   
-  public void ntest19TestFederatedBroker() throws Exception {
+  public void test19TestFederatedBroker() throws Exception {
     String req = "{\"bql\":\"select sum(met_impressionCount) where dim_memberAge <= 5000000\"}";
     JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei/federatedBroker/"), new JSONObject(req).toString());
     System.out.println(resp.toString(1));
     assertEquals( 4722, resp.getInt("numhits"));
     assertEquals( 11954, resp.getJSONObject("mapReduceResult").getInt("sum"));
+  }
+  
+  @Test
+  public void test1TestIndexMonitor() throws Exception {
+	String req = "{\"bql\":\"select com.senseidb.ba.monitor.IndexMonitorMapReduce(*)\"}";
+	JSONObject resp = TestUtil.search(new URL("http://localhost:8075/sensei/"), new JSONObject(req).toString());
+	System.out.println(resp.toString(1));
+	assertEquals(180000, resp.getJSONObject("mapReduceResult").getLong("allSegments_totalDocumentsCount_invertedIndex"));
+	assertEquals(402352, resp.getJSONObject("mapReduceResult").getLong("allSegments_memoryConsumption_invertedIndex"));
+	assertEquals(100410, resp.getJSONObject("mapReduceResult").getLong("allSegments_documentsCount_invertedIndex"));
+	assertEquals(201176, resp.getJSONObject("mapReduceResult").getJSONArray("allSegments__indexMonitor").getJSONObject(0).getLong("segment_memoryConsumption_invertedIndex_total"));
+	assertEquals(205, resp.getJSONObject("mapReduceResult").getJSONArray("allSegments__indexMonitor").getJSONObject(0).getLong("segment_documentsCount_invertedIndex_standardCardinality"));
+	assertEquals(50000, resp.getJSONObject("mapReduceResult").getJSONArray("allSegments__indexMonitor").getJSONObject(0).getLong("segment_documentsCount_invertedIndex_highCardinality"));
+	assertEquals(1176, resp.getJSONObject("mapReduceResult").getJSONArray("allSegments__indexMonitor").getJSONObject(0).getLong("segment_memoryConsumption_invertedIndex_standardCardinality"));
+	assertEquals("segment0", resp.getJSONObject("mapReduceResult").getJSONArray("allSegments__indexMonitor").getJSONObject(0).getString("segment_name"));
   }
 
 }

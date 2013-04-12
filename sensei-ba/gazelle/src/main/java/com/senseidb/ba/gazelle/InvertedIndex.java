@@ -6,6 +6,8 @@ package com.senseidb.ba.gazelle;
 
 import org.apache.lucene.search.DocIdSet;
 
+import com.senseidb.ba.gazelle.impl.InvertedIndexStatistics;
+
 public interface InvertedIndex{
 
 	/**
@@ -23,6 +25,11 @@ public interface InvertedIndex{
 	 * Check if the given dictionary value has an inverted index set associated with it.
 	 * @param dictionaryIndex
 	 */
-	public boolean invertedIndexPresent(int dictionaryIndex);	
-
+	public boolean invertedIndexPresent(int dictionaryIndex);
+	
+	/**
+	 * @return The index stats for this column.
+	 */
+	public InvertedIndexStatistics getIndexStatistics();
+	
 }

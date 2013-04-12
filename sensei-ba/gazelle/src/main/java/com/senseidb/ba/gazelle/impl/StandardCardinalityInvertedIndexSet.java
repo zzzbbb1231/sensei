@@ -200,11 +200,7 @@ public class StandardCardinalityInvertedIndexSet extends DocIdSet {
 			else{
 				indexReader = new SingleValueForwardIndexReader(forwardIndex, dictValue);
 			}
-			
-			StandardCardinalityInvertedIndex.invertedTotalDocCount.inc(getCount());
-			StandardCardinalityInvertedIndex.invertedDocCount.inc(getTrueCount());
-			StandardCardinalityInvertedIndex.invertedCompressedSize.inc(getCompSize());
-			
+
 			pForDIt = pForDSet.iterator();
 
 			currentMin = -1;

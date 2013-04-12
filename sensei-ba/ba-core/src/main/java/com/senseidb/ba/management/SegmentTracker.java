@@ -22,12 +22,12 @@ import proj.zoie.api.indexing.IndexReaderDecorator;
 
 import com.browseengine.bobo.api.BoboIndexReader;
 import com.senseidb.ba.SegmentToZoieReaderAdapter;
+import com.senseidb.ba.gazelle.InvertedIndex;
 import com.senseidb.ba.gazelle.impl.GazelleIndexSegmentImpl;
 import com.senseidb.ba.gazelle.persist.SegmentPersistentManager;
 import com.senseidb.ba.gazelle.utils.ReadMode;
 import com.senseidb.ba.util.FileUploadUtils;
 import com.senseidb.ba.util.TarGzCompressionUtils;
-import com.senseidb.metrics.MetricsConstants;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
 import com.yammer.metrics.core.MetricName;
@@ -104,9 +104,15 @@ public class SegmentTracker {
           segmentsMap.put(file.getName(), new SegmentToZoieReaderAdapter(indexSegment, file.getName(), senseiDecorator));
           currentNumberOfSegments.inc();
           currentNumberOfDocuments.inc(indexSegment.getLength());
-          totalDocumentsStoredInInvertedIndex.inc(indexSegment.getTotalInvertedDocCount());
-          documentsStoredInInvertedIndex.inc(indexSegment.getInvertedDocCount());
-          invertedIndexCompressionRate.inc(indexSegment.getInvertedCompressionRate()/8);
+       	  for (String columnName : indexSegment.getColumnMetadataMap().keySet()) {
+            InvertedIndex invertedIndex = indexSegment.getInvertedIndex(columnName);
+      	    if (indexSegment.getInvertedIndex(columnName) == null) {
+      		  continue;
+        	}
+            totalDocumentsStoredInInvertedIndex.inc(invertedIndex.getIndexStatistics().getDocCount());
+            documentsStoredInInvertedIndex.inc(invertedIndex.getIndexStatistics().getTrueDocCount());        
+            invertedIndexCompressionRate.inc(invertedIndex.getIndexStatistics().getCompressedSize());
+          }                         
           activeSegments.add(file.getName());
           referenceCounts.put(file.getName(), new AtomicInteger(1));
           logger.info("Bootstrapped the  segment " + file.getName() + " with " + indexSegment.getLength() + " elements");
@@ -258,11 +264,15 @@ public class SegmentTracker {
         }
         segmentLoadIntoMemoryTime.update(System.currentTimeMillis() - loadTime, TimeUnit.MILLISECONDS);
         currentNumberOfDocuments.inc(indexSegment.getLength());
-        totalDocumentsStoredInInvertedIndex.inc(indexSegment.getTotalInvertedDocCount());
-        documentsStoredInInvertedIndex.inc(indexSegment.getInvertedDocCount());
-        invertedIndexCompressionRate.inc(indexSegment.getInvertedCompressionRate()/8);
-        
-        
+    	for (String columnName : indexSegment.getColumnMetadataMap().keySet()) {
+          InvertedIndex invertedIndex = indexSegment.getInvertedIndex(columnName);
+    	  if (indexSegment.getInvertedIndex(columnName) == null) {
+    		continue;
+    	  }
+          totalDocumentsStoredInInvertedIndex.inc(invertedIndex.getIndexStatistics().getDocCount());
+          documentsStoredInInvertedIndex.inc(invertedIndex.getIndexStatistics().getTrueDocCount());        
+          invertedIndexCompressionRate.inc(invertedIndex.getIndexStatistics().getCompressedSize());
+        }               
         return indexSegment;
       }
     } catch (Exception ex) {
@@ -291,9 +301,19 @@ public class SegmentTracker {
         }
       }  
       if (adapter != null) {
+    	GazelleIndexSegmentImpl indexSegment = (GazelleIndexSegmentImpl) adapter.getOfflineSegment();
         currentNumberOfSegments.dec();
-        currentNumberOfDocuments.dec(adapter.getOfflineSegment().getLength());
-        numDeletedSegments.inc();
+        currentNumberOfDocuments.dec(indexSegment.getLength());
+        numDeletedSegments.inc();        
+    	for (String columnName : indexSegment.getColumnMetadataMap().keySet()) {
+          InvertedIndex invertedIndex = indexSegment.getInvertedIndex(columnName);
+      	  if (indexSegment.getInvertedIndex(columnName) == null) {
+      		continue;
+      	  }
+          totalDocumentsStoredInInvertedIndex.dec(invertedIndex.getIndexStatistics().getDocCount());
+          documentsStoredInInvertedIndex.dec(invertedIndex.getIndexStatistics().getTrueDocCount());        
+          invertedIndexCompressionRate.dec(invertedIndex.getIndexStatistics().getCompressedSize());
+        }                              
       }
       logger.info("Segment " + segmentId + " has been deleted");
       executorService.execute(new Runnable() {

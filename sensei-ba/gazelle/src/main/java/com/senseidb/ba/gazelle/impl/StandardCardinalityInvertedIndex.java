@@ -9,8 +9,6 @@ import com.senseidb.ba.gazelle.ForwardIndex;
 import com.senseidb.ba.gazelle.InvertedIndex;
 import com.senseidb.ba.gazelle.SingleValueForwardIndex;
 import com.senseidb.ba.gazelle.SingleValueRandomReader;
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Counter;
 
 /**
  * Implementation of an InvertedIndex for SenseiBA. We don't store all docIDs in
@@ -25,22 +23,9 @@ public class StandardCardinalityInvertedIndex implements InvertedIndex{
 
 	private StandardCardinalityInvertedIndexSet[] docIdSets;
 
-	protected static final Counter invertedDocCount = Metrics.newCounter(StandardCardinalityInvertedIndexSet.class, "invertedDocCount");
-	protected static final Counter invertedCompressedSize = Metrics.newCounter(StandardCardinalityInvertedIndexSet.class, "invertedCompressedSize");
-	protected static final Counter invertedTotalDocCount = Metrics.newCounter(StandardCardinalityInvertedIndexSet.class, "invertedTotalDocCount");
-
-	public static long getTotalCount() {
-		return invertedTotalDocCount.count();
-	}
-
-	public static long getTotalTrueCount() {
-		return invertedDocCount.count();
-	}
-
-	public static long getTotalCompSize() {
-		return invertedCompressedSize.count();
-	}
-
+	private InvertedIndexStatistics columnInvertedIndexStatistics = new InvertedIndexStatistics();	
+		
+	
 	/**
 	 * This method figures out the best minimum jump value to use for the inverted indices.
 	 * The algorithm is as followed: We go through the forward iterator assuming the optimal jump value is 0.
@@ -210,7 +195,7 @@ public class StandardCardinalityInvertedIndex implements InvertedIndex{
 	@SuppressWarnings("rawtypes")
 	public StandardCardinalityInvertedIndex(ForwardIndex fIndex, int size, int optVal, TermValueList values) throws IOException{
 		docIdSets = new StandardCardinalityInvertedIndexSet[size];
-
+		
 		for(int i = 0; i < size; i++){
 			String value = values.get(i);
 			docIdSets[i] = new StandardCardinalityInvertedIndexSet(fIndex, fIndex.getDictionary().indexOf(value), optVal);
@@ -221,6 +206,25 @@ public class StandardCardinalityInvertedIndex implements InvertedIndex{
 		docIdSets[value].addDoc(id);
 	}
 
+	/** 
+	 * This function update the statistics information of the inverted index. This MUST be called after the initializer.
+	 */
+	public void updateStatisticsInfo() {
+	  long invertedIndexDocCount = 0;
+	  long invertedIndexTrueDocCount = 0;
+	  long invertedIndexCompressedSize = 0;
+	  for (int i = 0; i < docIdSets.length; ++i) {
+		invertedIndexDocCount += docIdSets[i].getCount();
+		invertedIndexTrueDocCount += docIdSets[i].getTrueCount();
+		invertedIndexCompressedSize += docIdSets[i].getCompSize();
+	  }
+	  invertedIndexCompressedSize /= 8;
+	  columnInvertedIndexStatistics.setDocCount(invertedIndexDocCount);
+	  columnInvertedIndexStatistics.setTrueDocCount(invertedIndexTrueDocCount);
+	  columnInvertedIndexStatistics.setCompressedSize(invertedIndexCompressedSize);
+	  columnInvertedIndexStatistics.setInvertedIndexStrategy("StandardCardinality");
+	}
+	
 	@Override
 	public boolean invertedIndexPresent(int index) {
 		return docIdSets[index] != null;
@@ -247,10 +251,16 @@ public class StandardCardinalityInvertedIndex implements InvertedIndex{
 				docIdSets[i].optimize();
 			}
 		}		
+		updateStatisticsInfo();		
 	}
 
 	@Override
 	public int length() {
 		return docIdSets.length;
+	}
+
+	@Override
+	public InvertedIndexStatistics getIndexStatistics() {
+		return columnInvertedIndexStatistics;
 	}
 }
